@@ -1,0 +1,8 @@
+<#if licenseFirst??>
+${licenseFirst}
+</#if>
+${licensePrefix}Logic simlator
+${licensePrefix}Author: Martin Krcma
+<#if licenseLast??>
+${licenseLast}
+</#if>
