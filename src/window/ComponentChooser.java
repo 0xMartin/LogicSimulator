@@ -19,12 +19,17 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
-import javax.swing.JFrame;
+import logicSimulator.ui.SystemResources;
 import javax.swing.JList;
 import logicSimulator.LogicSimulatorCore;
+import logicSimulator.ModuleEditor;
 import logicSimulator.Project;
+import logicSimulator.ProjectFile;
+import logicSimulator.WorkSpace;
 import logicSimulator.WorkSpaceObject;
-import logicSimulator.common.Tools;
+import logicSimulator.Tools;
+import logicSimulator.common.LogicModule;
+import logicSimulator.common.Model;
 import logicSimulator.objects.wiring.BitGet;
 import logicSimulator.objects.control.Button;
 import logicSimulator.objects.displays.Bulp;
@@ -37,7 +42,9 @@ import logicSimulator.objects.gates.Nxor;
 import logicSimulator.objects.gates.Or;
 import logicSimulator.objects.gates.Xor;
 import logicSimulator.objects.wiring.BitSet;
+import logicSimulator.objects.wiring.Bridge;
 import logicSimulator.objects.wiring.Input;
+import logicSimulator.objects.wiring.Output;
 import window.components.PropertieEditor;
 
 /**
@@ -50,7 +57,9 @@ public class ComponentChooser extends javax.swing.JFrame {
     public static final String[] GATE = {"BUFFER", "NOT", "OR", "NOR", "AND", "NAND", "XOR", "NXOR"};
     public static final String[] DISPLAY = {"BULP", "7 SEG", "DISPLAY"};
     public static final String[] CONTROL = {"BUTTON", "POTENTIOMETER"};
-    public static final String[] WIRING = {"BIT GET", "BIT SET", "INPUT"};
+    public static final String[] WIRING = {"BIT GET", "BIT SET", "INPUT", "OUTPUT", "BRIDGE"};
+    public static String[] MODULES = null;
+    public static final List<LogicModule> modules = new ArrayList<>();
 
     private void reloadList() {
         String[] list = null;
@@ -67,6 +76,28 @@ public class ComponentChooser extends javax.swing.JFrame {
             case "Wiring":
                 list = ComponentChooser.WIRING;
                 break;
+            case "Modules":
+                //get all modules from project
+                ComponentChooser.modules.clear();
+                this.project.getProjectFiles().stream().forEach((pf) -> {
+                    if (pf instanceof ModuleEditor) {
+                        LogicModule m = ((ModuleEditor) pf).getModule();
+                        if (m != null) {
+                            ComponentChooser.modules.add(m);
+                        }
+                    }
+                });
+                //get names of each module
+                int index = 0;
+                ComponentChooser.MODULES = new String[ComponentChooser.modules.size()];
+                for (int i = 0; i < this.project.getProjectFiles().size(); i++) {
+                    ProjectFile pf = this.project.getProjectFiles().get(i);
+                    if (pf instanceof ModuleEditor) {
+                        ComponentChooser.MODULES[index++] = ((ModuleEditor) pf).getName();
+                    }
+                }
+                list = ComponentChooser.MODULES;
+                break;
         }
         if (list != null) {
             this.model.clear();
@@ -81,20 +112,24 @@ public class ComponentChooser extends javax.swing.JFrame {
      */
     private WorkSpaceObject selectedObject = null;
 
+    public WorkSpaceObject getSelectedComponent() {
+        return this.selectedObject;
+    }
+
     private Project project;
 
-    private final JFrame parent;
+    private final MainWindow mWindow;
 
     private final DefaultListModel<String> model;
 
     /**
      * Creates new form ComponentChooser
      *
-     * @param form Parent form
+     * @param mWindow MainWindow
      */
-    public ComponentChooser(JFrame form) {
+    public ComponentChooser(MainWindow mWindow) {
         this.model = new DefaultListModel<>();
-        this.parent = form;
+        this.mWindow = mWindow;
         initComponents();
         if (Toolkit.getDefaultToolkit().isAlwaysOnTopSupported()) {
             this.setAlwaysOnTop(true);
@@ -119,8 +154,8 @@ public class ComponentChooser extends javax.swing.JFrame {
         //show
         this.setVisible(true);
         this.setLocation(
-                this.parent.getX() + (this.parent.getWidth() - this.getWidth()) / 2,
-                this.parent.getY() + (this.parent.getHeight() - this.getHeight()) / 2
+                this.mWindow.getX() + (this.mWindow.getWidth() - this.getWidth()) / 2,
+                this.mWindow.getY() + (this.mWindow.getHeight() - this.getHeight()) / 2
         );
         this.jSplitPane1.setDividerLocation(0.3f);
         //reload list
@@ -167,14 +202,17 @@ public class ComponentChooser extends javax.swing.JFrame {
 
                 g2.clearRect(0, 0, jPanelView.getWidth(), jPanelView.getHeight());
                 if(selectedObject != null){
+                    Model m = selectedObject.getModel();
                     int max  = Math.max(
-                        selectedObject.getModel().getWidth(),
-                        selectedObject.getModel().getHeight()
+                        m.getWidth(),
+                        m.getHeight()
                     ) + 30;
                     float f = jPanelView.getWidth() / (float) max;
                     g2.scale(f, f);
-                    selectedObject.getPosition().x = (int)(jPanelView.getWidth() / (2 * f));
-                    selectedObject.getPosition().y = (int)(jPanelView.getHeight() / (2 * f));
+                    selectedObject.getPosition().x = (int)((jPanelView.getWidth() - m.getBoundsMax().x - m.getBoundsMin().x)/ (2f * f));
+                    selectedObject.getPosition().y = (int)((jPanelView.getHeight() - m.getBoundsMax().y - m.getBoundsMin().y) / (2f * f));
+                    selectedObject.getPosition().x -= (int)((m.getBoundsMax().x + m.getBoundsMin().x) / (2f * f));
+                    selectedObject.getPosition().y -= (int)((m.getBoundsMax().y + m.getBoundsMin().y) / (2f * f));
                     selectedObject.render(
                         g2,
                         new Point(0, 0),
@@ -194,6 +232,7 @@ public class ComponentChooser extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Component chooser");
+        setIconImage(SystemResources.ICON);
         setType(java.awt.Window.Type.UTILITY);
 
         jSplitPane1.setDividerLocation(300);
@@ -215,7 +254,7 @@ public class ComponentChooser extends javax.swing.JFrame {
         });
         jScrollPane1.setViewportView(jList1);
 
-        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Gate", "Control", "Display", "Wiring" }));
+        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Gate", "Control", "Display", "Wiring", "Modules" }));
         jComboBox1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jComboBox1ActionPerformed(evt);
@@ -316,7 +355,12 @@ public class ComponentChooser extends javax.swing.JFrame {
         });
         jScrollPane3.setViewportView(jTableProperties);
 
-        jButtonDefault.setText("Default");
+        jButtonDefault.setText("Add to toolbar");
+        jButtonDefault.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonDefaultActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanelRightLayout = new javax.swing.GroupLayout(jPanelRight);
         jPanelRight.setLayout(jPanelRightLayout);
@@ -333,10 +377,10 @@ public class ComponentChooser extends javax.swing.JFrame {
                 .addGroup(jPanelRightLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                     .addComponent(jPanelView, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 205, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelRightLayout.createSequentialGroup()
-                        .addComponent(jButtonDefault, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanelRightLayout.createSequentialGroup()
+                        .addComponent(jButtonDefault, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButtonPlace, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addComponent(jButtonPlace, javax.swing.GroupLayout.PREFERRED_SIZE, 68, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         jPanelRightLayout.setVerticalGroup(
@@ -386,13 +430,23 @@ public class ComponentChooser extends javax.swing.JFrame {
     }//GEN-LAST:event_jComboBox1ActionPerformed
 
     private void jButtonPlaceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonPlaceActionPerformed
+        if (this.project == null) {
+            dispose();
+            return;
+        }
         try {
             List<WorkSpaceObject> list = new ArrayList<>();
             WorkSpaceObject obj = Tools.clone(this.selectedObject);
             if (obj != null) {
                 obj.getPosition().x = LogicSimulatorCore.OBJECT_NULL_POSITION;
                 list.add(obj);
-                this.project.getSelectedWorkspace().addNewObjects(list);
+                //add selected component to workspace
+                ProjectFile pf = this.project.getSelectedFile();
+                if (pf instanceof WorkSpace) {
+                    ((WorkSpace) pf).addNewObjects(list);
+                }
+                //add to last added component combobox
+                this.mWindow.addComponentToLastAdded(obj);
                 dispose();
             }
         } catch (CloneNotSupportedException ex) {
@@ -411,12 +465,13 @@ public class ComponentChooser extends javax.swing.JFrame {
     private void jTextFieldFindKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldFindKeyReleased
         if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
             this.jTextFieldFind.setText(this.jTextFieldFind.getText().toUpperCase());
+            Point m0 = getBestMatch(ComponentChooser.MODULES, this.jTextFieldFind.getText());
             Point m1 = getBestMatch(ComponentChooser.GATE, this.jTextFieldFind.getText());
             Point m2 = getBestMatch(ComponentChooser.CONTROL, this.jTextFieldFind.getText());
             Point m3 = getBestMatch(ComponentChooser.DISPLAY, this.jTextFieldFind.getText());
             Point m4 = getBestMatch(ComponentChooser.WIRING, this.jTextFieldFind.getText());
-            int[] dat = new int[]{m1.y, m2.y, m3.y, m4.y};
-            int[] indexList = new int[]{m1.x, m2.x, m3.x, m4.x};
+            int[] dat = new int[]{m0.y, m1.y, m2.y, m3.y, m4.y};
+            int[] indexList = new int[]{m0.x, m1.x, m2.x, m3.x, m4.x};
             //find best
             int max = dat[0];
             int index = 0;
@@ -439,6 +494,11 @@ public class ComponentChooser extends javax.swing.JFrame {
     private void jTablePropertiesMouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTablePropertiesMouseReleased
         this.jPanelView.repaint();
     }//GEN-LAST:event_jTablePropertiesMouseReleased
+
+    private void jButtonDefaultActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonDefaultActionPerformed
+        //add selected component to toolbar
+        this.mWindow.addComponentToToolbar(this.selectedObject);
+    }//GEN-LAST:event_jButtonDefaultActionPerformed
 
     /**
      * Get best match item
@@ -548,10 +608,27 @@ public class ComponentChooser extends javax.swing.JFrame {
                 this.selectedObject = new BitGet(new Point(0, 0), new boolean[1]);
                 break;
             case "BIT SET":
-                this.selectedObject = new BitSet(new Point(0, 0), new int[1], 1);
+                this.selectedObject = new BitSet(new Point(0, 0), new int[1]);
                 break;
             case "INPUT":
                 this.selectedObject = new Input(new Point(0, 0), 1);
+                break;
+            case "OUTPUT":
+                this.selectedObject = new Output(new Point(0, 0), 1);
+                break;
+            case "BRIDGE":
+                this.selectedObject = new Bridge(new Point(0, 0), "A");
+                break;
+            //modules
+            default:
+                if (ComponentChooser.MODULES != null) {
+                    for (int i = 0; i < ComponentChooser.MODULES.length; i++) {
+                        if (ComponentChooser.MODULES[i].equals(id)) {
+                            this.selectedObject = ComponentChooser.modules.get(i).cloneObject();
+                            break;
+                        }
+                    }
+                }
                 break;
         }
     }

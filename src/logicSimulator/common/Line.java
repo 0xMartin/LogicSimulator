@@ -1,5 +1,6 @@
 package logicSimulator.common;
 
+import logicSimulator.Tools;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.io.Serializable;
@@ -20,11 +21,21 @@ public class Line implements Serializable {
     //graphics node
     public boolean n1 = false, n2 = false;
 
+    /**
+     * Create line from two double points (references)
+     * @param p1 Point p1
+     * @param p2 Point p2
+     */
     public Line(Point.Double p1, Point.Double p2) {
         this.p1 = p1;
         this.p2 = p2;
     }
 
+    /**
+     * Create line from two points (values)
+     * @param p1 Point p1
+     * @param p2 Point p2
+     */
     public Line(Point p1, Point p2) {
         this.p1 = new Point.Double(p1.x, p1.y);
         this.p2 = new Point.Double(p2.x, p2.y);
@@ -76,16 +87,16 @@ public class Line implements Serializable {
         );
         //draw nodes
         if (this.n1) {
-            g2.drawOval(
+            g2.fillOval(
                     (int) (p1.x + xOff - 4),
                     (int) (p1.y + yOff - 4),
-                    7, 7);
+                    8, 8);
         }
         if (this.n2) {
-            g2.drawOval(
+            g2.fillOval(
                     (int) (p2.x + xOff - 4),
                     (int) (p2.y + yOff - 4),
-                    7, 7);
+                    8, 8);
         }
     }
 

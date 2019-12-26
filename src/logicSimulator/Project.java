@@ -8,6 +8,7 @@ import data.PropertieReader;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import logicSimulator.common.CopyObjectVector;
 import window.MainWindow;
 
 /**
@@ -17,43 +18,47 @@ import window.MainWindow;
 public class Project implements LSComponent {
 
     private File file;
-    
+
     private LogicSimulatorCore core;
-    
-    private WorkSpace selectedWorkSpace = null;
-    
-    private final List<WorkSpace> workspaces;
-    
+
+    private ProjectFile selectedFile = null;
+
+    private final List<ProjectFile> projectFiles;
+
+    //copy
+    public CopyObjectVector copyObjects = null;
+
     private String name;
     public boolean editMode = true;
-    
-    public Project(String name){
+
+    public Project(String name) {
         this.name = name;
-        this.workspaces = new LinkedList<>();
+        this.projectFiles = new LinkedList<>();
     }
-    
-    public WorkSpace getSelectedWorkspace(){
-        return this.selectedWorkSpace;
+
+    public ProjectFile getSelectedFile() {
+        return this.selectedFile;
     }
-    
-    public void setSelectedWorkspace(WorkSpace work){
-        this.selectedWorkSpace = work;
+
+    public void setSelectedFile(ProjectFile projectFile) {
+        this.selectedFile = projectFile;
     }
 
     /**
      * Add object to propertie editor
-     * @param obj 
+     *
+     * @param obj
      */
     public void editPropt(WorkSpaceObject obj) {
-        if(this.core == null){
+        if (this.core == null) {
             return;
         }
-        if(this.core.getLSComponents() == null){
+        if (this.core.getLSComponents() == null) {
             return;
         }
-        for(LSComponent comp : this.core.getLSComponents()){
-            if(comp instanceof MainWindow){
-                ((MainWindow)comp).editProperties(obj);
+        for (LSComponent comp : this.core.getLSComponents()) {
+            if (comp instanceof MainWindow) {
+                ((MainWindow) comp).editProperties(obj);
                 break;
             }
         }
@@ -69,19 +74,20 @@ public class Project implements LSComponent {
     public void run() {
         //none
     }
-    
+
     /**
-     * Return all workspace for this project
-     * @return 
+     * Return all project for this project
+     *
+     * @return
      */
-    public List<WorkSpace> getWorkSpaces(){
-        return this.workspaces;
+    public List<ProjectFile> getProjectFiles() {
+        return this.projectFiles;
     }
 
-    public void rename(String newName){
+    public void rename(String newName) {
         //to do
     }
-    
+
     public String getName() {
         return this.name;
     }
@@ -89,9 +95,9 @@ public class Project implements LSComponent {
     public File getFile() {
         return this.file;
     }
-    
-    public void setFile(File file){
+
+    public void setFile(File file) {
         this.file = file;
     }
-    
+
 }

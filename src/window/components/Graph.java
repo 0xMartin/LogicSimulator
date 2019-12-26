@@ -14,6 +14,9 @@ import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JPanel;
+import logicSimulator.LogicSimulatorCore;
+import logicSimulator.Settings;
+import logicSimulator.Tools;
 
 /**
  *
@@ -27,8 +30,8 @@ public class Graph extends JPanel {
         this.setBackground(Color.WHITE);
         this.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent e) {
-                double w = width;
-                double d = getWidth() / (getWidth() - w);
+                double d = getWidth() / width;
+                width = getWidth();
                 POINTS.stream().forEach((pts) -> {
                     pts.x = pts.x * d;
                 });
@@ -61,13 +64,10 @@ public class Graph extends JPanel {
 
         Graphics2D g2 = (Graphics2D) g;
 
-        //render hints
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_RENDERING,
-                RenderingHints.VALUE_RENDER_QUALITY);
-        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
-                RenderingHints.VALUE_STROKE_PURE);
+        //set high rendering quality (if is allowed in core)
+        if (Settings.HIGH_RENDER_QUALITY) {
+            Tools.setHighQuality(g2);
+        }
 
         //find min and max
         double MIN = Double.MAX_VALUE, MAX = Double.MIN_VALUE;

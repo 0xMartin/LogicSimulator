@@ -6,6 +6,8 @@ package window.components;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.HashMap;
@@ -18,7 +20,7 @@ import logicSimulator.common.Propertie;
  *
  * @author Martin
  */
-public class PropertieEditor extends JTable implements MouseListener {
+public class PropertieEditor extends JTable implements MouseListener, KeyListener {
 
     private WorkSpaceObject object;
 
@@ -33,6 +35,7 @@ public class PropertieEditor extends JTable implements MouseListener {
     public PropertieEditor() {
         super();
         this.addMouseListener(this);
+        this.addKeyListener(this);
         this.map = new HashMap<>();
     }
 
@@ -87,8 +90,7 @@ public class PropertieEditor extends JTable implements MouseListener {
         }
     }
 
-    @Override
-    public void mouseReleased(MouseEvent arg0) {
+    private void valuesChanged() {
         try {
             DefaultTableModel model = (DefaultTableModel) this.getModel();
             boolean change = false;
@@ -115,19 +117,40 @@ public class PropertieEditor extends JTable implements MouseListener {
     }
 
     @Override
-    public void mouseClicked(MouseEvent arg0) {
+    public void mouseReleased(MouseEvent evt) {
+        valuesChanged();
     }
 
     @Override
-    public void mousePressed(MouseEvent arg0) {
+    public void mouseClicked(MouseEvent evt) {
     }
 
     @Override
-    public void mouseEntered(MouseEvent arg0) {
+    public void mousePressed(MouseEvent evt) {
     }
 
     @Override
-    public void mouseExited(MouseEvent arg0) {
+    public void mouseEntered(MouseEvent evt) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent evt) {
+    }
+
+    @Override
+    public void keyTyped(KeyEvent evt) {
+    }
+
+    @Override
+    public void keyPressed(KeyEvent evt) {
+
+    }
+
+    @Override
+    public void keyReleased(KeyEvent evt) {
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+            this.valuesChanged();
+        }
     }
 
 }

@@ -12,14 +12,13 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import logicSimulator.WorkSpaceObject;
 import logicSimulator.common.IOPin;
 import logicSimulator.common.Line;
 import logicSimulator.common.Model;
 import logicSimulator.common.Propertie;
-import logicSimulator.common.Tools;
+import logicSimulator.Tools;
 
 /**
  * Wire connects io pints
@@ -28,14 +27,57 @@ import logicSimulator.common.Tools;
  */
 public class Wire implements WorkSpaceObject, Serializable {
 
+    //io pins connect to the wire
     private final List<IOPin> pins;
 
-    private final LinkedList<Line> path;
+    //path of this wire (only for graphics visualiation)
+    private final List<Line> path;
 
-    private boolean select = false;
+    private final List<Line> selectedLines = new ArrayList<>();
+
+    /**
+     * Value the was be writed on this wire (0=low,1=high,-1=bus(this is
+     * automatic))
+     */
+    public int value = 0;
+
+    public Wire() {
+        this.pins = new ArrayList<>();
+        this.path = new ArrayList<>();
+    }
+
+    /**
+     * Return selected line of this wire path
+     *
+     * @return Line
+     */
+    public List<Line> getSelectedLines() {
+        return this.selectedLines;
+    }
 
     @Override
     public boolean compute() {
+        //get color (high low or bus color)
+        boolean existOutPin = false;
+        for (int i = 0; i < this.pins.size(); i++) {
+            if (this.pins.get(i).mode == IOPin.MODE.OUTPUT
+                    || this.pins.get(i).mode == IOPin.MODE.IO) {
+                existOutPin = true;
+                if (this.pins.get(i).getValue().length > 1) {
+                    this.value = -1;
+                    break;
+                }
+            }
+        }
+        //set false for all input pin in this wire because outpin not exist (not connected) on this wire
+        if (!existOutPin) {
+            this.value = 0;
+            boolean changed = false;
+            for (IOPin pin : this.pins) {
+                changed = pin.setValue(false);
+            }
+            return changed;
+        }
         return false;
     }
 
@@ -44,23 +86,8 @@ public class Wire implements WorkSpaceObject, Serializable {
         return false;
     }
 
-    public enum WValue {
-        LOW, HIGH, BUS;
-    }
-
-    private WValue value = WValue.LOW;
-
-    public Wire() {
-        this.pins = new ArrayList<>();
-        this.path = new LinkedList<>();
-    }
-
-    public LinkedList<Line> getPath() {
+    public List<Line> getPath() {
         return this.path;
-    }
-
-    public void setBinaryValue(WValue val) {
-        this.value = val;
     }
 
     @Override
@@ -78,14 +105,15 @@ public class Wire implements WorkSpaceObject, Serializable {
 
     @Override
     public void render(Graphics2D g2, Point offset, Dimension screen) {
+        //set color
         switch (this.value) {
-            case LOW:
+            case 0:
                 g2.setColor(Colors.WIRE_0);
                 break;
-            case HIGH:
+            case 1:
                 g2.setColor(Colors.WIRE_1);
                 break;
-            case BUS:
+            case -1:
                 g2.setColor(Colors.WIRE_BUS);
                 break;
         }
@@ -94,7 +122,14 @@ public class Wire implements WorkSpaceObject, Serializable {
             //draw line
             line.draw(g2, 0, 0);
             //draw select
-            if (this.select) {
+            boolean isIn = false;
+            for (Line l : this.selectedLines) {
+                if (l == line) {
+                    isIn = true;
+                    break;
+                }
+            }
+            if (isIn) {
                 Color c = g2.getColor();
                 g2.setColor(Colors.SELECT_RECT);
                 g2.fillRect((int) (line.p1.x) - 4, (int) (line.p1.y) - 4, 7, 7);
@@ -108,7 +143,7 @@ public class Wire implements WorkSpaceObject, Serializable {
                     (int) (line.p1.y - (line.p1.y - line.p2.y) / 2)
             );
             g2.drawString(": " + this.pins.size(), p.x + 15, p.y + 15);
-             */
+            */
         });
     }
 
@@ -129,22 +164,24 @@ public class Wire implements WorkSpaceObject, Serializable {
 
     @Override
     public boolean select(Point position) {
-        if (Tools.isOnLine(this, position)) {
-            this.select = true;
+        Line l = Tools.isOnLine(this, position);
+        if (l != null) {
+            if (!this.selectedLines.stream().anyMatch((o1) -> (o1 == l))) {
+                this.selectedLines.add(l);
+            }
             return true;
         }
-        this.select = false;
         return false;
     }
 
     @Override
     public void unSelect() {
-        this.select = false;
+        this.selectedLines.clear();
     }
 
     @Override
     public boolean isSelected() {
-        return this.select;
+        return this.selectedLines.size() > 0;
     }
 
     @Override

@@ -14,6 +14,8 @@ import logicSimulator.common.IOPin;
 import logicSimulator.common.Line;
 import logicSimulator.common.Model;
 import logicSimulator.common.Propertie;
+import logicSimulator.ui.Colors;
+import logicSimulator.ui.Fonts;
 
 /**
  *
@@ -27,6 +29,19 @@ public class Input implements WorkSpaceObject, Serializable {
 
     private boolean selected = false;
 
+    private String label = "";
+
+    //this be will be visible only outside of module
+    private IOPin input;
+
+    public IOPin getInput() {
+        return this.input;
+    }
+
+    public void setInput(IOPin pin) {
+        this.input = pin;
+    }
+
     public Input(Point position, int bits) {
         this.position = position;
         //model
@@ -39,9 +54,14 @@ public class Input implements WorkSpaceObject, Serializable {
                 null, null
         );
         //pins
+        this.input = new IOPin(IOPin.MODE.INPUT, bits, "", new Point.Double(0, 0));
         this.model.getIOPins().add(
-                new IOPin(IOPin.MODE.OUTPUT, bits, "OUT", new Point.Double(0, 20))
+                new IOPin(IOPin.MODE.OUTPUT, bits, "", new Point.Double(0, 20))
         );
+    }
+
+    public String getLabel() {
+        return this.label;
     }
 
     @Override
@@ -56,18 +76,45 @@ public class Input implements WorkSpaceObject, Serializable {
 
     @Override
     public void render(Graphics2D g2, Point offset, Dimension screen) {
-        this.model.renderModel(g2, this.position, offset, screen, this.selected);
+        boolean stat = this.model.renderModel(g2, this.position, offset, screen, this.selected);
+        if (stat) //draw label
+        {
+            g2.setColor(Colors.GATE);
+            g2.setFont(Fonts.LABEL);
+            //draw label
+            g2.drawString(
+                    this.label,
+                    (int) (this.position.x + this.model.getBoundsMin().x
+                    - g2.getFontMetrics().stringWidth(this.label) - 9),
+                    (int) (this.position.y + this.model.getBoundsMin().y
+                    + (this.model.getAngle()== 2 ? 0 : this.model.getHeight() / 2))
+            );
+        }
     }
 
     @Override
     public Propertie[] getProperties() {
-        return null;
+        return new Propertie[]{
+            new Propertie("Bits", this.model.getIOPins().get(0).getValue().length),
+            new Propertie("Label", this.label)
+        };
     }
 
     @Override
     public void changePropertie(Propertie propt) {
         try {
-
+            switch (propt.getName()) {
+                case "Bits":
+                    int i = propt.getValueInt();
+                    i = Math.max(i, 1);
+                    i = Math.min(i, 128);
+                    this.model.getIOPins().get(0).changeBitWidth(i);
+                    break;
+                case "Label":
+                    this.label = propt.getValueString();
+                    this.input.setLabel(this.label);
+                    break;
+            }
         } catch (NumberFormatException ex) {
         }
     }
@@ -104,7 +151,8 @@ public class Input implements WorkSpaceObject, Serializable {
 
     @Override
     public boolean compute() {
-        return false;
+        IOPin pin = this.model.getIOPins().get(0);
+        return pin.setValue(this.input.getValue());
     }
 
     public WorkSpaceObject cloneObject() {
@@ -112,6 +160,8 @@ public class Input implements WorkSpaceObject, Serializable {
                 new Point(this.position.x, this.position.y),
                 this.model.getIOPins().get(0).getValue().length
         );
+        ret.input = this.input.cloneObject();
+        ret.label = this.label;
         ret.getModel().clone(this.model);
         return ret;
     }

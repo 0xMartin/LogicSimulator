@@ -4,7 +4,6 @@
  */
 package logicSimulator.ui;
 
-import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -14,7 +13,7 @@ import java.awt.event.MouseListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import javax.swing.JButton;
-import logicSimulator.common.Tools;
+import logicSimulator.Tools;
 
 /**
  *
@@ -32,12 +31,7 @@ public class LSButton extends JButton implements MouseListener {
         Graphics2D g2 = (Graphics2D) g;
 
         //render hints
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_RENDERING,
-                RenderingHints.VALUE_RENDER_QUALITY);
-        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
-                RenderingHints.VALUE_STROKE_PURE);
+        Tools.setHighQuality(g2);
 
         //draw bg
         g2.setColor(this.cursorIN ? Colors.COMPONENT_SELECTBG : Colors.COMPONENT_BACKGROUND);

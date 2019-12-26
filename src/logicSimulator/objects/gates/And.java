@@ -15,7 +15,7 @@ import logicSimulator.WorkSpaceObject;
 import logicSimulator.common.Curve;
 import logicSimulator.common.Line;
 import logicSimulator.common.Model;
-import logicSimulator.common.Tools;
+import logicSimulator.Tools;
 
 /**
  *
@@ -65,12 +65,12 @@ public class And implements WorkSpaceObject, Serializable {
                     new Line(new Point.Double(0, 25), new Point.Double(0, 37))
                 };
                 //io pins
-                this.model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, bits, "IN1", new Point.Double(-20, -40)));
-                this.model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, bits, "IN2", new Point.Double(20, -40)));
+                this.model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, bits, "", new Point.Double(-20, -40)));
+                this.model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, bits, "", new Point.Double(20, -40)));
                 break;
         }
         //output pin
-        this.model.getIOPins().add(new IOPin(IOPin.MODE.OUTPUT, bits, "OUT", new Point.Double(0, 40)));
+        this.model.getIOPins().add(new IOPin(IOPin.MODE.OUTPUT, bits, "", new Point.Double(0, 40)));
         this.model.computeSize();
     }
 
@@ -92,7 +92,7 @@ public class And implements WorkSpaceObject, Serializable {
     @Override
     public Propertie[] getProperties() {
         return new Propertie[]{
-            new Propertie("Bits", Tools.getIOPin(this.model.getIOPins(), "OUT").getValue().length),
+            new Propertie("Bits", Tools.getLast(this.model.getIOPins()).getValue().length),
             new Propertie("Inputs", this.inputs)
         };
     }
@@ -141,7 +141,7 @@ public class And implements WorkSpaceObject, Serializable {
     public And cloneObject() {
         And ret = new And(
                 new Point(this.position.x, this.position.y),
-                Tools.getIOPin(this.model.getIOPins(), "OUT").getValue().length,
+                Tools.getLast(this.model.getIOPins()).getValue().length,
                 this.inputs
         );
         ret.getModel().clone(this.model);
@@ -166,7 +166,6 @@ public class And implements WorkSpaceObject, Serializable {
             }
             out[i] = result;
         }
-
         //write value
         return this.model.getIOPins().get(this.model.getIOPins().size() - 1).setValue(out);
     }

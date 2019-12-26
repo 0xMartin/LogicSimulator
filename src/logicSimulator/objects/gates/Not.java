@@ -15,7 +15,7 @@ import logicSimulator.WorkSpaceObject;
 import logicSimulator.common.Circle;
 import logicSimulator.common.Line;
 import logicSimulator.common.Model;
-import logicSimulator.common.Tools;
+import logicSimulator.Tools;
 
 /**
  *
@@ -46,8 +46,8 @@ public class Not implements WorkSpaceObject, Serializable {
                 },
                 null
         );
-        this.model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, bits, "IN", new Point.Double(0, -20)));
-        this.model.getIOPins().add(new IOPin(IOPin.MODE.OUTPUT, bits, "OUT", new Point.Double(0, 20)));
+        this.model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, bits, "", new Point.Double(0, -20)));
+        this.model.getIOPins().add(new IOPin(IOPin.MODE.OUTPUT, bits, "", new Point.Double(0, 20)));
     }
 
     @Override
@@ -68,7 +68,7 @@ public class Not implements WorkSpaceObject, Serializable {
     @Override
     public Propertie[] getProperties() {
         return new Propertie[]{
-            new Propertie("Bits", Tools.getIOPin(this.model.getIOPins(), "OUT").getValue().length)
+            new Propertie("Bits", Tools.getLast(this.model.getIOPins()).getValue().length)
         };
     }
 
@@ -113,7 +113,7 @@ public class Not implements WorkSpaceObject, Serializable {
     public Not cloneObject() {
         Not ret = new Not(
                 new Point(this.position.x, this.position.y),
-                Tools.getIOPin(this.model.getIOPins(), "OUT").getValue().length
+                Tools.getLast(this.model.getIOPins()).getValue().length
         );
         ret.getModel().clone(this.model);
         return ret;

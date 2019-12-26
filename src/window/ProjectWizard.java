@@ -12,7 +12,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -22,18 +21,21 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileFilter;
 import logicSimulator.LSComponent;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.Project;
 import logicSimulator.WorkSpace;
 import logicSimulator.common.Propertie;
-import logicSimulator.common.Tools;
+import logicSimulator.Tools;
 import logicSimulator.ui.LSButton;
 import logicSimulator.ui.LSTextField;
+import logicSimulator.ui.SystemResources;
 
 /**
  *
@@ -101,15 +103,13 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 super.paintComponent(g);
                 //draw image on background of panel
                 Graphics2D g2 = (Graphics2D)g;
-                RenderingHints rh = new RenderingHints(
-                    RenderingHints.KEY_TEXT_ANTIALIASING,
-                    RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                g2.setRenderingHints(rh);
+                Tools.setHighQuality(g2);
                 g2.clearRect(0, 0, this.getWidth(), this.getHeight());
-                float f = (float)this.getHeight() / (float)core.getImages().PROJECT_WIZARD_BG.getHeight();
+                BufferedImage imgBG = SystemResources.PROJECT_WIZARD_BG;
+                float f = (float)this.getHeight() / (float)imgBG.getHeight();
                 BufferedImage img = Tools.resizeImage(
-                    core.getImages().PROJECT_WIZARD_BG,
-                    (int)((float)core.getImages().PROJECT_WIZARD_BG.getWidth() * f),
+                    imgBG,
+                    (int)((float)imgBG.getWidth() * f),
                     this.getHeight()
                 );
                 g2.drawImage(
@@ -119,7 +119,14 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
             }
         };
         jScrollPane1 = new javax.swing.JScrollPane();
-        jListLastProjects = new javax.swing.JList<>();
+        jListLastProjects = new javax.swing.JList<>(){
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g;
+                Tools.setHighQuality(g2);
+                super.paintComponent((Graphics2D) g);
+            }
+        };
         jLabel2 = new javax.swing.JLabel();
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -451,6 +458,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("HL simulator");
+        setIconImage(SystemResources.ICON);
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowOpened(java.awt.event.WindowEvent evt) {
                 formWindowOpened(evt);
@@ -486,6 +494,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
         );
 
         jLabel1.setFont(new java.awt.Font("Dubai Light", 0, 48)); // NOI18N
+        jLabel1.setIcon(new ImageIcon(Tools.resizeImage(SystemResources.ICON, 30, 30)));
         jLabel1.setText("HL simulator");
 
         javax.swing.GroupLayout jPanelBodyLayout = new javax.swing.GroupLayout(jPanelBody);
@@ -530,7 +539,42 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButtonOpenProjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOpenProjectActionPerformed
-        // TODO add your handling code here:
+        this.chooser.setDialogTitle("Open project");
+        this.chooser.setFileFilter(new FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                if (f.isDirectory()) {
+                    return true;
+                } else if (f.getName().endsWith("." + LogicSimulatorCore.PROJECT_FILE_TYPE)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public String getDescription() {
+                return "HL simulator project file";
+            }
+        });
+        //show file open dialog and the open project
+        if (this.chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File f = this.chooser.getSelectedFile();
+            Project project = new Project(Tools.fileName(f.getName()));
+            IOProject io = new IOProject(project);
+            try {
+                //open project
+                io.open(f.toString());
+                project.init(this.core, null);
+                this.core.getLSComponents().add(project);
+                //add this project to last project list
+                io.addToLastProjectList();
+                //close this wizzard
+                dispose();
+            }catch(Exception ex){
+               JOptionPane.showMessageDialog(this, "Cant open project", "Error", JOptionPane.ERROR_MESSAGE, null); 
+            }
+        }
     }//GEN-LAST:event_jButtonOpenProjectActionPerformed
 
     private void jButtonNewLibraryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonNewLibraryActionPerformed
@@ -571,8 +615,8 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
             project.init(this.core, null);
             //add main workspace
             WorkSpace w = new WorkSpace("Main", project);
-            project.getWorkSpaces().add(w);
-            project.setSelectedWorkspace(w);
+            project.getProjectFiles().add(w);
+            project.setSelectedFile(w);
             //add logic system core
             this.core.getLSComponents().add(project);
             project.init(this.core, null);
@@ -764,7 +808,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 int index,
                 boolean isSelected,
                 boolean cellHasFocus) {
-            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus); 
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             JLabel line = new JLabel();
             line.setOpaque(true);
             //name, time, file, type

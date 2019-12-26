@@ -6,7 +6,6 @@
 package data;
 
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -49,6 +48,7 @@ public class PropertieWriter {
             }
         });
         writer.flush();
+        writer.close();
     }
 
 }

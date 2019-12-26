@@ -15,7 +15,7 @@ import java.util.List;
  * @author Martin
  */
 public interface LogicSimulatorCore {
-
+    
     //properties
     public static final int WORK_SPACE_STEP = 20; //must be 20 
     public static final int OBJECT_NULL_POSITION = -9999;
@@ -23,6 +23,7 @@ public interface LogicSimulatorCore {
     //files
     public static final String PROJECT_FILE_TYPE = "phl";
     public static final String WORKSPACE_FILE_TYPE = "lwf";
+    public static final String MODULE_FILE_TYPE = "mf";
     public static final String PROPT_PROJECTS = "projects.propt";
 
     public static String getDate(String pattern) {
@@ -44,7 +45,5 @@ public interface LogicSimulatorCore {
 
     //send message from lscomponent to core
     public void sendMessage(MessageType type, String message);
-
-    public data.Images getImages();
 
 }

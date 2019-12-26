@@ -14,7 +14,7 @@ public class Propertie {
     private final String name;
     private String value;
     private int number;
-    private final boolean numeric;
+    private boolean numeric;
 
     public Propertie(String name, String value) {
         this.name = name;
@@ -44,8 +44,17 @@ public class Propertie {
         if (this.numeric) {
             return this.number;
         }
-
         return Integer.parseInt(this.value);
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+        this.numeric = false;
+    }
+    
+    public void setValue(int value) {
+        this.number = value;
+        this.numeric = true;
     }
 
 }

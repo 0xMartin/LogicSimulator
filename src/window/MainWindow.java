@@ -8,25 +8,35 @@ import data.IOProject;
 import data.PropertieReader;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import logicSimulator.ComputeCore;
 import logicSimulator.LSComponent;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.Project;
+import logicSimulator.ProjectFile;
+import logicSimulator.Tools;
 import logicSimulator.WorkSpace;
 import logicSimulator.WorkSpaceObject;
-import logicSimulator.common.Tools;
+import logicSimulator.objects.Text;
+import logicSimulator.ui.ButtonHQ;
+import logicSimulator.ui.SystemResources;
 import window.components.Graph;
 import window.components.ProjectTreeView;
 import window.components.PropertieEditor;
+import window.components.TabbedPaneCloseButton;
 
 /**
  *
@@ -57,18 +67,21 @@ public class MainWindow extends JFrame implements LSComponent {
         initComponents();
         //maximize window
         this.setExtendedState(this.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+
         //create instances of utils
         this.componentChooser = new ComponentChooser(this);
+
         //propertie editor event
-        ((PropertieEditor) this.jTableProperties).onPropertieChange(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent arg0) {
+        ((PropertieEditor) this.jTableProperties).onPropertieChange((ActionEvent evt) -> {
+            if (this.project.getSelectedFile() instanceof WorkSpace) {
+                WorkSpace w = (WorkSpace) this.project.getSelectedFile();
                 //on propertie change reconect all object in selected workspace
-                Tools.connectAllObject(project.getSelectedWorkspace().getObjects());
+                ComputeCore.CircuitHandler.refreshConnectivity(w.getObjects());
                 //rapaint
-                project.getSelectedWorkspace().getHandler().repaint();
+                w.getHandler().repaint();
             }
         });
+
     }
 
     /**
@@ -83,8 +96,24 @@ public class MainWindow extends JFrame implements LSComponent {
         buttonGroup1 = new javax.swing.ButtonGroup();
         jPanelBody = new javax.swing.JPanel();
         jToolBarMain = new javax.swing.JToolBar();
-        jButtonEdit = new javax.swing.JButton();
-        jButtonControl = new javax.swing.JButton();
+        jButtonEdit = new ButtonHQ();
+        jButtonControl = new ButtonHQ();
+        jToolBarFile = new javax.swing.JToolBar();
+        jButtonNewFile = new ButtonHQ();
+        jButtonNewProject = new ButtonHQ();
+        jButtonOpenProject = new ButtonHQ();
+        jButtonSaveProject = new ButtonHQ();
+        jToolBarEdit = new javax.swing.JToolBar();
+        jButtonUndo = new ButtonHQ();
+        jButtonRedo = new ButtonHQ();
+        jButtonSettings = new ButtonHQ();
+        jToolBarSimulating = new javax.swing.JToolBar();
+        jButtonRun = new ButtonHQ();
+        jButtonStop = new ButtonHQ();
+        jToolBarOther = new javax.swing.JToolBar();
+        jButtonHelp = new ButtonHQ();
+        jToolBarComponents = new javax.swing.JToolBar();
+        jComboBoxLastAdded = new javax.swing.JComboBox<>();
         jSplitPaneBody = new javax.swing.JSplitPane();
         jSplitPaneLeft = new javax.swing.JSplitPane();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -112,20 +141,27 @@ public class MainWindow extends JFrame implements LSComponent {
         jProgressBarMemoryUsage = new javax.swing.JProgressBar();
         jMenuBarMain = new javax.swing.JMenuBar();
         jMenuFile = new javax.swing.JMenu();
+        jMenuItemSave = new javax.swing.JMenuItem();
+        jMenuItemOpen = new javax.swing.JMenuItem();
+        jSeparator3 = new javax.swing.JPopupMenu.Separator();
+        jMenuItemAddNewFile = new javax.swing.JMenuItem();
         jMenuEdit = new javax.swing.JMenu();
+        jMenuItemPlaceComponent = new javax.swing.JMenuItem();
+        jMenuItemPlaceComponent1 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("HL simulator");
+        setIconImage(SystemResources.ICON);
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowOpened(java.awt.event.WindowEvent evt) {
                 formWindowOpened(evt);
             }
         });
 
-        jToolBarMain.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jToolBarMain.setBorder(null);
         jToolBarMain.setFloatable(false);
 
-        jButtonEdit.setIcon(new javax.swing.ImageIcon(getClass().getResource("/src/img/def/cursor.png"))); // NOI18N
+        jButtonEdit.setIcon(SystemResources.TOOLBAR_CURCOR);
         jButtonEdit.setToolTipText("Edit");
         jButtonEdit.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         jButtonEdit.setContentAreaFilled(false);
@@ -139,8 +175,9 @@ public class MainWindow extends JFrame implements LSComponent {
         });
         jToolBarMain.add(jButtonEdit);
 
-        jButtonControl.setIcon(new javax.swing.ImageIcon(getClass().getResource("/src/img/def/clicker.png"))); // NOI18N
+        jButtonControl.setIcon(SystemResources.TOOLBAR_CLICKER);
         jButtonControl.setToolTipText("Control");
+        jButtonControl.setBorder(null);
         jButtonControl.setContentAreaFilled(false);
         jButtonControl.setFocusable(false);
         jButtonControl.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -152,270 +189,517 @@ public class MainWindow extends JFrame implements LSComponent {
         });
         jToolBarMain.add(jButtonControl);
 
-        jSplitPaneBody.setDividerSize(5);
+        jToolBarFile.setRollover(true);
+        jToolBarFile.setName("File"); // NOI18N
 
-        jSplitPaneLeft.setDividerSize(5);
-        jSplitPaneLeft.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
-        jSplitPaneLeft.setMinimumSize(new java.awt.Dimension(200, 27));
-
-        jScrollPane1.setBorder(javax.swing.BorderFactory.createTitledBorder("Project explorer"));
-        jScrollPane1.setViewportView(jTreeProject);
-
-        jSplitPaneLeft.setTopComponent(jScrollPane1);
-
-        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Object properties"));
-
-        jScrollPane3.setBorder(null);
-
-        jTableProperties.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-
-            },
-            new String [] {
-                "Propertie", "Value"
-            }
-        ) {
-            Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class
-            };
-            boolean[] canEdit = new boolean [] {
-                false, true
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types [columnIndex];
-            }
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
-        jScrollPane3.setViewportView(jTableProperties);
-
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 188, Short.MAX_VALUE)
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 443, Short.MAX_VALUE)
-        );
-
-        jSplitPaneLeft.setRightComponent(jPanel1);
-
-        jSplitPaneBody.setLeftComponent(jSplitPaneLeft);
-
-        jSplitPaneRight.setDividerSize(5);
-
-        jTabbedPane.setMinimumSize(new java.awt.Dimension(200, 4));
-        jTabbedPane.addChangeListener(new javax.swing.event.ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                jTabbedPaneStateChanged(evt);
-            }
-        });
-        jSplitPaneRight.setLeftComponent(jTabbedPane);
-
-        jScrollPaneSimulation.setMinimumSize(new java.awt.Dimension(140, 7));
-        jScrollPaneSimulation.setPreferredSize(new java.awt.Dimension(200, 558));
-
-        jPanelSimulation3.setBorder(javax.swing.BorderFactory.createTitledBorder("Simulation"));
-        jPanelSimulation3.setMinimumSize(new java.awt.Dimension(140, 300));
-        jPanelSimulation3.setPreferredSize(new java.awt.Dimension(140, 555));
-
-        timingGraph.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        timingGraph.setToolTipText("Graph of updates per second");
-
-        javax.swing.GroupLayout timingGraphLayout = new javax.swing.GroupLayout(timingGraph);
-        timingGraph.setLayout(timingGraphLayout);
-        timingGraphLayout.setHorizontalGroup(
-            timingGraphLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-        timingGraphLayout.setVerticalGroup(
-            timingGraphLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 203, Short.MAX_VALUE)
-        );
-
-        buttonGroup1.add(jRadioButton1);
-        jRadioButton1.setSelected(true);
-        jRadioButton1.setText("Auto run");
-        jRadioButton1.addActionListener(new java.awt.event.ActionListener() {
+        jButtonNewFile.setIcon(SystemResources.TOOLBAR_NEWFILE);
+        jButtonNewFile.setToolTipText("New file");
+        jButtonNewFile.setBorder(javax.swing.BorderFactory.createCompoundBorder());
+        jButtonNewFile.setFocusable(false);
+        jButtonNewFile.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonNewFile.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        jButtonNewFile.setOpaque(false);
+        jButtonNewFile.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonNewFile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButton1ActionPerformed(evt);
+                jButtonNewFileActionPerformed(evt);
             }
         });
+        jToolBarFile.add(jButtonNewFile);
 
-        buttonGroup1.add(jRadioButton2);
-        jRadioButton2.setText("Manual");
-        jRadioButton2.addActionListener(new java.awt.event.ActionListener() {
+        jButtonNewProject.setIcon(SystemResources.TOOLBAR_NEWPROJECT);
+        jButtonNewProject.setToolTipText("New project");
+        jButtonNewProject.setBorder(javax.swing.BorderFactory.createCompoundBorder());
+        jButtonNewProject.setFocusable(false);
+        jButtonNewProject.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonNewProject.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        jButtonNewProject.setOpaque(false);
+        jButtonNewProject.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonNewProject.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButton2ActionPerformed(evt);
+                jButtonNewProjectActionPerformed(evt);
             }
         });
+        jToolBarFile.add(jButtonNewProject);
 
-        jLabelUPS.setText("UPS: 50");
-
-        jSliderUPS.setMajorTickSpacing(25);
-        jSliderUPS.setMaximum(200);
-        jSliderUPS.setMinimum(1);
-        jSliderUPS.setPaintTicks(true);
-        jSliderUPS.setToolTipText("Updates per second");
-        jSliderUPS.addChangeListener(new javax.swing.event.ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                jSliderUPSStateChanged(evt);
-            }
-        });
-        jSliderUPS.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseReleased(java.awt.event.MouseEvent evt) {
-                jSliderUPSMouseReleased(evt);
-            }
-        });
-
-        jButtonNextstep.setText("Next step");
-        jButtonNextstep.setEnabled(false);
-        jButtonNextstep.addActionListener(new java.awt.event.ActionListener() {
+        jButtonOpenProject.setIcon(SystemResources.TOOLBAR_OPENPROJECT);
+        jButtonOpenProject.setToolTipText("Open project");
+        jButtonOpenProject.setBorder(javax.swing.BorderFactory.createCompoundBorder());
+        jButtonOpenProject.setFocusable(false);
+        jButtonOpenProject.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonOpenProject.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        jButtonOpenProject.setOpaque(false);
+        jButtonOpenProject.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonOpenProject.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonNextstepActionPerformed(evt);
+                jButtonOpenProjectActionPerformed(evt);
             }
         });
+        jToolBarFile.add(jButtonOpenProject);
 
-        jButtonNextstep1.setText("Clear graph");
-        jButtonNextstep1.addActionListener(new java.awt.event.ActionListener() {
+        jButtonSaveProject.setIcon(SystemResources.TOOLBAR_SAVE);
+        jButtonSaveProject.setToolTipText("Save");
+        jButtonSaveProject.setBorder(javax.swing.BorderFactory.createCompoundBorder());
+        jButtonSaveProject.setFocusable(false);
+        jButtonSaveProject.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonSaveProject.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        jButtonSaveProject.setOpaque(false);
+        jButtonSaveProject.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonSaveProject.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonNextstep1ActionPerformed(evt);
+                jButtonSaveProjectActionPerformed(evt);
             }
         });
+        jToolBarFile.add(jButtonSaveProject);
 
-        javax.swing.GroupLayout jPanelSimulation3Layout = new javax.swing.GroupLayout(jPanelSimulation3);
-        jPanelSimulation3.setLayout(jPanelSimulation3Layout);
-        jPanelSimulation3Layout.setHorizontalGroup(
-            jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanelSimulation3Layout.createSequentialGroup()
-                .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanelSimulation3Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanelSimulation3Layout.createSequentialGroup()
-                                .addComponent(jLabelUPS, javax.swing.GroupLayout.PREFERRED_SIZE, 66, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jSliderUPS, javax.swing.GroupLayout.DEFAULT_SIZE, 246, Short.MAX_VALUE))
-                            .addGroup(jPanelSimulation3Layout.createSequentialGroup()
-                                .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(jPanelSimulation3Layout.createSequentialGroup()
-                                        .addComponent(jRadioButton1)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jRadioButton2))
-                                    .addGroup(jPanelSimulation3Layout.createSequentialGroup()
-                                        .addComponent(jButtonNextstep)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jButtonNextstep1)))
-                                .addGap(0, 0, Short.MAX_VALUE))))
-                    .addComponent(timingGraph, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
-        );
-        jPanelSimulation3Layout.setVerticalGroup(
-            jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelSimulation3Layout.createSequentialGroup()
-                .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jRadioButton1)
-                    .addComponent(jRadioButton2))
-                .addGap(0, 0, 0)
-                .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jSliderUPS, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabelUPS, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(0, 0, 0)
-                .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButtonNextstep)
-                    .addComponent(jButtonNextstep1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(timingGraph, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(232, Short.MAX_VALUE))
-        );
+        jToolBarMain.add(jToolBarFile);
 
-        jScrollPaneSimulation.setViewportView(jPanelSimulation3);
+        jToolBarEdit.setRollover(true);
+        jToolBarEdit.setName("Edit"); // NOI18N
 
-        jSplitPaneRight.setRightComponent(jScrollPaneSimulation);
+        jButtonUndo.setIcon(SystemResources.TOOLBAR_UNDO);
+        jButtonUndo.setToolTipText("Edit");
+        jButtonUndo.setFocusable(false);
+        jButtonUndo.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonUndo.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        jButtonUndo.setOpaque(false);
+        jButtonUndo.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonUndo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonUndoActionPerformed(evt);
+            }
+        });
+        jToolBarEdit.add(jButtonUndo);
 
-        jSplitPaneBody.setRightComponent(jSplitPaneRight);
+        jButtonRedo.setIcon(SystemResources.TOOLBAR_REDO);
+        jButtonRedo.setToolTipText("Redo");
+        jButtonRedo.setFocusable(false);
+        jButtonRedo.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonRedo.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        jButtonRedo.setOpaque(false);
+        jButtonRedo.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonRedo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonRedoActionPerformed(evt);
+            }
+        });
+        jToolBarEdit.add(jButtonRedo);
 
-        javax.swing.GroupLayout jPanelBodyLayout = new javax.swing.GroupLayout(jPanelBody);
-        jPanelBody.setLayout(jPanelBodyLayout);
-        jPanelBodyLayout.setHorizontalGroup(
-            jPanelBodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jToolBarMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(jSplitPaneBody, javax.swing.GroupLayout.DEFAULT_SIZE, 770, Short.MAX_VALUE)
-        );
-        jPanelBodyLayout.setVerticalGroup(
-            jPanelBodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanelBodyLayout.createSequentialGroup()
-                .addComponent(jToolBarMain, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0)
-                .addComponent(jSplitPaneBody, javax.swing.GroupLayout.DEFAULT_SIZE, 495, Short.MAX_VALUE))
-        );
+        jButtonSettings.setIcon(SystemResources.TOOLBAR_SETTINGS);
+        jButtonSettings.setToolTipText("Settings");
+        jButtonSettings.setFocusable(false);
+        jButtonSettings.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonSettings.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        jButtonSettings.setOpaque(false);
+        jButtonSettings.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonSettings.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonSettingsActionPerformed(evt);
+            }
+        });
+        jToolBarEdit.add(jButtonSettings);
 
-        jToolBar1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        jToolBar1.setFloatable(false);
+        jToolBarMain.add(jToolBarEdit);
 
-        jLabelZoom.setText("Zoom: 100%");
-        jToolBar1.add(jLabelZoom);
-        jToolBar1.add(jSeparator1);
+        jToolBarSimulating.setRollover(true);
+        jToolBarSimulating.setName("Simulating"); // NOI18N
 
-        jLabelTiming.setText(" Timing:  50ups ");
-        jToolBar1.add(jLabelTiming);
-        jToolBar1.add(jSeparator2);
+        jButtonRun.setIcon(SystemResources.TOOLBAR_RUN);
+        jButtonRun.setToolTipText("Start");
+        jButtonRun.setFocusable(false);
+        jButtonRun.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonRun.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        jButtonRun.setOpaque(false);
+        jButtonRun.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonRun.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonRunActionPerformed(evt);
+            }
+        });
+        jToolBarSimulating.add(jButtonRun);
 
-        jLabel2.setText(" Memory usage: ");
-        jToolBar1.add(jLabel2);
+        jButtonStop.setIcon(SystemResources.TOOLBAR_STOP);
+        jButtonStop.setToolTipText("Stop");
+        jButtonStop.setEnabled(false);
+        jButtonStop.setFocusable(false);
+        jButtonStop.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonStop.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        jButtonStop.setOpaque(false);
+        jButtonStop.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonStop.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonStopActionPerformed(evt);
+            }
+        });
+        jToolBarSimulating.add(jButtonStop);
 
-        jProgressBarMemoryUsage.setMaximumSize(new java.awt.Dimension(200, 12));
-        jProgressBarMemoryUsage.setStringPainted(true);
-        jToolBar1.add(jProgressBarMemoryUsage);
+        jToolBarMain.add(jToolBarSimulating);
 
-        jMenuFile.setText("File");
-        jMenuBarMain.add(jMenuFile);
+        jToolBarOther.setRollover(true);
+        jToolBarOther.setName("Other"); // NOI18N
 
-        jMenuEdit.setText("Edit");
-        jMenuBarMain.add(jMenuEdit);
+        jButtonHelp.setIcon(SystemResources.TOOLBAR_HELP);
+        jButtonHelp.setToolTipText("Start");
+        jButtonHelp.setFocusable(false);
+        jButtonHelp.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonHelp.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        jButtonHelp.setOpaque(false);
+        jButtonHelp.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonHelp.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonHelpActionPerformed(evt);
+            }
+        });
+        jToolBarOther.add(jButtonHelp);
 
-        setJMenuBar(jMenuBarMain);
+        jToolBarMain.add(jToolBarOther);
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanelBody, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(jToolBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+        jToolBarComponents.setRollover(true);
+        jToolBarComponents.setName("Components"); // NOI18N
+
+        jComboBoxLastAdded.setMaximumSize(new java.awt.Dimension(95, 26));
+        jComboBoxLastAdded.setMinimumSize(new java.awt.Dimension(95, 26));
+        jToolBarComponents.add(jComboBoxLastAdded);
+        jComboBoxLastAdded.setRenderer(
+            (JList<? extends Object[]> list, Object[] value, int index, boolean isSelected, boolean cellHasFocus) -> {
+                String text = "";
+                if(value != null){
+                    if(value[0] == null){
+                        return null;
+                    }else{
+                        text = (String) value[0];
+                    }
+                }
+                JLabel l = new JLabel(text);
+                return l;
+            });
+
+            jToolBarMain.add(jToolBarComponents);
+
+            jSplitPaneBody.setBorder(null);
+            jSplitPaneBody.setDividerSize(5);
+
+            jSplitPaneLeft.setBorder(null);
+            jSplitPaneLeft.setDividerSize(5);
+            jSplitPaneLeft.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+            jSplitPaneLeft.setMinimumSize(new java.awt.Dimension(200, 27));
+
+            jScrollPane1.setBorder(javax.swing.BorderFactory.createTitledBorder("Project explorer"));
+            jScrollPane1.setViewportView(jTreeProject);
+
+            jSplitPaneLeft.setTopComponent(jScrollPane1);
+
+            jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Object properties"));
+
+            jScrollPane3.setBorder(null);
+
+            jTableProperties.setModel(new javax.swing.table.DefaultTableModel(
+                new Object [][] {
+
+                },
+                new String [] {
+                    "Propertie", "Value"
+                }
+            ) {
+                Class[] types = new Class [] {
+                    java.lang.String.class, java.lang.String.class
+                };
+                boolean[] canEdit = new boolean [] {
+                    false, true
+                };
+
+                public Class getColumnClass(int columnIndex) {
+                    return types [columnIndex];
+                }
+
+                public boolean isCellEditable(int rowIndex, int columnIndex) {
+                    return canEdit [columnIndex];
+                }
+            });
+            jScrollPane3.setViewportView(jTableProperties);
+
+            javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+            jPanel1.setLayout(jPanel1Layout);
+            jPanel1Layout.setHorizontalGroup(
+                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 190, Short.MAX_VALUE)
+            );
+            jPanel1Layout.setVerticalGroup(
+                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 427, Short.MAX_VALUE)
+            );
+
+            jSplitPaneLeft.setRightComponent(jPanel1);
+
+            jSplitPaneBody.setLeftComponent(jSplitPaneLeft);
+
+            jSplitPaneRight.setBorder(null);
+            jSplitPaneRight.setDividerSize(5);
+
+            jTabbedPane.setMinimumSize(new java.awt.Dimension(200, 4));
+            jTabbedPane.addChangeListener(new javax.swing.event.ChangeListener() {
+                public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                    jTabbedPaneStateChanged(evt);
+                }
+            });
+            jSplitPaneRight.setLeftComponent(jTabbedPane);
+
+            jScrollPaneSimulation.setBorder(null);
+            jScrollPaneSimulation.setMinimumSize(new java.awt.Dimension(140, 7));
+            jScrollPaneSimulation.setPreferredSize(new java.awt.Dimension(200, 558));
+
+            jPanelSimulation3.setBorder(javax.swing.BorderFactory.createTitledBorder("Simulation"));
+            jPanelSimulation3.setMinimumSize(new java.awt.Dimension(140, 300));
+            jPanelSimulation3.setPreferredSize(new java.awt.Dimension(140, 555));
+
+            timingGraph.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+            timingGraph.setToolTipText("Graph of updates per second");
+
+            javax.swing.GroupLayout timingGraphLayout = new javax.swing.GroupLayout(timingGraph);
+            timingGraph.setLayout(timingGraphLayout);
+            timingGraphLayout.setHorizontalGroup(
+                timingGraphLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGap(0, 0, Short.MAX_VALUE)
+            );
+            timingGraphLayout.setVerticalGroup(
+                timingGraphLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGap(0, 203, Short.MAX_VALUE)
+            );
+
+            buttonGroup1.add(jRadioButton1);
+            jRadioButton1.setSelected(true);
+            jRadioButton1.setText("Auto run");
+            jRadioButton1.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jRadioButton1ActionPerformed(evt);
+                }
+            });
+
+            buttonGroup1.add(jRadioButton2);
+            jRadioButton2.setText("Manual");
+            jRadioButton2.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jRadioButton2ActionPerformed(evt);
+                }
+            });
+
+            jLabelUPS.setText("UPS: 50");
+
+            jSliderUPS.setMajorTickSpacing(25);
+            jSliderUPS.setMaximum(200);
+            jSliderUPS.setMinimum(1);
+            jSliderUPS.setPaintTicks(true);
+            jSliderUPS.setToolTipText("Updates per second");
+            jSliderUPS.addChangeListener(new javax.swing.event.ChangeListener() {
+                public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                    jSliderUPSStateChanged(evt);
+                }
+            });
+            jSliderUPS.addMouseListener(new java.awt.event.MouseAdapter() {
+                public void mouseReleased(java.awt.event.MouseEvent evt) {
+                    jSliderUPSMouseReleased(evt);
+                }
+            });
+
+            jButtonNextstep.setText("Next step");
+            jButtonNextstep.setEnabled(false);
+            jButtonNextstep.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jButtonNextstepActionPerformed(evt);
+                }
+            });
+
+            jButtonNextstep1.setText("Clear graph");
+            jButtonNextstep1.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jButtonNextstep1ActionPerformed(evt);
+                }
+            });
+
+            javax.swing.GroupLayout jPanelSimulation3Layout = new javax.swing.GroupLayout(jPanelSimulation3);
+            jPanelSimulation3.setLayout(jPanelSimulation3Layout);
+            jPanelSimulation3Layout.setHorizontalGroup(
+                jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanelSimulation3Layout.createSequentialGroup()
+                    .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanelSimulation3Layout.createSequentialGroup()
+                            .addContainerGap()
+                            .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addGroup(jPanelSimulation3Layout.createSequentialGroup()
+                                    .addComponent(jLabelUPS, javax.swing.GroupLayout.PREFERRED_SIZE, 66, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(jSliderUPS, javax.swing.GroupLayout.DEFAULT_SIZE, 253, Short.MAX_VALUE))
+                                .addGroup(jPanelSimulation3Layout.createSequentialGroup()
+                                    .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(jPanelSimulation3Layout.createSequentialGroup()
+                                            .addComponent(jRadioButton1)
+                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                            .addComponent(jRadioButton2))
+                                        .addGroup(jPanelSimulation3Layout.createSequentialGroup()
+                                            .addComponent(jButtonNextstep)
+                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                            .addComponent(jButtonNextstep1)))
+                                    .addGap(0, 0, Short.MAX_VALUE))))
+                        .addComponent(timingGraph, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addContainerGap())
+            );
+            jPanelSimulation3Layout.setVerticalGroup(
+                jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelSimulation3Layout.createSequentialGroup()
+                    .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jRadioButton1)
+                        .addComponent(jRadioButton2))
+                    .addGap(0, 0, 0)
+                    .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addComponent(jSliderUPS, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabelUPS, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGap(0, 0, 0)
+                    .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jButtonNextstep)
+                        .addComponent(jButtonNextstep1))
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addComponent(timingGraph, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(232, Short.MAX_VALUE))
+            );
+
+            jScrollPaneSimulation.setViewportView(jPanelSimulation3);
+
+            jSplitPaneRight.setRightComponent(jScrollPaneSimulation);
+
+            jSplitPaneBody.setRightComponent(jSplitPaneRight);
+
+            javax.swing.GroupLayout jPanelBodyLayout = new javax.swing.GroupLayout(jPanelBody);
+            jPanelBody.setLayout(jPanelBodyLayout);
+            jPanelBodyLayout.setHorizontalGroup(
+                jPanelBodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(jToolBarMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jSplitPaneBody, javax.swing.GroupLayout.DEFAULT_SIZE, 770, Short.MAX_VALUE)
+            );
+            jPanelBodyLayout.setVerticalGroup(
+                jPanelBodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanelBodyLayout.createSequentialGroup()
+                    .addComponent(jToolBarMain, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGap(0, 0, 0)
+                    .addComponent(jSplitPaneBody, javax.swing.GroupLayout.DEFAULT_SIZE, 495, Short.MAX_VALUE))
+            );
+
+            jToolBar1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+            jToolBar1.setFloatable(false);
+
+            jLabelZoom.setText("Zoom: 100%");
+            jToolBar1.add(jLabelZoom);
+            jToolBar1.add(jSeparator1);
+
+            jLabelTiming.setText(" Timing:  50ups ");
+            jToolBar1.add(jLabelTiming);
+            jToolBar1.add(jSeparator2);
+
+            jLabel2.setText(" Memory usage: ");
+            jToolBar1.add(jLabel2);
+
+            jProgressBarMemoryUsage.setMaximumSize(new java.awt.Dimension(200, 12));
+            jProgressBarMemoryUsage.setStringPainted(true);
+            jToolBar1.add(jProgressBarMemoryUsage);
+
+            jMenuFile.setText("File");
+
+            jMenuItemSave.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
+            jMenuItemSave.setText("Save");
+            jMenuItemSave.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemSaveActionPerformed(evt);
+                }
+            });
+            jMenuFile.add(jMenuItemSave);
+
+            jMenuItemOpen.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
+            jMenuItemOpen.setText("Open");
+            jMenuItemOpen.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemOpenActionPerformed(evt);
+                }
+            });
+            jMenuFile.add(jMenuItemOpen);
+            jMenuFile.add(jSeparator3);
+
+            jMenuItemAddNewFile.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, java.awt.event.InputEvent.CTRL_MASK));
+            jMenuItemAddNewFile.setText("Add new file");
+            jMenuItemAddNewFile.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemAddNewFileActionPerformed(evt);
+                }
+            });
+            jMenuFile.add(jMenuItemAddNewFile);
+
+            jMenuBarMain.add(jMenuFile);
+
+            jMenuEdit.setText("Edit");
+
+            jMenuItemPlaceComponent.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W, java.awt.event.InputEvent.CTRL_MASK));
+            jMenuItemPlaceComponent.setText("Place component");
+            jMenuItemPlaceComponent.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemPlaceComponentActionPerformed(evt);
+                }
+            });
+            jMenuEdit.add(jMenuItemPlaceComponent);
+
+            jMenuItemPlaceComponent1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.CTRL_MASK));
+            jMenuItemPlaceComponent1.setText("Add text");
+            jMenuItemPlaceComponent1.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemPlaceComponent1ActionPerformed(evt);
+                }
+            });
+            jMenuEdit.add(jMenuItemPlaceComponent1);
+
+            jMenuBarMain.add(jMenuEdit);
+
+            setJMenuBar(jMenuBarMain);
+
+            javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+            getContentPane().setLayout(layout);
+            layout.setHorizontalGroup(
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addComponent(jPanelBody, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(0, 0, 0)
-                .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0))
-        );
+                .addComponent(jToolBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            );
+            layout.setVerticalGroup(
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                    .addComponent(jPanelBody, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGap(0, 0, 0)
+                    .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGap(0, 0, 0))
+            );
 
-        pack();
-    }// </editor-fold>//GEN-END:initComponents
+            pack();
+        }// </editor-fold>//GEN-END:initComponents
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         //windows opened
         this.jSplitPaneRight.setDividerLocation(0.8f);
         this.jSplitPaneLeft.setDividerLocation(0.6f);
 
+        ProjectFile selected = this.project.getSelectedFile();
+
+        //add all opened project
+        this.project.getProjectFiles().stream().forEach((pf) -> {
+            if (pf.isOpened()) {
+                displayProjectFile(pf);
+            }
+        });
+
         //display selected workspace
-        WorkSpace w = this.project.getSelectedWorkspace();
-        if (w != null) {
-            this.displayWorkSpace(w);
+        if (selected != null) {
+            this.displayProjectFile(selected);
         }
     }//GEN-LAST:event_formWindowOpened
 
     private void jTabbedPaneStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jTabbedPaneStateChanged
         //select current opened workspace
-        this.project.setSelectedWorkspace(
-                (WorkSpace) this.jTabbedPane.getSelectedComponent()
+        this.project.setSelectedFile(
+                (ProjectFile) this.jTabbedPane.getSelectedComponent()
         );
     }//GEN-LAST:event_jTabbedPaneStateChanged
 
@@ -423,13 +707,23 @@ public class MainWindow extends JFrame implements LSComponent {
         this.project.editMode = true;
         this.jButtonEdit.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         this.jButtonControl.setBorder(null);
+        //change cursor
+        this.project.getProjectFiles().stream().forEach((w) -> {
+            w.getComp().setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        });
     }//GEN-LAST:event_jButtonEditActionPerformed
 
     private void jButtonControlActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonControlActionPerformed
         this.project.editMode = false;
         this.jButtonControl.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         this.jButtonEdit.setBorder(null);
-        this.project.getSelectedWorkspace().unselectAllObjects(null);
+        if (this.project.getSelectedFile() instanceof WorkSpace) {
+            ((WorkSpace) this.project.getSelectedFile()).unselectAllObjects(null);
+        }
+        //change cursor
+        this.project.getProjectFiles().stream().forEach((w) -> {
+            w.getComp().setCursor(new Cursor(Cursor.HAND_CURSOR));
+        });
     }//GEN-LAST:event_jButtonControlActionPerformed
 
     private void jRadioButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButton1ActionPerformed
@@ -464,6 +758,91 @@ public class MainWindow extends JFrame implements LSComponent {
         // TODO add your handling code here:
     }//GEN-LAST:event_jButtonNextstep1ActionPerformed
 
+    private void jMenuItemOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemOpenActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jMenuItemOpenActionPerformed
+
+    private void jMenuItemPlaceComponentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemPlaceComponentActionPerformed
+        if (this.project.editMode) {
+            //show component chooser
+            ProjectFile pf = this.project.getSelectedFile();
+            if (pf instanceof WorkSpace) {
+                this.componentChooser.chooseComponent();
+                ((WorkSpace) pf).unselectAllObjects(null);
+            }
+        }
+    }//GEN-LAST:event_jMenuItemPlaceComponentActionPerformed
+
+    private void jMenuItemSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSaveActionPerformed
+        //save project
+        saveProject();
+    }//GEN-LAST:event_jMenuItemSaveActionPerformed
+
+    private void jMenuItemAddNewFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemAddNewFileActionPerformed
+        (new NewFile(this, this.project)).setVisible(true);
+    }//GEN-LAST:event_jMenuItemAddNewFileActionPerformed
+
+    private void jMenuItemPlaceComponent1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemPlaceComponent1ActionPerformed
+        //add text to object list of selected workspace
+        ProjectFile pf = this.project.getSelectedFile();
+        if (pf instanceof WorkSpace) {
+            WorkSpace w = (WorkSpace) pf;
+            List<WorkSpaceObject> objects = new ArrayList<>();
+            objects.add(new Text(
+                    "Text",
+                    w.getHandler().getCursorPosition(),
+                    new Font("tahoma", Font.PLAIN, 12)
+            ));
+            w.addNewObjects(objects);
+        }
+    }//GEN-LAST:event_jMenuItemPlaceComponent1ActionPerformed
+
+    private void jButtonNewFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonNewFileActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButtonNewFileActionPerformed
+
+    private void jButtonNewProjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonNewProjectActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButtonNewProjectActionPerformed
+
+    private void jButtonOpenProjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOpenProjectActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButtonOpenProjectActionPerformed
+
+    private void jButtonUndoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonUndoActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButtonUndoActionPerformed
+
+    private void jButtonRedoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonRedoActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButtonRedoActionPerformed
+
+    private void jButtonSettingsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSettingsActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButtonSettingsActionPerformed
+
+    private void jButtonSaveProjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSaveProjectActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButtonSaveProjectActionPerformed
+
+    private void jButtonRunActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonRunActionPerformed
+        //run simulation
+        this.comuteCore.RUN = true;
+        this.jButtonRun.setEnabled(false);
+        this.jButtonStop.setEnabled(true);
+    }//GEN-LAST:event_jButtonRunActionPerformed
+
+    private void jButtonStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStopActionPerformed
+        //stop simulation
+        this.comuteCore.RUN = false;
+        this.jButtonRun.setEnabled(true);
+        this.jButtonStop.setEnabled(false);
+    }//GEN-LAST:event_jButtonStopActionPerformed
+
+    private void jButtonHelpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonHelpActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButtonHelpActionPerformed
+
     /**
      * Init this window, must exis compute core and project in Core
      *
@@ -492,12 +871,13 @@ public class MainWindow extends JFrame implements LSComponent {
         }
 
         //init project tree view
-        ((ProjectTreeView) this.jTreeProject).init(this.core, this.project);
+        ((ProjectTreeView) this.jTreeProject).init(this, this.project);
 
         //thread
         this.thread = new Thread(() -> {
             jProgressBarMemoryUsage.setMaximum(100);
             while (true) {
+                //memory usage bat
                 Runtime r = Runtime.getRuntime();
                 float memoryUsage = 1.0f - (float) r.freeMemory() / (float) r.totalMemory();
                 jProgressBarMemoryUsage.setValue((int) (memoryUsage * 100f));
@@ -515,6 +895,12 @@ public class MainWindow extends JFrame implements LSComponent {
         this.componentChooser.setProject(this.project);
     }
 
+    @Override
+    public void run() {
+        this.setVisible(true);
+        this.thread.start();
+    }
+
     /**
      * Edit propertie of object (obj)
      *
@@ -525,48 +911,157 @@ public class MainWindow extends JFrame implements LSComponent {
     }
 
     /**
-     * Add or display new workspace
+     * Add or display new workspace to tabbed panel (!!not add to project
+     * data!!)
      *
-     * @param w Workspace
+     * @param pf Workspace
      */
-    private void displayWorkSpace(WorkSpace w) {
+    public void displayProjectFile(ProjectFile pf) {
+        pf.setOpened(true);
         //find workspace in tabbedpane if it isnt inside then add
-        boolean b = true;
+        boolean addProjectFile = true;
         for (Component c : this.jTabbedPane.getComponents()) {
-            if (c == w) {
-                b = false;
+            if (c == pf) {
+                addProjectFile = false;
                 break;
             }
         }
-        if (b) {
-            //add to tabbed
-            w.setBorder(null);
-            this.jTabbedPane.add(w.getName(), w);
-            //add lister
-            w.getHandler().addKeyListener(new KeyAdapter() {
-                @Override
-                public void keyPressed(KeyEvent arg0) {
-                    switch (arg0.getKeyCode()) {
-                        case KeyEvent.VK_W:
-                            //show component chooser
-                            if (arg0.isControlDown()) {
-                                componentChooser.chooseComponent();
-                                project.getSelectedWorkspace().unselectAllObjects(null);
-                            }
-                            break;
-                        case KeyEvent.VK_S:
-                            if (arg0.isControlDown()) {
-                                saveProject();
-                            }
-                            break;
-                    }
-                }
-            });
+        //add this project file
+        if (addProjectFile) {
+            //add
+            this.jTabbedPane.add(pf.getComp().getName(), pf.getComp());
+            //add close button
+            this.jTabbedPane.setTabComponentAt(
+                    this.jTabbedPane.getTabCount() - 1,
+                    new TabbedPaneCloseButton(this.jTabbedPane, pf.getComp())
+            );
         }
-        //select workspace
-        this.jTabbedPane.setSelectedComponent(w);
+        //select project file in tabbed pane
+        this.jTabbedPane.setSelectedComponent(pf.getComp());
     }
 
+    /**
+     * Update project file tree view
+     */
+    public void updateProjectView() {
+        //update project file tree
+        ((ProjectTreeView) this.jTreeProject).updateProjectTree();
+    }
+
+    /**
+     * Rename file of opened project
+     *
+     * @param comp Component that you want to rename
+     */
+    public void renameFileOfProject(ProjectFile comp) {
+        if (comp == null) {
+            return;
+        }
+
+        //last name
+        String lastName = comp.getComp().getName();
+
+        //get new name from input dialog
+        String name = (String) JOptionPane.showInputDialog(
+                this,
+                "Write new name of this file",
+                "Rename",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                null,
+                comp.getComp().getName()
+        );
+        //constraints
+        if (name == null) {
+            return;
+        }
+        if (name.length() == 0) {
+            return;
+        }
+        //for workspace
+        if (comp instanceof WorkSpace) {
+            for (ProjectFile pf : this.project.getProjectFiles()) {
+                if (pf.getComp() != null) {
+                    if (pf.getComp().getName().equals(name)) {
+                        return;
+                    }
+                }
+            }
+            //rename workspace
+            ((WorkSpace) comp).setName(name);
+            //update tree
+            ((ProjectTreeView) this.jTreeProject).updateProjectTree();
+        }
+
+        //refresh names for all displayed components
+        for (Component c : this.jTabbedPane.getComponents()) {
+            if (c == null) {
+                continue;
+            }
+            //get index of component c
+            int index = this.jTabbedPane.indexOfComponent(c);
+            if (index >= 0) {
+                //get tab component
+                Component title = this.jTabbedPane.getTabComponentAt(index);
+                if (title instanceof TabbedPaneCloseButton) {
+                    //chage title
+                    ((TabbedPaneCloseButton) title).setTitle(c.getName());
+                }
+            }
+        }
+
+        //rename file
+        IOProject io = new IOProject(this.project);
+        String fileType = "";
+        if (comp instanceof WorkSpace) {
+            fileType = "." + LogicSimulatorCore.WORKSPACE_FILE_TYPE;
+        }
+        io.renameFile(lastName + fileType, comp.getComp().getName() + fileType);
+    }
+
+    /**
+     * Delete file from project
+     *
+     * @param comp
+     */
+    public void deleteFile(ProjectFile comp) {
+        if (comp == null) {
+            return;
+        }
+
+        int n = JOptionPane.showConfirmDialog(
+                this,
+                "Do you really want to delete [" + comp.getComp().getName() + "]",
+                "Delete",
+                JOptionPane.YES_NO_OPTION);
+
+        if (n != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        //remove from tabbedPane
+        this.jTabbedPane.remove(comp.getComp());
+
+        //remove from project list
+        if (comp instanceof WorkSpace) {
+            this.project.getProjectFiles().remove((WorkSpace) comp);
+        }
+
+        //update tree
+        ((ProjectTreeView) this.jTreeProject).updateProjectTree();
+
+        //delete file from disk and from project link list
+        IOProject io = new IOProject(this.project);
+        String fileType = "";
+        if (comp instanceof WorkSpace) {
+            fileType = "." + LogicSimulatorCore.WORKSPACE_FILE_TYPE;
+        }
+        io.deleteFile(comp.getComp().getName() + fileType);
+    }
+
+    /**
+     * Save current opened project
+     */
     private void saveProject() {
         try {
             IOProject io = new IOProject(this.project);
@@ -577,18 +1072,81 @@ public class MainWindow extends JFrame implements LSComponent {
         }
     }
 
-    @Override
-    public void run() {
-        this.setVisible(true);
-        this.thread.start();
+    /**
+     * Add reference of component to toolbar
+     *
+     * @param obj Component
+     */
+    public void addComponentToToolbar(WorkSpaceObject obj) {
+        if (obj != null) {
+
+            String componentName = Tools.getComponentName(obj);
+            //commponent can be only one in toolbar
+            for (Component c : this.jToolBarComponents.getComponents()) {
+                if (c instanceof JButton) {
+                    if (((JButton) c).getToolTipText().equals(componentName)) {
+                        return;
+                    }
+                }
+            }
+
+            //button
+            ButtonHQ b = new ButtonHQ();
+            b.setToolTipText(componentName);
+            //event
+            b.addActionListener((ActionEvent evt) -> {
+                ProjectFile pf = this.project.getSelectedFile();
+                if (pf instanceof WorkSpace) {
+                    if (this.project.editMode) {
+                        try {
+                            List<WorkSpaceObject> list = new ArrayList<>();
+                            obj.getPosition().x = LogicSimulatorCore.OBJECT_NULL_POSITION;
+                            list.add(Tools.clone(obj));
+                            ((WorkSpace) pf).addNewObjects(list);
+                        } catch (CloneNotSupportedException ex) {
+                        }
+                    }
+                }
+            });
+            //create image of selected object and set this image for button        
+            b.setIcon(new ImageIcon(Tools.createImage(obj, 20, Math.PI / 4)));
+            //add to toolbar
+            this.jToolBarComponents.add(b);
+        }
+    }
+
+    /**
+     * Add component to combobox with last added components
+     *
+     * @param obj
+     */
+    public void addComponentToLastAdded(WorkSpaceObject obj) {     
+        if (obj != null) {
+            Object[] item = new Object[]{
+                Tools.getComponentName(obj),
+                obj
+            };
+            this.jComboBoxLastAdded.addItem(item);
+        }
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JButton jButtonControl;
     private javax.swing.JButton jButtonEdit;
+    private javax.swing.JButton jButtonHelp;
+    private javax.swing.JButton jButtonNewFile;
+    private javax.swing.JButton jButtonNewProject;
     private javax.swing.JButton jButtonNextstep;
     private javax.swing.JButton jButtonNextstep1;
+    private javax.swing.JButton jButtonOpenProject;
+    private javax.swing.JButton jButtonRedo;
+    private javax.swing.JButton jButtonRun;
+    private javax.swing.JButton jButtonSaveProject;
+    private javax.swing.JButton jButtonSettings;
+    private javax.swing.JButton jButtonStop;
+    private javax.swing.JButton jButtonUndo;
+    private javax.swing.JComboBox<Object[]> jComboBoxLastAdded;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabelTiming;
     private javax.swing.JLabel jLabelUPS;
@@ -596,6 +1154,11 @@ public class MainWindow extends JFrame implements LSComponent {
     private javax.swing.JMenuBar jMenuBarMain;
     private javax.swing.JMenu jMenuEdit;
     private javax.swing.JMenu jMenuFile;
+    private javax.swing.JMenuItem jMenuItemAddNewFile;
+    private javax.swing.JMenuItem jMenuItemOpen;
+    private javax.swing.JMenuItem jMenuItemPlaceComponent;
+    private javax.swing.JMenuItem jMenuItemPlaceComponent1;
+    private javax.swing.JMenuItem jMenuItemSave;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanelBody;
     private javax.swing.JPanel jPanelSimulation3;
@@ -607,6 +1170,7 @@ public class MainWindow extends JFrame implements LSComponent {
     private javax.swing.JScrollPane jScrollPaneSimulation;
     private javax.swing.JToolBar.Separator jSeparator1;
     private javax.swing.JToolBar.Separator jSeparator2;
+    private javax.swing.JPopupMenu.Separator jSeparator3;
     private javax.swing.JSlider jSliderUPS;
     private javax.swing.JSplitPane jSplitPaneBody;
     private javax.swing.JSplitPane jSplitPaneLeft;
@@ -614,7 +1178,12 @@ public class MainWindow extends JFrame implements LSComponent {
     private javax.swing.JTabbedPane jTabbedPane;
     private javax.swing.JTable jTableProperties;
     private javax.swing.JToolBar jToolBar1;
+    private javax.swing.JToolBar jToolBarComponents;
+    private javax.swing.JToolBar jToolBarEdit;
+    private javax.swing.JToolBar jToolBarFile;
     private javax.swing.JToolBar jToolBarMain;
+    private javax.swing.JToolBar jToolBarOther;
+    private javax.swing.JToolBar jToolBarSimulating;
     private javax.swing.JTree jTreeProject;
     private javax.swing.JPanel timingGraph;
     // End of variables declaration//GEN-END:variables

@@ -9,6 +9,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.io.Serializable;
 import java.util.List;
+import logicSimulator.Tools;
 import logicSimulator.WorkSpaceObject;
 import logicSimulator.common.IOPin;
 import logicSimulator.common.Line;
@@ -29,7 +30,7 @@ public class BitSet implements WorkSpaceObject, Serializable {
 
     private boolean selected = false;
 
-    public BitSet(Point position, int[] indexes, int bits_out) {
+    public BitSet(Point position, int[] indexes) {
         this.position = position;
         this.indexes = indexes;
         this.model = new Model(
@@ -47,10 +48,10 @@ public class BitSet implements WorkSpaceObject, Serializable {
         );
         //pins
         this.model.getIOPins().add(
-                new IOPin(IOPin.MODE.INPUT, 1, "IN", new Point.Double(0, -20))
+                new IOPin(IOPin.MODE.INPUT, 1, "", new Point.Double(0, -20))
         );
         this.model.getIOPins().add(
-                new IOPin(IOPin.MODE.OUTPUT, bits_out, "OUT", new Point.Double(0, 20))
+                new IOPin(IOPin.MODE.OUTPUT, Tools.max(this.indexes) + 1, "", new Point.Double(0, 20))
         );
         setWriteOnlyBits();
     }
@@ -72,11 +73,10 @@ public class BitSet implements WorkSpaceObject, Serializable {
 
     @Override
     public Propertie[] getProperties() {
-        Propertie[] p = new Propertie[this.indexes.length + 2];
+        Propertie[] p = new Propertie[this.indexes.length + 1];
         p[0] = new Propertie("Input bits", this.indexes.length);
-        p[1] = new Propertie("Output bits", this.model.getIOPins().get(1).getValue().length);
         for (int i = 0; i < this.indexes.length; i++) {
-            p[2 + i] = new Propertie("Bit " + i, this.indexes[i]);
+            p[1 + i] = new Propertie("Bit " + i, this.indexes[i]);
         }
         return p;
     }
@@ -91,10 +91,7 @@ public class BitSet implements WorkSpaceObject, Serializable {
                         v[i] = this.indexes[i];
                     }
                     this.indexes = v;
-                    this.model.getIOPins().get(1).changeBitWidth(propt.getValueInt());
-                    break;
-                case "Output bits":
-                    this.model.getIOPins().get(1).changeBitWidth(propt.getValueInt());
+                    this.model.getIOPins().get(0).changeBitWidth(propt.getValueInt());
                     break;
                 default:
                     String postfix = propt.getName().substring(4);
@@ -104,6 +101,9 @@ public class BitSet implements WorkSpaceObject, Serializable {
                     }
                     break;
             }
+            //change bit width of output pin
+            this.model.getIOPins().get(1).changeBitWidth(Tools.max(this.indexes) + 1);
+            //refresh write only bits
             setWriteOnlyBits();
         } catch (NumberFormatException ex) {
         }
@@ -128,7 +128,6 @@ public class BitSet implements WorkSpaceObject, Serializable {
             this.selected = true;
             return true;
         }
-        this.selected = false;
         return false;
     }
 
@@ -167,8 +166,7 @@ public class BitSet implements WorkSpaceObject, Serializable {
         System.arraycopy(this.indexes, 0, av, 0, av.length);
         BitSet ret = new BitSet(
                 new Point(this.position.x, this.position.y),
-                av,
-                this.model.getIOPins().get(1).getValue().length
+                av
         );
         ret.getModel().clone(this.model);
         return ret;

@@ -3,12 +3,15 @@
  * Author: Martin Krcma
  */
 
-import data.Images;
+import logicSimulator.ui.SystemResources;
 import data.PropertieReader;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -17,22 +20,25 @@ import logicSimulator.ComputeCore;
 import logicSimulator.LogicSimulatorCore;
 import window.MainWindow;
 import logicSimulator.LSComponent;
+import logicSimulator.Project;
+import logicSimulator.Tools;
 import window.ProjectWizard;
 
 /**
  *
  * @author Martin
  */
-public class HLSimulator implements LogicSimulatorCore {
-
-    //all images
-    private data.Images images;
+public class HLSimulator extends SystemResources implements LogicSimulatorCore {
 
     //all main components
     private final List<LSComponent> components;
 
-    public HLSimulator() {
+    public static Splash splash;
+
+    public HLSimulator() throws IOException {
+        super();
         this.components = new ArrayList<>();
+        //Settings.HIGH_RENDER_QUALITY = true;
     }
 
     /**
@@ -42,10 +48,9 @@ public class HLSimulator implements LogicSimulatorCore {
      * @throws Exception
      */
     public void init(PropertieReader[] proptFiles) throws Exception {
-        //images
-        this.images = new data.Images();
 
         LSComponent component;
+
         //project wizard (choose or create project and then continue in initialisation)
         component = new ProjectWizard(null, true);
         component.init(
@@ -53,7 +58,24 @@ public class HLSimulator implements LogicSimulatorCore {
                 PropertieReader.getWithID(proptFiles, PropertieReader.ID.PROJECT)
         );
         this.components.add(component);
+        //hide splash screen
+        this.splash.setVisible(false);
+        this.splash.dispose();
+        //open or create project
         ((ProjectWizard) component).setVisible(true);
+
+        //if project is null
+        boolean projectNotFound = true;
+        for (LSComponent c : this.components) {
+            if (c instanceof Project) {
+                projectNotFound = false;
+                break;
+            }
+        }
+        if (projectNotFound) {
+            System.exit(0);
+            return;
+        }
 
         //compute core
         component = new ComputeCore();
@@ -93,17 +115,13 @@ public class HLSimulator implements LogicSimulatorCore {
 
     }
 
-    @Override
-    public Images getImages() {
-        return this.images;
-    }
-
     /**
      * Main, rum logisim core
      *
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+
         //set LookAndFeel 
         try {
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
@@ -117,16 +135,25 @@ public class HLSimulator implements LogicSimulatorCore {
         }
         SwingUtilities.invokeLater(() -> {
             try {
+                
+                //splash
+                HLSimulator.splash = new Splash("/src/img/splash.png", 900, 450);
+                HLSimulator.splash.setVisible(true);
+                
                 //HL simulator
                 HLSimulator logicSimulator = new HLSimulator();
+                
                 //propertie files
                 PropertieReader[] proptList = new PropertieReader[]{
                     new PropertieReader(PROPT_PROJECTS, PropertieReader.ID.PROJECT)
                 };
+                
                 //init
                 logicSimulator.init(proptList);
+                
                 //run
                 logicSimulator.run();
+                
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(null, ex.getStackTrace(), "Error", JOptionPane.ERROR_MESSAGE, null);
                 Logger.getLogger(HLSimulator.class.getName()).log(Level.SEVERE, null, ex);

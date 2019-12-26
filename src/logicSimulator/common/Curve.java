@@ -1,5 +1,6 @@
 package logicSimulator.common;
 
+import logicSimulator.Tools;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.QuadCurve2D;
@@ -24,7 +25,14 @@ public class Curve implements Serializable {
     }
 
     public void draw(Graphics2D g2, int xOff, int yOff) {
-        QuadCurve2D.Double curve = new QuadCurve2D.Double(p1.x + xOff, p1.y + yOff, control.x + xOff, control.y + yOff, p2.x + xOff, p2.y + yOff);
+        QuadCurve2D.Double curve = new QuadCurve2D.Double(
+                p1.x + xOff,
+                p1.y + yOff,
+                control.x + xOff,
+                control.y + yOff,
+                p2.x + xOff,
+                p2.y + yOff
+        );
         g2.draw(curve);
     }
 

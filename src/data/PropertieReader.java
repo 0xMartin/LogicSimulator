@@ -55,6 +55,7 @@ public class PropertieReader {
             propt = line.split("=");
             ret.add(new Propertie(propt[0], propt[1]));
         }
+        reader.close();
         return ret;
     }
 

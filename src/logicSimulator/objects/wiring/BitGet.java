@@ -48,10 +48,10 @@ public class BitGet implements WorkSpaceObject, Serializable {
         );
         //pins
         this.model.getIOPins().add(
-                new IOPin(IOPin.MODE.INPUT, 1, "IN", new Point.Double(0, -20))
+                new IOPin(IOPin.MODE.INPUT, 1, "", new Point.Double(0, -20))
         );
         this.model.getIOPins().add(
-                new IOPin(IOPin.MODE.OUTPUT, 1, "OUT", new Point.Double(0, 20))
+                new IOPin(IOPin.MODE.OUTPUT, 1, "", new Point.Double(0, 20))
         );
         changeOutputWidth();
     }
@@ -127,7 +127,6 @@ public class BitGet implements WorkSpaceObject, Serializable {
             this.selected = true;
             return true;
         }
-        this.selected = false;
         return false;
     }
 

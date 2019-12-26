@@ -4,6 +4,7 @@
  */
 package logicSimulator.common;
 
+import logicSimulator.Tools;
 import logicSimulator.ui.Colors;
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -12,7 +13,6 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import logicSimulator.LogicSimulatorCore;
 
@@ -22,7 +22,11 @@ import logicSimulator.LogicSimulatorCore;
  */
 public class Model implements Serializable {
 
+    //width and height of model
     private int width = 0, height = 0;
+
+    //model bounds
+    private Point.Double min, max;
 
     private final List<IOPin> pins;
 
@@ -33,6 +37,11 @@ public class Model implements Serializable {
      */
     private int angle = 0;
 
+    /**
+     * Orientation of model [0, 1, 2, 3] 0 - start position
+     *
+     * @return
+     */
     public int getAngle() {
         return this.angle;
     }
@@ -40,8 +49,6 @@ public class Model implements Serializable {
     public Line[] lines;
     public Circle[] circles;
     public Curve[] curves;
-
-    public Point.Double[] points;
 
     public Model(Line[] lines, Circle[] circles, Curve[] curves) {
         this.lines = lines;
@@ -51,45 +58,83 @@ public class Model implements Serializable {
         computeSize();
     }
 
+    /**
+     * Get all io pins
+     *
+     * @return
+     */
     public List<IOPin> getIOPins() {
         return this.pins;
+    }
+
+    /**
+     * Return up left corner of model bounds
+     *
+     * @return
+     */
+    public Point.Double getBoundsMin() {
+        return this.min;
+    }
+
+    /**
+     * Return down right corner of model
+     *
+     * @return
+     */
+    public Point.Double getBoundsMax() {
+        return this.max;
     }
 
     /**
      * Compute size of this model
      */
     public void computeSize() {
-        Point.Double max = new Point.Double(Integer.MIN_VALUE, Integer.MIN_VALUE);
-        Point.Double min = new Point.Double(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        this.max = new Point.Double(Integer.MIN_VALUE, Integer.MIN_VALUE);
+        this.min = new Point.Double(Integer.MAX_VALUE, Integer.MAX_VALUE);
         //find max and min for x and y axis
         if (this.lines != null) {
             for (Line l : this.lines) {
                 //max
-                max.x = Math.max(max.x, l.p1.x);
-                max.x = Math.max(max.x, l.p2.x);
-                max.y = Math.max(max.y, l.p1.y);
-                max.y = Math.max(max.y, l.p2.y);
+                this.max.x = Math.max(this.max.x, l.p1.x);
+                this.max.x = Math.max(this.max.x, l.p2.x);
+                this.max.y = Math.max(this.max.y, l.p1.y);
+                this.max.y = Math.max(this.max.y, l.p2.y);
                 //min
-                min.x = Math.min(min.x, l.p1.x);
-                min.x = Math.min(min.x, l.p2.x);
-                min.y = Math.min(min.y, l.p1.y);
-                min.y = Math.min(min.y, l.p2.y);
+                this.min.x = Math.min(this.min.x, l.p1.x);
+                this.min.x = Math.min(this.min.x, l.p2.x);
+                this.min.y = Math.min(this.min.y, l.p1.y);
+                this.min.y = Math.min(this.min.y, l.p2.y);
             }
         }
         //find max and min for x and y axis
         if (this.circles != null) {
             for (Circle c : this.circles) {
                 //max
-                max.x = Math.max(max.x, c.p1.x + c.radius);
-                max.y = Math.max(max.y, c.p1.y + c.radius);
+                this.max.x = Math.max(this.max.x, c.p1.x + c.radius);
+                this.max.y = Math.max(this.max.y, c.p1.y + c.radius);
                 //min
-                min.x = Math.min(min.x, c.p1.x - c.radius);
-                min.y = Math.min(min.y, c.p1.y - c.radius);
+                this.min.x = Math.min(this.min.x, c.p1.x - c.radius);
+                this.min.y = Math.min(this.min.y, c.p1.y - c.radius);
+            }
+        }
+        //find max and min for x and y axis
+        if (this.curves != null) {
+            for (Curve c : this.curves) {
+                //max
+                this.max.x = Math.max(this.max.x, c.p1.x);
+                this.max.x = Math.max(this.max.x, c.p2.x);
+                this.max.y = Math.max(this.max.y, c.p1.y);
+                this.max.y = Math.max(this.max.y, c.p2.y);
+                //min
+                this.min.x = Math.min(this.min.x, c.p1.x);
+                this.min.x = Math.min(this.min.x, c.p2.x);
+                this.min.y = Math.min(this.min.y, c.p1.y);
+                this.min.y = Math.min(this.min.y, c.p2.y);
             }
         }
         //compute width and height
-        this.width = (int) (max.x - min.x);
-        this.height = (int) (max.y - min.y);
+        this.width = (int) (this.max.x - this.min.x);
+        this.height = (int) (this.max.y - this.min.y);
     }
 
     public int getWidth() {
@@ -123,7 +168,7 @@ public class Model implements Serializable {
         }
         //render pints
         this.pins.stream().forEach((pin) -> {
-            pin.render(g2, new Point(x, y));
+            pin.render(g2, x, y);
         });
     }
 
@@ -162,12 +207,6 @@ public class Model implements Serializable {
                 Tools.rotatePoint(c.control, A);
             }
         }
-        //points
-        if (this.points != null) {
-            for (Point.Double p : this.points) {
-                Tools.rotatePoint(p, A);
-            }
-        }
         //pins
         this.pins.stream().forEach((pin) -> {
             Tools.rotatePoint(pin.getPosition(), A);
@@ -188,10 +227,10 @@ public class Model implements Serializable {
     public boolean intersect(Point cursor, Point mPosition) {
         int x = cursor.x;
         int y = cursor.y;
-        if (x >= mPosition.x - this.width / 2
-                && x <= mPosition.x + this.width / 2) {
-            if (y >= mPosition.y - this.height / 2
-                    && y <= mPosition.y + this.height / 2) {
+        if (x >= mPosition.x + this.min.x
+                && x <= mPosition.x + this.max.x) {
+            if (y >= mPosition.y + this.min.y
+                    && y <= mPosition.y + this.max.y) {
                 return true;
             }
         }
@@ -223,17 +262,8 @@ public class Model implements Serializable {
                 curves_copy[i] = this.curves[i].cloneObject();
             }
         }
-        //copy points
-        Point.Double[] points_copy = null;
-        if (this.points != null) {
-            points_copy = new Point.Double[this.points.length];
-            for (int i = 0; i < this.points.length; i++) {
-                points_copy[i] = Tools.copy(this.points[i]);
-            }
-        }
         //model 
         Model ret = new Model(lines_copy, circles_copy, curves_copy);
-        ret.points = points_copy;
         //pins
         this.pins.forEach((pin) -> {
             ret.getIOPins().add(pin.cloneObject());
@@ -248,11 +278,13 @@ public class Model implements Serializable {
      *
      * @param g2 Graphics2D
      * @param pos Position of object
-     * @param offset Rendereing offset (Only for render gates thet are in visible area)
+     * @param offset Rendereing offset (Only for render gates thet are in
+     * visible area)
      * @param screen Sreen size
      * @param select Is selecte ? -> draw select
+     * @return Return true if model was rendered
      */
-    public void renderModel(Graphics2D g2, Point pos, Point offset, Dimension screen, boolean select) {
+    public boolean renderModel(Graphics2D g2, Point pos, Point offset, Dimension screen, boolean select) {
         if (Tools.isInRange(
                 pos.x - offset.x, pos.y - offset.y, screen,
                 Math.max(this.width, this.height)
@@ -262,8 +294,8 @@ public class Model implements Serializable {
                 g2.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0));
                 g2.setColor(Colors.SELECT_RECT);
                 g2.drawRect(
-                        pos.x - this.width / 2 - 10,
-                        pos.y - this.height / 2 - 10,
+                        (int) (pos.x + this.min.x - 10),
+                        (int) (pos.y + this.min.y - 10),
                         this.width + 20,
                         this.height + 20
                 );
@@ -277,7 +309,9 @@ public class Model implements Serializable {
             if (this.error) {
                 Tools.drawError(g2, pos.x, pos.y, Math.max(this.width, this.height) / 3);
             }
+            return true;
         }
+        return false;
     }
 
     public void setColor(Color c) {
@@ -299,7 +333,6 @@ public class Model implements Serializable {
         this.lines = m.lines;
         this.circles = m.circles;
         this.curves = m.curves;
-        this.points = m.points;
         this.pins.clear();
         this.angle = m.angle;
         m.pins.stream().forEach((p) -> {
@@ -334,8 +367,6 @@ public class Model implements Serializable {
                     ret.add(curve.control);
                     ret.add(curve.p2);
                 }
-                //get point
-                ret.addAll(Arrays.asList(this.points));
                 return ret;
             } catch (Exception ex) {
                 i++;

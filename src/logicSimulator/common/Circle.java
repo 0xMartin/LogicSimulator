@@ -1,5 +1,6 @@
 package logicSimulator.common;
 
+import logicSimulator.Tools;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.io.Serializable;
