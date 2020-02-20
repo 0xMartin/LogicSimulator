@@ -6,31 +6,22 @@ package logicSimulator.objects.gates;
 
 import logicSimulator.common.Propertie;
 import logicSimulator.common.IOPin;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.Point;
-import java.io.Serializable;
-import java.util.List;
-import logicSimulator.WorkSpaceObject;
 import logicSimulator.common.Circle;
 import logicSimulator.common.Curve;
 import logicSimulator.common.Line;
 import logicSimulator.common.Model;
 import logicSimulator.Tools;
+import logicSimulator.WorkSpaceObject;
+import logicSimulator.common.GraphicsObject;
 
 /**
  *
  * @author Martin
  */
-public class Nor implements WorkSpaceObject, Serializable {
+public class Nor extends WorkSpaceObject {
 
     private int inputs;
-
-    private final Point position;
-
-    private final Model model;
-
-    private boolean select = false;
 
     /**
      * Create and gate
@@ -40,60 +31,37 @@ public class Nor implements WorkSpaceObject, Serializable {
      * @param inputs Number of inputs (2<->5)
      */
     public Nor(Point position, int bits, int inputs) {
-        //default
-        this.position = position;
+        super(position);
+
         this.inputs = inputs;
+
         //create gate model
-        this.model = new Model(
-                null,
-                new Circle[]{
-                    new Circle(new Point.Double(0, 31), 6)
-                },
-                new Curve[]{
-                    new Curve(new Point.Double(-24, -25), new Point.Double(0, -15), new Point.Double(24, -25)),
-                    new Curve(new Point.Double(-24, -25), new Point.Double(-23, 0), new Point.Double(0, 25)),
-                    new Curve(new Point.Double(24, -25), new Point.Double(23, 0), new Point.Double(0, 25))
-                });
-        this.buildModel(inputs, bits);
-    }
+        Model model = new Model(
+                new GraphicsObject[]{
+                    new Curve(new Point.Double(-21.0, -14.0), new Point.Double(0.0, 0.0), new Point.Double(21.0, -14.0)),
+                    new Curve(new Point.Double(-21.0, -14.0), new Point.Double(-21.0, 14.0), new Point.Double(0.0, 28.0)),
+                    new Curve(new Point.Double(21.0, -14.0), new Point.Double(21.0, 14.0), new Point.Double(0.0, 28.0)),
+                    new Line(new Point.Double(-14.0, -12.0), new Point.Double(-14.0, -28.0)),
+                    new Line(new Point.Double(14.0, -12.0), new Point.Double(14.0, -28.0)),
+                    new Circle(new Point.Double(0.0, 35.0), 6)
+                }
+        );
 
-    public void buildModel(int inputs, int bits) {
-        switch (inputs) {
-            case 2:
-                this.model.lines = new Line[]{
-                    //pins in
-                    new Line(new Point.Double(-20, -25), new Point.Double(-20, -37)),
-                    new Line(new Point.Double(20, -25), new Point.Double(20, -37)),};
-                //io pins
-                this.model.getIOPins().clear();
-                this.model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, bits, "", new Point.Double(-20, -40)));
-                this.model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, bits, "", new Point.Double(20, -40)));
-                break;
-        }
-        //output pin
-        this.model.getIOPins().add(new IOPin(IOPin.MODE.OUTPUT, bits, "", new Point.Double(0, 40)));
-        this.model.computeSize();
-    }
+        model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, bits, "", new Point.Double(-14.0, -28.0)));
+        model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, bits, "", new Point.Double(14.0, -28.0)));
+        model.getIOPins().add(new IOPin(IOPin.MODE.OUTPUT, bits, "", new Point.Double(0.0, 42.0)));
 
-    @Override
-    public Point getPosition() {
-        return this.position;
-    }
-
-    @Override
-    public Dimension getSize() {
-        return new Dimension(this.model.getWidth(), this.model.getHeight());
-    }
-
-    @Override
-    public void render(Graphics2D g2, Point offset, Dimension screen) {
-        this.model.renderModel(g2, this.position, offset, screen, this.select);
+        super.setModel(model);
     }
 
     @Override
     public Propertie[] getProperties() {
         return new Propertie[]{
-            new Propertie("Bits", Tools.getLast(this.model.getIOPins()).getValue().length),
+            new Propertie(
+            "Bits",
+            Tools.getLast(super.getPins()).getValue().length,
+            Propertie.Type.BITS
+            ),
             new Propertie("Inputs", this.inputs)
         };
     }
@@ -103,7 +71,7 @@ public class Nor implements WorkSpaceObject, Serializable {
         try {
             switch (propt.getName()) {
                 case "Bits":
-                    this.model.getIOPins().forEach((pin) -> {
+                    super.getPins().forEach((pin) -> {
                         pin.changeBitWidth(propt.getValueInt());
                     });
                     break;
@@ -115,49 +83,25 @@ public class Nor implements WorkSpaceObject, Serializable {
         }
     }
 
-    @Override
-    public boolean select(Point cursor) {
-        if (this.model.intersect(cursor, this.position)) {
-            this.select = true;
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public void unSelect() {
-        this.select = false;
-    }
-
-    @Override
-    public boolean isSelected() {
-        return this.select;
-    }
-
-    @Override
-    public Model getModel() {
-        return this.model;
-    }
-
     public Nor cloneObject() {
         Nor ret = new Nor(
-                new Point(this.position.x, this.position.y),
-                Tools.getLast(this.model.getIOPins()).getValue().length,
+                Tools.copy(super.getPosition()),
+                Tools.getLast(super.getPins()).getValue().length,
                 this.inputs
         );
-        ret.getModel().clone(this.model);
+        ret.getModel().clone(super.getModel());
         return ret;
     }
 
     @Override
     public boolean compute() {
         //read value
-        boolean[] in = this.model.getIOPins().get(0).getValue();
+        boolean[] in = super.getPins().get(0).getValue();
         //and fuction
         boolean[] out = new boolean[in.length];
         for (int i = 0; i < in.length; i++) {
             boolean result = false;
-            for (IOPin pin : this.model.getIOPins()) {
+            for (IOPin pin : super.getPins()) {
                 if (pin.mode == IOPin.MODE.INPUT) {
                     if (pin.getValue()[i]) {
                         result = true;
@@ -168,17 +112,7 @@ public class Nor implements WorkSpaceObject, Serializable {
             out[i] = !result;
         }
         //write value
-        return this.model.getIOPins().get(this.model.getIOPins().size() - 1).setValue(out);
-    }
-    
-    @Override
-    public boolean error() {
-        return !Tools.sameBitWidth(this.model.getIOPins(), IOPin.MODE.IO); 
-    }
-    
-    @Override
-    public List<IOPin> getPins() {
-        return this.model.getIOPins();
+        return Tools.getLast(super.getPins()).setValue(out);
     }
 
 }

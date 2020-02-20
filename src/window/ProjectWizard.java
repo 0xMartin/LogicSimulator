@@ -30,7 +30,7 @@ import javax.swing.filechooser.FileFilter;
 import logicSimulator.LSComponent;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.Project;
-import logicSimulator.WorkSpace;
+import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.common.Propertie;
 import logicSimulator.Tools;
 import logicSimulator.ui.LSButton;
@@ -74,8 +74,6 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
     private void initComponents() {
 
         jPanelMain = new javax.swing.JPanel();
-        jButtonOpenLibrary = new LSButton();
-        jButtonNewLibrary = new LSButton();
         jButtonOpenProject = new LSButton();
         jButtonNewProject = new LSButton();
         jLabel3 = new javax.swing.JLabel();
@@ -134,34 +132,6 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
         jPanelMain.setMinimumSize(new java.awt.Dimension(394, 546));
         jPanelMain.setOpaque(false);
 
-        jButtonOpenLibrary.setBackground(new java.awt.Color(51, 51, 51));
-        jButtonOpenLibrary.setFont(new java.awt.Font("Gadugi", 1, 14)); // NOI18N
-        jButtonOpenLibrary.setForeground(new java.awt.Color(0, 0, 0));
-        jButtonOpenLibrary.setText("Open library");
-        jButtonOpenLibrary.setBorderPainted(false);
-        jButtonOpenLibrary.setFocusPainted(false);
-        jButtonOpenLibrary.setFocusable(false);
-        jButtonOpenLibrary.setOpaque(false);
-        jButtonOpenLibrary.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonOpenLibraryActionPerformed(evt);
-            }
-        });
-
-        jButtonNewLibrary.setBackground(new java.awt.Color(51, 51, 51));
-        jButtonNewLibrary.setFont(new java.awt.Font("Gadugi", 1, 14)); // NOI18N
-        jButtonNewLibrary.setForeground(new java.awt.Color(0, 0, 0));
-        jButtonNewLibrary.setText("New library");
-        jButtonNewLibrary.setBorderPainted(false);
-        jButtonNewLibrary.setFocusPainted(false);
-        jButtonNewLibrary.setFocusable(false);
-        jButtonNewLibrary.setOpaque(false);
-        jButtonNewLibrary.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonNewLibraryActionPerformed(evt);
-            }
-        });
-
         jButtonOpenProject.setBackground(new java.awt.Color(51, 51, 51));
         jButtonOpenProject.setFont(new java.awt.Font("Gadugi", 1, 14)); // NOI18N
         jButtonOpenProject.setForeground(new java.awt.Color(0, 0, 0));
@@ -204,8 +174,6 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 .addContainerGap(24, Short.MAX_VALUE)
                 .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jButtonNewProject, javax.swing.GroupLayout.PREFERRED_SIZE, 355, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButtonOpenLibrary, javax.swing.GroupLayout.PREFERRED_SIZE, 355, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButtonNewLibrary, javax.swing.GroupLayout.PREFERRED_SIZE, 355, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButtonOpenProject, javax.swing.GroupLayout.PREFERRED_SIZE, 355, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel3))
                 .addGap(15, 15, 15))
@@ -217,11 +185,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 .addComponent(jButtonNewProject, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButtonOpenProject, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButtonNewLibrary, javax.swing.GroupLayout.PREFERRED_SIZE, 57, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButtonOpenLibrary, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 243, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 370, Short.MAX_VALUE)
                 .addComponent(jLabel3)
                 .addContainerGap())
         );
@@ -571,19 +535,11 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 io.addToLastProjectList();
                 //close this wizzard
                 dispose();
-            }catch(Exception ex){
-               JOptionPane.showMessageDialog(this, "Cant open project", "Error", JOptionPane.ERROR_MESSAGE, null); 
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Cant open project", "Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
     }//GEN-LAST:event_jButtonOpenProjectActionPerformed
-
-    private void jButtonNewLibraryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonNewLibraryActionPerformed
-        showNewLibrary();
-    }//GEN-LAST:event_jButtonNewLibraryActionPerformed
-
-    private void jButtonOpenLibraryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOpenLibraryActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButtonOpenLibraryActionPerformed
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         showMainMenu();
@@ -676,25 +632,37 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
             Project project = new Project(last.getName());
             IOProject io = new IOProject(project);
             try {
-                io.open(last.getValueString().split(";")[0]);
-                project.init(this.core, null);
-                this.core.getLSComponents().add(project);
-                dispose();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Project not found", "Error", JOptionPane.ERROR_MESSAGE, null);
-                //remove this project from list
-                PropertieWriter writer = new PropertieWriter(LogicSimulatorCore.PROPT_PROJECTS);
-                this.lastProjects.remove(last);
-                showAllLastProjects(this.lastProjects);
-                try {
-                    writer.writeFile(this.lastProjects);
-                } catch (Exception ex1) {
-                    Logger.getLogger(ProjectWizard.class.getName()).log(Level.SEVERE, null, ex1);
+                //file of project from linker list
+                File projectFile = new File(last.getValueString().split(";")[0]);
+                //if this file on exist than remove from list
+                if (!projectFile.exists()) {
+                    JOptionPane.showMessageDialog(this, "Project not found", "Error", JOptionPane.ERROR_MESSAGE, null);
+                    //remove this project from list
+                    PropertieWriter writer = new PropertieWriter(LogicSimulatorCore.PROPT_PROJECTS);
+                    this.lastProjects.remove(last);
+                    showAllLastProjects(this.lastProjects);
+                    try {
+                        writer.writeFile(this.lastProjects);
+                    } catch (Exception ex1) {
+                        Logger.getLogger(ProjectWizard.class.getName()).log(Level.SEVERE, null, ex1);
+                    }
+                } else {
+                    //opent project
+                    io.open(projectFile.getPath());
+                    project.init(this.core, null);
+                    this.core.getLSComponents().add(project);
+                    dispose();
                 }
+            } catch (Exception ex) {
+                Logger.getLogger(ProjectWizard.class.getName()).log(Level.SEVERE, null, ex);
+                JOptionPane.showMessageDialog(this, "Cant open project", "Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
     }//GEN-LAST:event_jListLastProjectsMouseReleased
 
+    /**
+     * Show main menu
+     */
     private void showMainMenu() {
         this.jPanel1.removeAll();
         this.jPanelMain.setBounds(0, 0, this.jPanel1.getWidth(), this.jPanel1.getHeight());
@@ -703,6 +671,9 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
         this.jPanel1.repaint();
     }
 
+    /**
+     * Show new project menu
+     */
     private void showNewProject() {
         this.jPanel1.removeAll();
         this.jPanelNewProject.setBounds(0, 0, this.jPanel1.getWidth(), this.jPanel1.getHeight());
@@ -711,19 +682,10 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
         this.jPanel1.repaint();
     }
 
+    /**
+     * Show open project menu
+     */
     private void showOpenProject() {
-
-    }
-
-    private void showNewLibrary() {
-        this.jPanel1.removeAll();
-        this.jPanelNewLibrary.setBounds(0, 0, this.jPanel1.getWidth(), this.jPanel1.getHeight());
-        this.jPanel1.add(this.jPanelNewLibrary);
-        this.jPanel1.revalidate();
-        this.jPanel1.repaint();
-    }
-
-    private void showOpenLibrary() {
 
     }
 
@@ -742,6 +704,11 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
 
     @Override
     public void run() {
+    }
+
+    @Override
+    public void stop() {
+        dispose();
     }
 
     private List<Propertie> lastProjects;
@@ -771,9 +738,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
     private javax.swing.JButton jButtonBack1;
     private javax.swing.JButton jButtonCreateProject;
     private javax.swing.JButton jButtonCreateProject1;
-    private javax.swing.JButton jButtonNewLibrary;
     private javax.swing.JButton jButtonNewProject;
-    private javax.swing.JButton jButtonOpenLibrary;
     private javax.swing.JButton jButtonOpenProject;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;

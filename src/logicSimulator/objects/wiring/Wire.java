@@ -10,7 +10,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import logicSimulator.WorkSpaceObject;
@@ -25,7 +24,7 @@ import logicSimulator.Tools;
  *
  * @author Martin
  */
-public class Wire implements WorkSpaceObject, Serializable {
+public class Wire extends WorkSpaceObject{
 
     //io pins connect to the wire
     private final List<IOPin> pins;
@@ -42,6 +41,7 @@ public class Wire implements WorkSpaceObject, Serializable {
     public int value = 0;
 
     public Wire() {
+        super(null);
         this.pins = new ArrayList<>();
         this.path = new ArrayList<>();
     }
@@ -60,16 +60,21 @@ public class Wire implements WorkSpaceObject, Serializable {
         //get color (high low or bus color)
         boolean existOutPin = false;
         for (int i = 0; i < this.pins.size(); i++) {
-            if (this.pins.get(i).mode == IOPin.MODE.OUTPUT
-                    || this.pins.get(i).mode == IOPin.MODE.IO) {
-                existOutPin = true;
+            IOPin pin = this.pins.get(i);
+            if (pin.mode == IOPin.MODE.OUTPUT || pin.mode == IOPin.MODE.IO) {
+                if (pin.getValue().length != 0) {
+                    existOutPin = true;
+                }
                 if (this.pins.get(i).getValue().length > 1) {
                     this.value = -1;
                     break;
                 }
             }
         }
-        //set false for all input pin in this wire because outpin not exist (not connected) on this wire
+        /**
+         * set false for all input pin in this wire if on wire isnt connected
+         * valid (lenght of pin value boolean[] != 0)output pin
+         */
         if (!existOutPin) {
             this.value = 0;
             boolean changed = false;
@@ -142,8 +147,8 @@ public class Wire implements WorkSpaceObject, Serializable {
                     (int) (line.p1.x - (line.p1.x - line.p2.x) / 2),
                     (int) (line.p1.y - (line.p1.y - line.p2.y) / 2)
             );
-            g2.drawString(": " + this.pins.size(), p.x + 15, p.y + 15);
-            */
+            g2.drawString(": " + this.path.size(), p.x + 15, p.y + 15);
+             */
         });
     }
 
@@ -164,7 +169,10 @@ public class Wire implements WorkSpaceObject, Serializable {
 
     @Override
     public boolean select(Point position) {
-        Line l = Tools.isOnLine(this, position);
+        if (position == null) {
+            return false;
+        }
+        Line l = Tools.isOnLine(this, Tools.ptToDouble(position), null);
         if (l != null) {
             if (!this.selectedLines.stream().anyMatch((o1) -> (o1 == l))) {
                 this.selectedLines.add(l);

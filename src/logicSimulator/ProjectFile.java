@@ -12,21 +12,14 @@ import java.awt.Component;
  * @author Martin
  */
 public interface ProjectFile {
-    
+
     /**
-     * Is project file opened (in some window)
+     * Get project file mode
      *
      * @return
      */
-    public boolean isOpened();
+    public PFMode getPFMode();
 
-    /**
-     * Set open status (true -> component is opened, false -> component is
-     * close)
-     *
-     * @param open
-     */
-    public void setOpened(boolean open);
 
     /**
      * Get component if exist
@@ -34,5 +27,39 @@ public interface ProjectFile {
      * @return
      */
     public Component getComp();
+
+    /**
+     * Get handler of project file
+     *
+     * @return
+     */
+    public PFHandler getHandler();
+
+    /**
+     * Set visibility
+     *
+     * @param val true -> then project file is visible on tabbed pane (is
+     * selected on tabbed pane)
+     */
+    public void setVisible(boolean val);
+
+    /**
+     * Is visible (selected) in tabbed pane
+     *
+     * @return
+     */
+    public boolean isVisible();
+
+    /**
+     * Get project
+     *
+     * @return
+     */
+    public Project getProject();
+
+    /**
+     * Select project file in project
+     */
+    public void selectInProject();
 
 }

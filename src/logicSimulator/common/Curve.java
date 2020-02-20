@@ -14,7 +14,7 @@ import java.io.Serializable;
  *
  * @author Martin
  */
-public class Curve implements Serializable {
+public class Curve implements Serializable, GraphicsObject {
 
     public Point.Double.Double p1, p2, control;
 
@@ -24,6 +24,7 @@ public class Curve implements Serializable {
         this.p2 = p2;
     }
 
+    @Override
     public void draw(Graphics2D g2, int xOff, int yOff) {
         QuadCurve2D.Double curve = new QuadCurve2D.Double(
                 p1.x + xOff,
@@ -36,9 +37,15 @@ public class Curve implements Serializable {
         g2.draw(curve);
     }
 
+    @Override
     public Curve cloneObject() {
         Curve c = new Curve(Tools.copy(this.p1), Tools.copy(this.control), Tools.copy(this.p2));
         return c;
+    }
+
+    @Override
+    public Point.Double[] getPoints() {
+        return new Point.Double[]{this.p1, this.p2, this.control};
     }
 
 }

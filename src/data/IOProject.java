@@ -11,14 +11,18 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import logicSimulator.projectFile.HEXEditor;
 import logicSimulator.LogicSimulatorCore;
-import logicSimulator.ModuleEditor;
+import logicSimulator.projectFile.ModuleEditor;
+import logicSimulator.PFMode;
 import logicSimulator.Project;
 import logicSimulator.ProjectFile;
-import logicSimulator.WorkSpace;
+import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.common.Propertie;
 import logicSimulator.Tools;
+import logicSimulator.WorkSpaceObject;
 import logicSimulator.common.LogicModule;
+import logicSimulator.objects.displays.VectorScreen;
 
 /**
  * Save or open project
@@ -44,13 +48,16 @@ public class IOProject {
      * @throws IOException
      */
     public void save(File file) throws IOException, Exception {
+        //set location of project main file
+        this.project.setFile(file);
+
         //create project main file
         PropertieWriter writer = new PropertieWriter(file.toString());
         List<Propertie> propts = new ArrayList<>();
 
         //project file linker
-        for (int i = 0; i < project.getProjectFiles().size(); i++) {
-            ProjectFile pf = project.getProjectFiles().get(i);
+        for (int i = 0; i < this.project.getProjectFiles().size(); i++) {
+            ProjectFile pf = this.project.getProjectFiles().get(i);
             if (pf == null) {
                 continue;
             }
@@ -60,6 +67,8 @@ public class IOProject {
                 type = LogicSimulatorCore.WORKSPACE_FILE_TYPE;
             } else if (pf instanceof ModuleEditor) {
                 type = LogicSimulatorCore.MODULE_FILE_TYPE;
+            } else if (pf instanceof HEXEditor) {
+                type = LogicSimulatorCore.HEX_FILE_TYPE;
             }
             //add to linker
             if (pf.getComp() != null) {
@@ -72,20 +81,34 @@ public class IOProject {
             }
         }
 
-        //selected
-        propts.add(new Propertie("selected",
-                this.project.getProjectFiles().indexOf(this.project.getSelectedFile())
-        ));
-        writer.writeFile(propts);
-
-        //opened
-        String opened = "";
+        //visible (on the top of tabbed pane view)
+        String sel = "";
         for (int i = 0; i < this.project.getProjectFiles().size(); i++) {
-            if (this.project.getProjectFiles().get(i).isOpened()) {
-                opened += i + ",";
+            ProjectFile pf = this.project.getProjectFiles().get(i);
+            if (pf.isVisible()) {
+                sel += i + ",";
             }
         }
-        propts.add(new Propertie("opened", opened));
+
+        propts.add(new Propertie("visible", sel));
+        writer.writeFile(propts);
+
+        //opened project files (in some tabbed pane)
+        String opened_left = "", opened_right = "";
+        for (int i = 0; i < this.project.getProjectFiles().size(); i++) {
+            ProjectFile pf = this.project.getProjectFiles().get(i);
+            if (pf.getPFMode().OPENED) {
+                if (pf.getPFMode().LEFT_SIDE) {
+                    opened_left += i + ",";
+                } else {
+                    opened_right += i + ",";
+                }
+            }
+        }
+        propts.add(new Propertie("opened_left", opened_left));
+        propts.add(new Propertie("opened_right", opened_right));
+
+        //write propt file
         writer.writeFile(propts);
 
         //create files for all project file
@@ -97,21 +120,41 @@ public class IOProject {
                         new File(file.getAbsoluteFile().getParent() + "/"
                                 + ws.getName() + "." + LogicSimulatorCore.WORKSPACE_FILE_TYPE)
                 );
-                try ( ObjectOutputStream objectOut = new ObjectOutputStream(fileOut)) {
+
+                //delete all useless data and not serializable data
+                deleteDateBeforeSave(ws.getObjects());
+
+                try (ObjectOutputStream objectOut = new ObjectOutputStream(fileOut)) {
                     //all object of workspace write to one file
                     objectOut.writeObject(ws.getObjects());
                 }
             } else if (pf instanceof ModuleEditor) {
-                //MODULE
+                //MODULE EDITOR
                 ModuleEditor me = (ModuleEditor) pf;
                 FileOutputStream fileOut = new FileOutputStream(
                         new File(file.getAbsoluteFile().getParent() + "/"
                                 + me.getName() + "." + LogicSimulatorCore.MODULE_FILE_TYPE)
                 );
-                try ( ObjectOutputStream objectOut = new ObjectOutputStream(fileOut)) {
+                try (ObjectOutputStream objectOut = new ObjectOutputStream(fileOut)) {
                     //write module to file
                     LogicModule logicModule = me.getModule();
+
+                    //delete all useless data and not serializable data
+                    deleteDateBeforeSave(logicModule.getLogicModel());
+
                     objectOut.writeObject(logicModule);
+                }
+            } else if (pf instanceof HEXEditor) {
+                //HEX EDITOR
+                HEXEditor he = (HEXEditor) pf;
+                FileOutputStream fileOut = new FileOutputStream(
+                        new File(file.getAbsoluteFile().getParent() + "/"
+                                + he.getName() + "." + LogicSimulatorCore.HEX_FILE_TYPE)
+                );
+
+                try (ObjectOutputStream objectOut = new ObjectOutputStream(fileOut)) {
+                    //all object of workspace write to one file
+                    objectOut.writeObject(he.getSaveData());
                 }
             }
         }
@@ -139,14 +182,16 @@ public class IOProject {
             PropertieReader reader = new PropertieReader(LogicSimulatorCore.PROPT_PROJECTS);
             propts = reader.readFile();
             //if this project is in the list then must delete it
-            for (Propertie propt : propts) {
+            for (int i = 0; i < propts.size(); i++) {
+                Propertie propt = propts.get(i);
                 if (propt.getValueString().split(";")[0].equals(this.project.getFile().toString())) {
                     propts.remove(propt);
-                    break;
+                    i = -1;
                 }
             }
         } catch (Exception ex) {
         }
+        //name: project name value: project location;time
         propts.add(new Propertie(this.project.getName(), this.project.getFile().toString() + ";"
                 + LogicSimulatorCore.getDate("HH:mm:ss - dd.MM.yyyy")));
         writer.writeFile(propts);
@@ -165,45 +210,71 @@ public class IOProject {
 
         this.project.setFile(new File(projectFile));
 
-        int selected = 0;
-        String opened = "";
+        List<Integer> visible = new ArrayList<>();
+        String opened_left = "", opened_right = "";
 
         String dirPath = (new File(projectFile)).getAbsoluteFile().getParent() + "\\";
 
-        //load all workspaces
+        //load all project files
         for (Propertie propt : subfiles) {
-            try {
-                File f = new File(dirPath + propt.getValueString());
-                if (propt.getName().startsWith(LogicSimulatorCore.WORKSPACE_FILE_TYPE)) {
-                    //workspace
-                    Tools.loadWorkspaceFromFile(f, project);
+            File f = new File(dirPath + propt.getValueString());
+            if (propt.getName().startsWith(LogicSimulatorCore.WORKSPACE_FILE_TYPE)) {
+                //workspace
+                Tools.loadWorkspaceFromFile(f, project);
+            } else if (propt.getName().startsWith(LogicSimulatorCore.MODULE_FILE_TYPE)) {
+                //module
+                Tools.loadModuleEditorFromFile(f, project);
+            } else if (propt.getName().startsWith(LogicSimulatorCore.HEX_FILE_TYPE)) {
+                //hex
+                Tools.loadHEXEditorFromFile(f, project);
+            } else if (propt.getName().equals("visible")) {
+                //store visible index
+                String[] arr = propt.getValueString().split(",");
+                for (String arr1 : arr) {
+                    try {
+                        visible.add(Integer.parseInt(arr1));
+                    } catch (NumberFormatException ex) {
+                    }
                 }
-                if (propt.getName().startsWith(LogicSimulatorCore.MODULE_FILE_TYPE)) {
-                    //module
-                    Tools.loadModuleEditorFromFile(f, project);
-                } else if (propt.getName().equals("selected")) {
-                    //store select index to variable
-                    selected = propt.getValueInt();
-                } else if (propt.getName().equals("opened")) {
-                    //store all opened workspaces
-                    opened = propt.getValueString();
-                }
-            } catch (Exception ex) {
+            } else if (propt.getName().equals("opened_left")) {
+                //store all opened workspaces
+                opened_left = propt.getValueString();
+            } else if (propt.getName().equals("opened_right")) {
+                //store all opened workspaces
+                opened_right = propt.getValueString();
             }
         }
 
-        //set selected workspace
-        if (selected < this.project.getProjectFiles().size() && selected >= 0) {
-            this.project.setSelectedFile(this.project.getProjectFiles().get(selected));
-        }
+        //set visble for project files
+        visible.stream()
+                .filter((v) -> (v < this.project.getProjectFiles().size() && v >= 0))
+                .forEachOrdered((v) -> {
+                    this.project.getProjectFiles().get(v).setVisible(true);
+                });
 
         //set open for all opened workspaces 
-        String[] indexes = opened.split(",");
+        //left
+        String[] indexes = opened_left.split(",");
         for (String index : indexes) {
             try {
                 int i = Integer.parseInt(index);
                 if (i >= 0 && i < this.project.getProjectFiles().size()) {
-                    this.project.getProjectFiles().get(i).setOpened(true);
+                    PFMode pfm = this.project.getProjectFiles().get(i).getPFMode();
+                    pfm.OPENED = true;
+                    pfm.LEFT_SIDE = true;
+                }
+            } catch (NumberFormatException ex) {
+            }
+        }
+        //right
+        indexes = opened_right.split(",");
+        for (String index : indexes) {
+            try {
+                int i = Integer.parseInt(index);
+                if (i >= 0 && i < this.project.getProjectFiles().size()) {
+                    PFMode pfm = this.project.getProjectFiles().get(i).getPFMode();
+                    pfm.OPENED = true;
+                    pfm.LEFT_SIDE = false;
                 }
             } catch (NumberFormatException ex) {
             }
@@ -225,7 +296,7 @@ public class IOProject {
                             //set pf2 workspace as logic model for "module"
                             module.setLogicModel((WorkSpace) pf2);
                             //set pf2 workspace for module editor
-                            ((ModuleEditor)pf).setWorkSpace((WorkSpace) pf2);
+                            ((ModuleEditor) pf).setWorkSpace((WorkSpace) pf2);
                             break;
                         }
                     }
@@ -267,18 +338,19 @@ public class IOProject {
     /**
      * Delete file of project from disk and from project link list
      *
-     * @param fileName File name
+     * @param file File name and file type
      */
-    public void deleteFile(String fileName) {
+    public void deleteFile(String file) {
         try {
             //rename file
-            File f = new File(this.project.getFile().getAbsoluteFile().getParent() + "/" + fileName);
+            File f = new File(this.project.getFile().getAbsoluteFile().getParent() + "/" + file);
+            System.out.println(">" + f);
             f.delete();
             //remove file from link list of project
             PropertieReader reader = new PropertieReader(this.project.getFile().toString());
             List<Propertie> propts = reader.readFile();
             for (Propertie p : propts) {
-                if (p.getValueString().equals(fileName)) {
+                if (p.getValueString().equals(file)) {
                     propts.remove(p);
                     break;
                 }
@@ -288,6 +360,19 @@ public class IOProject {
             write.writeFile(propts);
         } catch (Exception ex) {
         }
+    }
+
+    /**
+     * Delete all useless data and non serializable data
+     *
+     * @param objects list with objects
+     */
+    private void deleteDateBeforeSave(List<WorkSpaceObject> objects) {
+        objects.stream().forEach((obj) -> {
+            if (obj instanceof VectorScreen) {
+                ((VectorScreen) obj).clearData();
+            }
+        });
     }
 
 }

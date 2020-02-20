@@ -18,6 +18,9 @@ import logicSimulator.ui.Fonts;
  */
 public class IOPin implements Serializable {
 
+    //if is true than render label of pin
+    public boolean VisibleName = false;
+
     //pin mode: INPUT, OUTPUT or IO
     public static enum MODE implements Serializable {
         INPUT, //input can be used only for bit receiving
@@ -26,16 +29,26 @@ public class IOPin implements Serializable {
         LINKER;     //for wire connecting using bridge
     }
 
+    //label
     private String label = "";
 
+    //mode of pin
     public final IOPin.MODE mode;
 
+    //value of pin and last value
     private boolean[] value, lastVal;
 
+    //wire connected to this io pin
     protected Wire connectedWire;
 
+    //position of this pin
     private final Point.Double position;
 
+    /**
+     * If this is null than output pin write its value for all connected input
+     * pins, if is not null than value will be writed only if in "writeOnly" is
+     * on same position true
+     */
     public boolean[] writeOnly = null;
 
     public String ID;
@@ -147,7 +160,7 @@ public class IOPin implements Serializable {
      * Write value on wire, all input and io pins values will be changed
      */
     public void writeValue() {
-        if (this.mode != IOPin.MODE.OUTPUT) {
+        if (this.mode != IOPin.MODE.OUTPUT || this.value.length == 0) {
             return;
         }
         //update values for all input and common pins 
@@ -223,7 +236,8 @@ public class IOPin implements Serializable {
                 5, 5
         );
         //draw label
-        if (this.label.length() != 0) {
+
+        if (this.label.length() != 0 && this.VisibleName) {
             /**
              * Off set for label: if is on left side of model the draw it more
              * on left side in ride side is it same but on right, center line of
@@ -231,6 +245,7 @@ public class IOPin implements Serializable {
              *
              */
             g2.setFont(Fonts.IOPIN);
+            g2.setColor(Colors.TEXT);
             int labelOffset = this.position.x < 0 ? - 9 - g2.getFontMetrics().stringWidth(this.label) : 9;
             //draw
             g2.drawString(

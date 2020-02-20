@@ -15,5 +15,7 @@ public interface LSComponent {
     public void init(LogicSimulatorCore core, PropertieReader propt) throws Exception;
  
     public void run();
+
+    public void stop();
     
 }

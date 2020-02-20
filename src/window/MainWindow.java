@@ -6,11 +6,14 @@ package window;
 
 import data.IOProject;
 import data.PropertieReader;
+import data.SystemClosing;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
-import java.awt.Font;
+import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -18,25 +21,29 @@ import java.util.logging.Logger;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileFilter;
 import logicSimulator.ComputeCore;
 import logicSimulator.LSComponent;
 import logicSimulator.LogicSimulatorCore;
+import logicSimulator.projectFile.ModuleEditor;
 import logicSimulator.Project;
 import logicSimulator.ProjectFile;
 import logicSimulator.Tools;
-import logicSimulator.WorkSpace;
+import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.WorkSpaceObject;
-import logicSimulator.objects.Text;
+import logicSimulator.common.Propertie;
 import logicSimulator.ui.ButtonHQ;
+import logicSimulator.ui.MenuItemHQ;
 import logicSimulator.ui.SystemResources;
-import window.components.Graph;
+import logicSimulator.PFTwoSlotViewer;
+import window.components.NumberChooser;
 import window.components.ProjectTreeView;
 import window.components.PropertieEditor;
-import window.components.TabbedPaneCloseButton;
 
 /**
  *
@@ -53,9 +60,6 @@ public class MainWindow extends JFrame implements LSComponent {
     //project
     private Project project;
 
-    //thread
-    private Thread thread;
-
     //utilities
     private final ComponentChooser componentChooser;
 
@@ -63,8 +67,10 @@ public class MainWindow extends JFrame implements LSComponent {
      * Creates new form MainWindow
      */
     public MainWindow() {
+
         //init all from components
         initComponents();
+
         //maximize window
         this.setExtendedState(this.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 
@@ -78,10 +84,14 @@ public class MainWindow extends JFrame implements LSComponent {
                 //on propertie change reconect all object in selected workspace
                 ComputeCore.CircuitHandler.refreshConnectivity(w.getObjects());
                 //rapaint
-                w.getHandler().repaint();
+                w.getHandler().repaintPF();
             }
         });
 
+        //value changed listener ups controler (for compute core)
+        ((NumberChooser) this.ups).setValueChangedEvent((ActionEvent e) -> {
+            this.comuteCore.setUPS(((NumberChooser) this.ups).getValue());
+        });
     }
 
     /**
@@ -93,7 +103,6 @@ public class MainWindow extends JFrame implements LSComponent {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        buttonGroup1 = new javax.swing.ButtonGroup();
         jPanelBody = new javax.swing.JPanel();
         jToolBarMain = new javax.swing.JToolBar();
         jButtonEdit = new ButtonHQ();
@@ -110,10 +119,12 @@ public class MainWindow extends JFrame implements LSComponent {
         jToolBarSimulating = new javax.swing.JToolBar();
         jButtonRun = new ButtonHQ();
         jButtonStop = new ButtonHQ();
+        jButtonStep = new ButtonHQ();
+        ups = new NumberChooser(" UPS",100, 10, 1, 1000000);
         jToolBarOther = new javax.swing.JToolBar();
         jButtonHelp = new ButtonHQ();
         jToolBarComponents = new javax.swing.JToolBar();
-        jComboBoxLastAdded = new javax.swing.JComboBox<>();
+        jComboBoxLastPlaced = new javax.swing.JComboBox<>();
         jSplitPaneBody = new javax.swing.JSplitPane();
         jSplitPaneLeft = new javax.swing.JSplitPane();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -121,38 +132,64 @@ public class MainWindow extends JFrame implements LSComponent {
         jPanel1 = new javax.swing.JPanel();
         jScrollPane3 = new javax.swing.JScrollPane();
         jTableProperties = new PropertieEditor();
-        jSplitPaneRight = new javax.swing.JSplitPane();
-        jTabbedPane = new javax.swing.JTabbedPane();
-        jScrollPaneSimulation = new javax.swing.JScrollPane();
-        jPanelSimulation3 = new javax.swing.JPanel();
-        timingGraph = new Graph();
-        jRadioButton1 = new javax.swing.JRadioButton();
-        jRadioButton2 = new javax.swing.JRadioButton();
-        jLabelUPS = new javax.swing.JLabel();
-        jSliderUPS = new javax.swing.JSlider();
-        jButtonNextstep = new javax.swing.JButton();
-        jButtonNextstep1 = new javax.swing.JButton();
+        pfdockingPanel = new PFTwoSlotViewer();
         jToolBar1 = new javax.swing.JToolBar();
-        jLabelZoom = new javax.swing.JLabel();
-        jSeparator1 = new javax.swing.JToolBar.Separator();
-        jLabelTiming = new javax.swing.JLabel();
-        jSeparator2 = new javax.swing.JToolBar.Separator();
-        jLabel2 = new javax.swing.JLabel();
-        jProgressBarMemoryUsage = new javax.swing.JProgressBar();
+        jLabelSimulation = new javax.swing.JLabel();
         jMenuBarMain = new javax.swing.JMenuBar();
         jMenuFile = new javax.swing.JMenu();
-        jMenuItemSave = new javax.swing.JMenuItem();
-        jMenuItemOpen = new javax.swing.JMenuItem();
+        jMenuItemNewFileProject = new MenuItemHQ();
+        jMenuItemNewFile = new MenuItemHQ();
+        jSeparator5 = new javax.swing.JPopupMenu.Separator();
+        jMenuItemOpenProject = new MenuItemHQ();
         jSeparator3 = new javax.swing.JPopupMenu.Separator();
-        jMenuItemAddNewFile = new javax.swing.JMenuItem();
+        jMenuItemSaveProject = new MenuItemHQ();
+        jMenuItemSaveProjectAs = new MenuItemHQ();
+        jSeparator4 = new javax.swing.JPopupMenu.Separator();
+        jMenuItemExport = new MenuItemHQ();
+        jSeparator9 = new javax.swing.JPopupMenu.Separator();
+        jMenuItemExit = new MenuItemHQ();
         jMenuEdit = new javax.swing.JMenu();
-        jMenuItemPlaceComponent = new javax.swing.JMenuItem();
-        jMenuItemPlaceComponent1 = new javax.swing.JMenuItem();
+        jMenuItemEndo = new MenuItemHQ();
+        jMenuItemRedo = new MenuItemHQ();
+        jSeparator7 = new javax.swing.JPopupMenu.Separator();
+        jMenuItemFindText = new MenuItemHQ();
+        jSeparator6 = new javax.swing.JPopupMenu.Separator();
+        jMenuItemFindObject = new MenuItemHQ();
+        jMenuItemPlaceComponent = new MenuItemHQ();
+        jMenu1 = new javax.swing.JMenu();
+        jMenuItemRename = new MenuItemHQ();
+        jMenuItemMove = new MenuItemHQ();
+        jMenuItemAddLibrary = new MenuItemHQ();
+        jMenuItemSettings = new MenuItemHQ();
+        jMenu2 = new javax.swing.JMenu();
+        jMenuItemRun = new MenuItemHQ();
+        jMenuItemStop = new MenuItemHQ();
+        jMenuItemStep = new MenuItemHQ();
+        jCheckBoxMenuItemShowUpdates = new javax.swing.JCheckBoxMenuItem();
+        jMenu3 = new javax.swing.JMenu();
+        jMenuItemSettingsGlobal = new MenuItemHQ();
+        jMenuItemColors = new MenuItemHQ();
+        jMenuItemWindows = new MenuItemHQ();
+        jMenuItemCheckForUpdates = new MenuItemHQ();
+        jMenu4 = new javax.swing.JMenu();
+        jMenuItemPrint = new MenuItemHQ();
+        jMenuItemPrintScreen = new MenuItemHQ();
+        jSeparator8 = new javax.swing.JPopupMenu.Separator();
+        jMenuItemPrint1 = new MenuItemHQ();
+        jMenuItemPrint2 = new MenuItemHQ();
+        jMenu5 = new javax.swing.JMenu();
+        jMenu6 = new javax.swing.JMenu();
+        jMenuItemTutorials = new MenuItemHQ();
+        jMenuItemAbout = new MenuItemHQ();
+        jMenuItemReportBugs = new MenuItemHQ();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("HL simulator");
         setIconImage(SystemResources.ICON);
         addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
             public void windowOpened(java.awt.event.WindowEvent evt) {
                 formWindowOpened(evt);
             }
@@ -333,6 +370,28 @@ public class MainWindow extends JFrame implements LSComponent {
         });
         jToolBarSimulating.add(jButtonStop);
 
+        jButtonStep.setIcon(SystemResources.TOOLBAR_STEP);
+        jButtonStep.setToolTipText("Step");
+        jButtonStep.setFocusable(false);
+        jButtonStep.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonStep.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        jButtonStep.setOpaque(false);
+        jButtonStep.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonStep.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonStepActionPerformed(evt);
+            }
+        });
+        jToolBarSimulating.add(jButtonStep);
+
+        ups.setForeground(new java.awt.Color(0, 0, 0));
+        ups.setText("UPS");
+        ups.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        ups.setMaximumSize(new java.awt.Dimension(75, 60));
+        ups.setMinimumSize(new java.awt.Dimension(75, 0));
+        ups.setPreferredSize(new java.awt.Dimension(25, 20));
+        jToolBarSimulating.add(ups);
+
         jToolBarMain.add(jToolBarSimulating);
 
         jToolBarOther.setRollover(true);
@@ -357,10 +416,15 @@ public class MainWindow extends JFrame implements LSComponent {
         jToolBarComponents.setRollover(true);
         jToolBarComponents.setName("Components"); // NOI18N
 
-        jComboBoxLastAdded.setMaximumSize(new java.awt.Dimension(95, 26));
-        jComboBoxLastAdded.setMinimumSize(new java.awt.Dimension(95, 26));
-        jToolBarComponents.add(jComboBoxLastAdded);
-        jComboBoxLastAdded.setRenderer(
+        jComboBoxLastPlaced.setMaximumSize(new java.awt.Dimension(95, 26));
+        jComboBoxLastPlaced.setMinimumSize(new java.awt.Dimension(95, 26));
+        jComboBoxLastPlaced.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jComboBoxLastPlacedActionPerformed(evt);
+            }
+        });
+        jToolBarComponents.add(jComboBoxLastPlaced);
+        jComboBoxLastPlaced.setRenderer(
             (JList<? extends Object[]> list, Object[] value, int index, boolean isSelected, boolean cellHasFocus) -> {
                 String text = "";
                 if(value != null){
@@ -433,147 +497,26 @@ public class MainWindow extends JFrame implements LSComponent {
 
             jSplitPaneBody.setLeftComponent(jSplitPaneLeft);
 
-            jSplitPaneRight.setBorder(null);
-            jSplitPaneRight.setDividerSize(5);
-
-            jTabbedPane.setMinimumSize(new java.awt.Dimension(200, 4));
-            jTabbedPane.addChangeListener(new javax.swing.event.ChangeListener() {
-                public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                    jTabbedPaneStateChanged(evt);
-                }
-            });
-            jSplitPaneRight.setLeftComponent(jTabbedPane);
-
-            jScrollPaneSimulation.setBorder(null);
-            jScrollPaneSimulation.setMinimumSize(new java.awt.Dimension(140, 7));
-            jScrollPaneSimulation.setPreferredSize(new java.awt.Dimension(200, 558));
-
-            jPanelSimulation3.setBorder(javax.swing.BorderFactory.createTitledBorder("Simulation"));
-            jPanelSimulation3.setMinimumSize(new java.awt.Dimension(140, 300));
-            jPanelSimulation3.setPreferredSize(new java.awt.Dimension(140, 555));
-
-            timingGraph.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-            timingGraph.setToolTipText("Graph of updates per second");
-
-            javax.swing.GroupLayout timingGraphLayout = new javax.swing.GroupLayout(timingGraph);
-            timingGraph.setLayout(timingGraphLayout);
-            timingGraphLayout.setHorizontalGroup(
-                timingGraphLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGap(0, 0, Short.MAX_VALUE)
+            javax.swing.GroupLayout pfdockingPanelLayout = new javax.swing.GroupLayout(pfdockingPanel);
+            pfdockingPanel.setLayout(pfdockingPanelLayout);
+            pfdockingPanelLayout.setHorizontalGroup(
+                pfdockingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGap(0, 565, Short.MAX_VALUE)
             );
-            timingGraphLayout.setVerticalGroup(
-                timingGraphLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGap(0, 203, Short.MAX_VALUE)
+            pfdockingPanelLayout.setVerticalGroup(
+                pfdockingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGap(0, 495, Short.MAX_VALUE)
             );
 
-            buttonGroup1.add(jRadioButton1);
-            jRadioButton1.setSelected(true);
-            jRadioButton1.setText("Auto run");
-            jRadioButton1.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jRadioButton1ActionPerformed(evt);
-                }
-            });
-
-            buttonGroup1.add(jRadioButton2);
-            jRadioButton2.setText("Manual");
-            jRadioButton2.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jRadioButton2ActionPerformed(evt);
-                }
-            });
-
-            jLabelUPS.setText("UPS: 50");
-
-            jSliderUPS.setMajorTickSpacing(25);
-            jSliderUPS.setMaximum(200);
-            jSliderUPS.setMinimum(1);
-            jSliderUPS.setPaintTicks(true);
-            jSliderUPS.setToolTipText("Updates per second");
-            jSliderUPS.addChangeListener(new javax.swing.event.ChangeListener() {
-                public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                    jSliderUPSStateChanged(evt);
-                }
-            });
-            jSliderUPS.addMouseListener(new java.awt.event.MouseAdapter() {
-                public void mouseReleased(java.awt.event.MouseEvent evt) {
-                    jSliderUPSMouseReleased(evt);
-                }
-            });
-
-            jButtonNextstep.setText("Next step");
-            jButtonNextstep.setEnabled(false);
-            jButtonNextstep.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jButtonNextstepActionPerformed(evt);
-                }
-            });
-
-            jButtonNextstep1.setText("Clear graph");
-            jButtonNextstep1.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jButtonNextstep1ActionPerformed(evt);
-                }
-            });
-
-            javax.swing.GroupLayout jPanelSimulation3Layout = new javax.swing.GroupLayout(jPanelSimulation3);
-            jPanelSimulation3.setLayout(jPanelSimulation3Layout);
-            jPanelSimulation3Layout.setHorizontalGroup(
-                jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanelSimulation3Layout.createSequentialGroup()
-                    .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(jPanelSimulation3Layout.createSequentialGroup()
-                            .addContainerGap()
-                            .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addGroup(jPanelSimulation3Layout.createSequentialGroup()
-                                    .addComponent(jLabelUPS, javax.swing.GroupLayout.PREFERRED_SIZE, 66, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(jSliderUPS, javax.swing.GroupLayout.DEFAULT_SIZE, 253, Short.MAX_VALUE))
-                                .addGroup(jPanelSimulation3Layout.createSequentialGroup()
-                                    .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addGroup(jPanelSimulation3Layout.createSequentialGroup()
-                                            .addComponent(jRadioButton1)
-                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                            .addComponent(jRadioButton2))
-                                        .addGroup(jPanelSimulation3Layout.createSequentialGroup()
-                                            .addComponent(jButtonNextstep)
-                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                            .addComponent(jButtonNextstep1)))
-                                    .addGap(0, 0, Short.MAX_VALUE))))
-                        .addComponent(timingGraph, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addContainerGap())
-            );
-            jPanelSimulation3Layout.setVerticalGroup(
-                jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelSimulation3Layout.createSequentialGroup()
-                    .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jRadioButton1)
-                        .addComponent(jRadioButton2))
-                    .addGap(0, 0, 0)
-                    .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                        .addComponent(jSliderUPS, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jLabelUPS, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGap(0, 0, 0)
-                    .addGroup(jPanelSimulation3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jButtonNextstep)
-                        .addComponent(jButtonNextstep1))
-                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                    .addComponent(timingGraph, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(232, Short.MAX_VALUE))
-            );
-
-            jScrollPaneSimulation.setViewportView(jPanelSimulation3);
-
-            jSplitPaneRight.setRightComponent(jScrollPaneSimulation);
-
-            jSplitPaneBody.setRightComponent(jSplitPaneRight);
+            jSplitPaneBody.setRightComponent(pfdockingPanel);
+            pfdockingPanel.setLayout(new GridLayout());
 
             javax.swing.GroupLayout jPanelBodyLayout = new javax.swing.GroupLayout(jPanelBody);
             jPanelBody.setLayout(jPanelBodyLayout);
             jPanelBodyLayout.setHorizontalGroup(
                 jPanelBodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addComponent(jToolBarMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jSplitPaneBody, javax.swing.GroupLayout.DEFAULT_SIZE, 770, Short.MAX_VALUE)
+                .addComponent(jSplitPaneBody)
             );
             jPanelBodyLayout.setVerticalGroup(
                 jPanelBodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -586,54 +529,115 @@ public class MainWindow extends JFrame implements LSComponent {
             jToolBar1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
             jToolBar1.setFloatable(false);
 
-            jLabelZoom.setText("Zoom: 100%");
-            jToolBar1.add(jLabelZoom);
-            jToolBar1.add(jSeparator1);
-
-            jLabelTiming.setText(" Timing:  50ups ");
-            jToolBar1.add(jLabelTiming);
-            jToolBar1.add(jSeparator2);
-
-            jLabel2.setText(" Memory usage: ");
-            jToolBar1.add(jLabel2);
-
-            jProgressBarMemoryUsage.setMaximumSize(new java.awt.Dimension(200, 12));
-            jProgressBarMemoryUsage.setStringPainted(true);
-            jToolBar1.add(jProgressBarMemoryUsage);
+            jLabelSimulation.setText(" UPS:-");
+            jToolBar1.add(jLabelSimulation);
 
             jMenuFile.setText("File");
 
-            jMenuItemSave.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
-            jMenuItemSave.setText("Save");
-            jMenuItemSave.addActionListener(new java.awt.event.ActionListener() {
+            jMenuItemNewFileProject.setIcon(SystemResources.TOOLBAR_NEWPROJECT);
+            jMenuItemNewFileProject.setText("New project");
+            jMenuItemNewFileProject.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemSaveActionPerformed(evt);
+                    jMenuItemNewFileProjectActionPerformed(evt);
                 }
             });
-            jMenuFile.add(jMenuItemSave);
+            jMenuFile.add(jMenuItemNewFileProject);
 
-            jMenuItemOpen.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
-            jMenuItemOpen.setText("Open");
-            jMenuItemOpen.addActionListener(new java.awt.event.ActionListener() {
+            jMenuItemNewFile.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, java.awt.event.InputEvent.CTRL_MASK));
+            jMenuItemNewFile.setIcon(SystemResources.TOOLBAR_NEWFILE);
+            jMenuItemNewFile.setText("New file");
+            jMenuItemNewFile.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemOpenActionPerformed(evt);
+                    jMenuItemNewFileActionPerformed(evt);
                 }
             });
-            jMenuFile.add(jMenuItemOpen);
+            jMenuFile.add(jMenuItemNewFile);
+            jMenuFile.add(jSeparator5);
+
+            jMenuItemOpenProject.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
+            jMenuItemOpenProject.setIcon(SystemResources.TOOLBAR_OPENPROJECT);
+            jMenuItemOpenProject.setText("Open project");
+            jMenuItemOpenProject.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemOpenProjectActionPerformed(evt);
+                }
+            });
+            jMenuFile.add(jMenuItemOpenProject);
             jMenuFile.add(jSeparator3);
 
-            jMenuItemAddNewFile.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, java.awt.event.InputEvent.CTRL_MASK));
-            jMenuItemAddNewFile.setText("Add new file");
-            jMenuItemAddNewFile.addActionListener(new java.awt.event.ActionListener() {
+            jMenuItemSaveProject.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
+            jMenuItemSaveProject.setIcon(SystemResources.TOOLBAR_SAVE);
+            jMenuItemSaveProject.setText("Save project");
+            jMenuItemSaveProject.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemAddNewFileActionPerformed(evt);
+                    jMenuItemSaveProjectActionPerformed(evt);
                 }
             });
-            jMenuFile.add(jMenuItemAddNewFile);
+            jMenuFile.add(jMenuItemSaveProject);
+
+            jMenuItemSaveProjectAs.setIcon(SystemResources.TOOLBAR_SAVE);
+            jMenuItemSaveProjectAs.setText("Save project as...");
+            jMenuItemSaveProjectAs.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemSaveProjectAsActionPerformed(evt);
+                }
+            });
+            jMenuFile.add(jMenuItemSaveProjectAs);
+            jMenuFile.add(jSeparator4);
+
+            jMenuItemExport.setText("Export library");
+            jMenuFile.add(jMenuItemExport);
+            jMenuFile.add(jSeparator9);
+
+            jMenuItemExit.setText("Exit");
+            jMenuItemExit.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemExitActionPerformed(evt);
+                }
+            });
+            jMenuFile.add(jMenuItemExit);
 
             jMenuBarMain.add(jMenuFile);
 
             jMenuEdit.setText("Edit");
+
+            jMenuItemEndo.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, java.awt.event.InputEvent.CTRL_MASK));
+            jMenuItemEndo.setIcon(SystemResources.TOOLBAR_UNDO);
+            jMenuItemEndo.setText("Endo");
+            jMenuItemEndo.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemEndoActionPerformed(evt);
+                }
+            });
+            jMenuEdit.add(jMenuItemEndo);
+
+            jMenuItemRedo.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Y, java.awt.event.InputEvent.CTRL_MASK));
+            jMenuItemRedo.setIcon(SystemResources.TOOLBAR_REDO);
+            jMenuItemRedo.setText("Redo");
+            jMenuItemRedo.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemRedoActionPerformed(evt);
+                }
+            });
+            jMenuEdit.add(jMenuItemRedo);
+            jMenuEdit.add(jSeparator7);
+
+            jMenuItemFindText.setText("Find text");
+            jMenuItemFindText.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemFindTextActionPerformed(evt);
+                }
+            });
+            jMenuEdit.add(jMenuItemFindText);
+            jMenuEdit.add(jSeparator6);
+
+            jMenuItemFindObject.setText("Find object");
+            jMenuItemFindObject.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemFindObjectActionPerformed(evt);
+                }
+            });
+            jMenuEdit.add(jMenuItemFindObject);
 
             jMenuItemPlaceComponent.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W, java.awt.event.InputEvent.CTRL_MASK));
             jMenuItemPlaceComponent.setText("Place component");
@@ -644,16 +648,122 @@ public class MainWindow extends JFrame implements LSComponent {
             });
             jMenuEdit.add(jMenuItemPlaceComponent);
 
-            jMenuItemPlaceComponent1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.CTRL_MASK));
-            jMenuItemPlaceComponent1.setText("Add text");
-            jMenuItemPlaceComponent1.addActionListener(new java.awt.event.ActionListener() {
+            jMenuBarMain.add(jMenuEdit);
+
+            jMenu1.setText("Project");
+
+            jMenuItemRename.setText("Rename");
+            jMenu1.add(jMenuItemRename);
+
+            jMenuItemMove.setText("Move");
+            jMenu1.add(jMenuItemMove);
+
+            jMenuItemAddLibrary.setText("Add library");
+            jMenu1.add(jMenuItemAddLibrary);
+
+            jMenuItemSettings.setIcon(SystemResources.TOOLBAR_SETTINGS);
+            jMenuItemSettings.setText("Settings");
+            jMenu1.add(jMenuItemSettings);
+
+            jMenuBarMain.add(jMenu1);
+
+            jMenu2.setText("Simulation");
+
+            jMenuItemRun.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F5, 0));
+            jMenuItemRun.setIcon(SystemResources.TOOLBAR_RUN);
+            jMenuItemRun.setText("Run");
+            jMenuItemRun.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemPlaceComponent1ActionPerformed(evt);
+                    jMenuItemRunActionPerformed(evt);
                 }
             });
-            jMenuEdit.add(jMenuItemPlaceComponent1);
+            jMenu2.add(jMenuItemRun);
 
-            jMenuBarMain.add(jMenuEdit);
+            jMenuItemStop.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F6, 0));
+            jMenuItemStop.setIcon(SystemResources.TOOLBAR_STOP);
+            jMenuItemStop.setText("Stop");
+            jMenuItemStop.setEnabled(false);
+            jMenuItemStop.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemStopActionPerformed(evt);
+                }
+            });
+            jMenu2.add(jMenuItemStop);
+
+            jMenuItemStep.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F7, 0));
+            jMenuItemStep.setIcon(SystemResources.TOOLBAR_STEP);
+            jMenuItemStep.setText("Step");
+            jMenuItemStep.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemStepActionPerformed(evt);
+                }
+            });
+            jMenu2.add(jMenuItemStep);
+
+            jCheckBoxMenuItemShowUpdates.setText("Show updates");
+            jCheckBoxMenuItemShowUpdates.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jCheckBoxMenuItemShowUpdatesActionPerformed(evt);
+                }
+            });
+            jMenu2.add(jCheckBoxMenuItemShowUpdates);
+
+            jMenuBarMain.add(jMenu2);
+
+            jMenu3.setText("Global");
+
+            jMenuItemSettingsGlobal.setIcon(SystemResources.TOOLBAR_SETTINGS);
+            jMenuItemSettingsGlobal.setText("Settings");
+            jMenu3.add(jMenuItemSettingsGlobal);
+
+            jMenuItemColors.setText("Colors");
+            jMenu3.add(jMenuItemColors);
+
+            jMenuItemWindows.setText("Windows");
+            jMenu3.add(jMenuItemWindows);
+
+            jMenuItemCheckForUpdates.setText("Check for updates");
+            jMenu3.add(jMenuItemCheckForUpdates);
+
+            jMenuBarMain.add(jMenu3);
+
+            jMenu4.setText("Tools");
+
+            jMenuItemPrint.setText("Print");
+            jMenu4.add(jMenuItemPrint);
+
+            jMenuItemPrintScreen.setText("PrintScreen");
+            jMenu4.add(jMenuItemPrintScreen);
+            jMenu4.add(jSeparator8);
+
+            jMenuItemPrint1.setText("IO  analysis");
+            jMenu4.add(jMenuItemPrint1);
+
+            jMenuItemPrint2.setText("Object  analysis");
+            jMenu4.add(jMenuItemPrint2);
+
+            jMenu5.setText("Utilities");
+            jMenu4.add(jMenu5);
+
+            jMenuBarMain.add(jMenu4);
+
+            jMenu6.setText("Help");
+
+            jMenuItemTutorials.setText("Tutorials");
+            jMenu6.add(jMenuItemTutorials);
+
+            jMenuItemAbout.setText("About");
+            jMenuItemAbout.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    jMenuItemAboutActionPerformed(evt);
+                }
+            });
+            jMenu6.add(jMenuItemAbout);
+
+            jMenuItemReportBugs.setText("Report bugs");
+            jMenu6.add(jMenuItemReportBugs);
+
+            jMenuBarMain.add(jMenu6);
 
             setJMenuBar(jMenuBarMain);
 
@@ -678,30 +788,26 @@ public class MainWindow extends JFrame implements LSComponent {
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         //windows opened
-        this.jSplitPaneRight.setDividerLocation(0.8f);
         this.jSplitPaneLeft.setDividerLocation(0.6f);
-
-        ProjectFile selected = this.project.getSelectedFile();
 
         //add all opened project
         this.project.getProjectFiles().stream().forEach((pf) -> {
-            if (pf.isOpened()) {
-                displayProjectFile(pf);
+            if (pf.getPFMode().OPENED) {
+                ((PFTwoSlotViewer) this.pfdockingPanel).displayProjectFile(pf);
             }
         });
 
-        //display selected workspace
-        if (selected != null) {
-            this.displayProjectFile(selected);
-        }
-    }//GEN-LAST:event_formWindowOpened
+        //display visible project file (select in tab)
+        this.project.getProjectFiles().stream().forEach((pf) -> {
+            if (pf.getPFMode().VISIBLE) {
+                ((PFTwoSlotViewer) this.pfdockingPanel).displayProjectFile(pf);
 
-    private void jTabbedPaneStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jTabbedPaneStateChanged
-        //select current opened workspace
-        this.project.setSelectedFile(
-                (ProjectFile) this.jTabbedPane.getSelectedComponent()
-        );
-    }//GEN-LAST:event_jTabbedPaneStateChanged
+            }
+        });
+
+        //refresh layout of tabbed panels
+        ((PFTwoSlotViewer) this.pfdockingPanel).refreshLayout();
+    }//GEN-LAST:event_formWindowOpened
 
     private void jButtonEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonEditActionPerformed
         this.project.editMode = true;
@@ -726,41 +832,9 @@ public class MainWindow extends JFrame implements LSComponent {
         });
     }//GEN-LAST:event_jButtonControlActionPerformed
 
-    private void jRadioButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButton1ActionPerformed
-        //auto run
-        this.jSliderUPS.setEnabled(true);
-        this.jButtonNextstep.setEnabled(false);
-        this.comuteCore.startComputing();
-    }//GEN-LAST:event_jRadioButton1ActionPerformed
-
-    private void jRadioButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButton2ActionPerformed
-        //auto run
-        this.jSliderUPS.setEnabled(false);
-        this.jButtonNextstep.setEnabled(true);
-        this.comuteCore.stopComputing();
-        this.jLabelTiming.setText("Timing: - ");
-    }//GEN-LAST:event_jRadioButton2ActionPerformed
-
-    private void jSliderUPSStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jSliderUPSStateChanged
-        this.jLabelUPS.setText("UPS: " + this.jSliderUPS.getValue());
-    }//GEN-LAST:event_jSliderUPSStateChanged
-
-    private void jSliderUPSMouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSliderUPSMouseReleased
-        this.comuteCore.setUPS(this.jSliderUPS.getValue());
-    }//GEN-LAST:event_jSliderUPSMouseReleased
-
-    private void jButtonNextstepActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonNextstepActionPerformed
-        //compute step
-        this.comuteCore.step();
-    }//GEN-LAST:event_jButtonNextstepActionPerformed
-
-    private void jButtonNextstep1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonNextstep1ActionPerformed
+    private void jMenuItemOpenProjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemOpenProjectActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jButtonNextstep1ActionPerformed
-
-    private void jMenuItemOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemOpenActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jMenuItemOpenActionPerformed
+    }//GEN-LAST:event_jMenuItemOpenProjectActionPerformed
 
     private void jMenuItemPlaceComponentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemPlaceComponentActionPerformed
         if (this.project.editMode) {
@@ -773,32 +847,17 @@ public class MainWindow extends JFrame implements LSComponent {
         }
     }//GEN-LAST:event_jMenuItemPlaceComponentActionPerformed
 
-    private void jMenuItemSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSaveActionPerformed
+    private void jMenuItemSaveProjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSaveProjectActionPerformed
         //save project
-        saveProject();
-    }//GEN-LAST:event_jMenuItemSaveActionPerformed
+        saveProject(this.project.getFile());
+    }//GEN-LAST:event_jMenuItemSaveProjectActionPerformed
 
-    private void jMenuItemAddNewFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemAddNewFileActionPerformed
+    private void jMenuItemNewFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemNewFileActionPerformed
         (new NewFile(this, this.project)).setVisible(true);
-    }//GEN-LAST:event_jMenuItemAddNewFileActionPerformed
-
-    private void jMenuItemPlaceComponent1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemPlaceComponent1ActionPerformed
-        //add text to object list of selected workspace
-        ProjectFile pf = this.project.getSelectedFile();
-        if (pf instanceof WorkSpace) {
-            WorkSpace w = (WorkSpace) pf;
-            List<WorkSpaceObject> objects = new ArrayList<>();
-            objects.add(new Text(
-                    "Text",
-                    w.getHandler().getCursorPosition(),
-                    new Font("tahoma", Font.PLAIN, 12)
-            ));
-            w.addNewObjects(objects);
-        }
-    }//GEN-LAST:event_jMenuItemPlaceComponent1ActionPerformed
+    }//GEN-LAST:event_jMenuItemNewFileActionPerformed
 
     private void jButtonNewFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonNewFileActionPerformed
-        // TODO add your handling code here:
+        (new NewFile(this, this.project)).setVisible(true);
     }//GEN-LAST:event_jButtonNewFileActionPerformed
 
     private void jButtonNewProjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonNewProjectActionPerformed
@@ -822,26 +881,165 @@ public class MainWindow extends JFrame implements LSComponent {
     }//GEN-LAST:event_jButtonSettingsActionPerformed
 
     private void jButtonSaveProjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSaveProjectActionPerformed
-        // TODO add your handling code here:
+        //save project
+        saveProject(this.project.getFile());
     }//GEN-LAST:event_jButtonSaveProjectActionPerformed
 
     private void jButtonRunActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonRunActionPerformed
-        //run simulation
-        this.comuteCore.RUN = true;
-        this.jButtonRun.setEnabled(false);
-        this.jButtonStop.setEnabled(true);
+        runSimulation();
     }//GEN-LAST:event_jButtonRunActionPerformed
 
     private void jButtonStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStopActionPerformed
-        //stop simulation
-        this.comuteCore.RUN = false;
-        this.jButtonRun.setEnabled(true);
-        this.jButtonStop.setEnabled(false);
+        stopSimulation();
     }//GEN-LAST:event_jButtonStopActionPerformed
 
     private void jButtonHelpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonHelpActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jButtonHelpActionPerformed
+
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        //close system
+        SystemClosing sc = new SystemClosing(this.core);
+        sc.saveProperties();
+        //exit program
+        this.core.getLSComponents().stream().forEach((ls) -> {
+            ls.stop();
+        });
+    }//GEN-LAST:event_formWindowClosing
+
+    private void jButtonStepActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStepActionPerformed
+        this.comuteCore.step();
+    }//GEN-LAST:event_jButtonStepActionPerformed
+
+    private void jMenuItemNewFileProjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemNewFileProjectActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jMenuItemNewFileProjectActionPerformed
+
+    private void jMenuItemEndoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemEndoActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jMenuItemEndoActionPerformed
+
+    private void jMenuItemRedoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemRedoActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jMenuItemRedoActionPerformed
+
+    private void jMenuItemFindTextActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemFindTextActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jMenuItemFindTextActionPerformed
+
+    private void jMenuItemFindObjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemFindObjectActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jMenuItemFindObjectActionPerformed
+
+    private void jMenuItemAboutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemAboutActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jMenuItemAboutActionPerformed
+
+    private void jMenuItemSaveProjectAsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSaveProjectAsActionPerformed
+        //save opened project as
+        JFileChooser chooser = new JFileChooser();
+        chooser.setSelectedFile(new File(this.project.getName() + "." + LogicSimulatorCore.PROJECT_FILE_TYPE));
+        chooser.setFileFilter(new FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                return f.getPath().endsWith(LogicSimulatorCore.PROJECT_FILE_TYPE) || f.isDirectory();
+            }
+
+            @Override
+            public String getDescription() {
+                return "High low simulator project";
+            }
+        });
+        if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            /**
+             * Get path of new location of project and if project file doesnt
+             * end with its agree postfix then add it on the end of path
+             */
+            String path = chooser.getSelectedFile().getPath();
+            path += path.endsWith(LogicSimulatorCore.PROJECT_FILE_TYPE) ? "" : '.'
+                    + LogicSimulatorCore.PROJECT_FILE_TYPE;
+            //save project
+            this.saveProject(new File(path));
+        }
+    }//GEN-LAST:event_jMenuItemSaveProjectAsActionPerformed
+
+    private void jMenuItemExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemExitActionPerformed
+        int dialogResult = JOptionPane.showConfirmDialog(
+                this,
+                "Do you want to exit without saving?",
+                "Exit",
+                JOptionPane.YES_NO_OPTION
+        );
+        if (dialogResult == JOptionPane.YES_OPTION) {
+            dispose();
+        }
+    }//GEN-LAST:event_jMenuItemExitActionPerformed
+
+    private void jMenuItemStepActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemStepActionPerformed
+        //simulate one step
+        this.comuteCore.step();
+    }//GEN-LAST:event_jMenuItemStepActionPerformed
+
+    private void jMenuItemStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemStopActionPerformed
+        //stop simulation
+        stopSimulation();
+    }//GEN-LAST:event_jMenuItemStopActionPerformed
+
+    private void jMenuItemRunActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemRunActionPerformed
+        //run simulation
+        runSimulation();
+    }//GEN-LAST:event_jMenuItemRunActionPerformed
+
+    private void jCheckBoxMenuItemShowUpdatesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItemShowUpdatesActionPerformed
+        if (this.jCheckBoxMenuItemShowUpdates.isSelected()) {
+            //add ups display to the toolbar
+            JLabel l = new JLabel("0");
+            l.setMinimumSize(new Dimension(60, 0));
+            l.setMaximumSize(new Dimension(60, 60));
+            l.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
+            l.setOpaque(true);
+            l.setFont(l.getFont().deriveFont(12f));
+            l.setForeground(Color.white);
+            l.setName("updates");
+            this.jToolBarSimulating.add(l);
+        } else {
+            //remove ups from tool bar
+            for (Component c : this.jToolBarSimulating.getComponents()) {
+                if (c.getName().equals("updates")) {
+                    this.jToolBarSimulating.remove(c);
+                    break;
+                }
+            }
+        }
+    }//GEN-LAST:event_jCheckBoxMenuItemShowUpdatesActionPerformed
+
+    private boolean jComboBoxLastPlaced_lock = true;
+
+    private void jComboBoxLastPlacedActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxLastPlacedActionPerformed
+        if (this.jComboBoxLastPlaced_lock) {
+            this.jComboBoxLastPlaced_lock = false;
+            return;
+        }
+        //place component from combobox
+        Object[] selected = (Object[]) jComboBoxLastPlaced.getSelectedItem();
+        if (selected == null) {
+            return;
+        }
+        if (selected.length < 2) {
+            return;
+        }
+        ProjectFile pf = this.project.getSelectedFile();
+        if (pf instanceof WorkSpace) {
+            List list = new ArrayList<>();
+            try {
+                WorkSpaceObject obj = Tools.clone((WorkSpaceObject) selected[1]);
+                obj.getPosition().x = LogicSimulatorCore.OBJECT_NULL_POSITION;
+                list.add(obj);
+                ((WorkSpace) pf).addNewObjects(list);
+            } catch (CloneNotSupportedException ex) {
+            }
+        }
+    }//GEN-LAST:event_jComboBoxLastPlacedActionPerformed
 
     /**
      * Init this window, must exis compute core and project in Core
@@ -873,32 +1071,89 @@ public class MainWindow extends JFrame implements LSComponent {
         //init project tree view
         ((ProjectTreeView) this.jTreeProject).init(this, this.project);
 
-        //thread
-        this.thread = new Thread(() -> {
-            jProgressBarMemoryUsage.setMaximum(100);
-            while (true) {
-                //memory usage bat
-                Runtime r = Runtime.getRuntime();
-                float memoryUsage = 1.0f - (float) r.freeMemory() / (float) r.totalMemory();
-                jProgressBarMemoryUsage.setValue((int) (memoryUsage * 100f));
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ex) {
+        //compute core 1 sec event
+        this.comuteCore.add1Sec((ActionEvent e) -> {
+            String[] data = e.getActionCommand().split(";");
+            for (String d : data) {
+                String[] arr = d.split("=");
+                switch (arr[0]) {
+                    case "UPS":
+                        //show updates per second and name of simulate circuit
+                        if (this.comuteCore.getWorkspace() != null) {
+                            this.jLabelSimulation.setText(" UPS: " + arr[1]
+                                    + " - circuit: [" + this.comuteCore.getWorkspace().getName() + "]");
+                        }
+                        break;
+                    case "UPDATES":
+                        //show how many object update
+                        if (this.jCheckBoxMenuItemShowUpdates.isSelected()) {
+                            //selected project file be workspace
+                            if (this.project.getSelectedFile() instanceof WorkSpace) {
+                                WorkSpace w = (WorkSpace) this.project.getSelectedFile();
+                                //find label updates
+                                for (Component c : this.jToolBarSimulating.getComponents()) {
+                                    if (c == null) {
+                                        continue;
+                                    }
+                                    if (c.getName() == null) {
+                                        continue;
+                                    }
+                                    if (!c.getName().equals("updates")) {
+                                        continue;
+                                    }
+                                    //get background color for label
+                                    int val = Integer.parseInt(arr[1]);
+                                    float hue = 0.85f * (float) val / w.getObjects().size();
+                                    hue = hue > 0.85f ? 0.85f : hue;
+                                    Color bg = Color.getHSBColor(hue, 0.7f, 0.7f);
+                                    JLabel l = ((JLabel) c);
+                                    l.setBackground(bg);
+                                    String txt = " " + (val > 999 ? String.format("%.1f", (float) val / 1000f) + "k" : val);
+                                    l.setText(txt);
+                                    break;
+                                }
+                            }
+                        }
+                        break;
                 }
             }
         });
 
-        //compute core
-        this.comuteCore.setUPSDisplay(this.jLabelTiming, (Graph) this.timingGraph);
-
         //init utils
         this.componentChooser.setProject(this.project);
+
+        //properties #############################################
+        try {
+            List<Propertie> propts = propt.readFile();
+            propts.stream().forEach((p -> {
+                switch (p.getName()) {
+                    case "PlacedComponent":
+                        this.addComponentToLastAdded(
+                                this.componentChooser.selectComponent(p.getValueString())
+                        );
+                        break;
+                    case "RefComponent":
+                        this.addComponentToToolbar(
+                                this.componentChooser.selectComponent(p.getValueString())
+                        );
+                        break;
+                }
+            }));
+        } catch (Exception ex) {
+            System.out.println("Window: Propertie file not found");
+        }
+        //set value for ups controler (value can be changed in compute core from propertie file)
+        ((NumberChooser) this.ups).setValue(this.comuteCore.getCTL().getTicksPerSecond());
     }
 
     @Override
     public void run() {
         this.setVisible(true);
-        this.thread.start();
+    }
+
+    @Override
+    public void stop() {
+        dispose();
     }
 
     /**
@@ -908,36 +1163,6 @@ public class MainWindow extends JFrame implements LSComponent {
      */
     public void editProperties(WorkSpaceObject obj) {
         ((PropertieEditor) this.jTableProperties).edit(obj);
-    }
-
-    /**
-     * Add or display new workspace to tabbed panel (!!not add to project
-     * data!!)
-     *
-     * @param pf Workspace
-     */
-    public void displayProjectFile(ProjectFile pf) {
-        pf.setOpened(true);
-        //find workspace in tabbedpane if it isnt inside then add
-        boolean addProjectFile = true;
-        for (Component c : this.jTabbedPane.getComponents()) {
-            if (c == pf) {
-                addProjectFile = false;
-                break;
-            }
-        }
-        //add this project file
-        if (addProjectFile) {
-            //add
-            this.jTabbedPane.add(pf.getComp().getName(), pf.getComp());
-            //add close button
-            this.jTabbedPane.setTabComponentAt(
-                    this.jTabbedPane.getTabCount() - 1,
-                    new TabbedPaneCloseButton(this.jTabbedPane, pf.getComp())
-            );
-        }
-        //select project file in tabbed pane
-        this.jTabbedPane.setSelectedComponent(pf.getComp());
     }
 
     /**
@@ -994,21 +1219,7 @@ public class MainWindow extends JFrame implements LSComponent {
         }
 
         //refresh names for all displayed components
-        for (Component c : this.jTabbedPane.getComponents()) {
-            if (c == null) {
-                continue;
-            }
-            //get index of component c
-            int index = this.jTabbedPane.indexOfComponent(c);
-            if (index >= 0) {
-                //get tab component
-                Component title = this.jTabbedPane.getTabComponentAt(index);
-                if (title instanceof TabbedPaneCloseButton) {
-                    //chage title
-                    ((TabbedPaneCloseButton) title).setTitle(c.getName());
-                }
-            }
-        }
+        ((PFTwoSlotViewer) this.pfdockingPanel).refreshAllNames();
 
         //rename file
         IOProject io = new IOProject(this.project);
@@ -1022,7 +1233,7 @@ public class MainWindow extends JFrame implements LSComponent {
     /**
      * Delete file from project
      *
-     * @param comp
+     * @param comp Project file
      */
     public void deleteFile(ProjectFile comp) {
         if (comp == null) {
@@ -1038,9 +1249,8 @@ public class MainWindow extends JFrame implements LSComponent {
         if (n != JOptionPane.YES_OPTION) {
             return;
         }
-
         //remove from tabbedPane
-        this.jTabbedPane.remove(comp.getComp());
+        ((PFTwoSlotViewer) this.pfdockingPanel).removePF(comp.getComp());
 
         //remove from project list
         if (comp instanceof WorkSpace) {
@@ -1055,17 +1265,22 @@ public class MainWindow extends JFrame implements LSComponent {
         String fileType = "";
         if (comp instanceof WorkSpace) {
             fileType = "." + LogicSimulatorCore.WORKSPACE_FILE_TYPE;
+        } else if (comp instanceof ModuleEditor) {
+            fileType = "." + LogicSimulatorCore.MODULE_FILE_TYPE;
         }
         io.deleteFile(comp.getComp().getName() + fileType);
     }
 
     /**
      * Save current opened project
+     *
+     * @param location File - location of project file (linker)
      */
-    private void saveProject() {
+    private void saveProject(File location) {
         try {
             IOProject io = new IOProject(this.project);
-            io.save(this.project.getFile());
+            io.save(location);
+            JOptionPane.showMessageDialog(this, "project successfully saved", "Project", JOptionPane.INFORMATION_MESSAGE, null);
         } catch (Exception ex) {
             Logger.getLogger(ProjectWizard.class.getName()).log(Level.SEVERE, null, ex);
             JOptionPane.showMessageDialog(this, "Project could not be saved", "Error", JOptionPane.ERROR_MESSAGE, null);
@@ -1075,7 +1290,7 @@ public class MainWindow extends JFrame implements LSComponent {
     /**
      * Add reference of component to toolbar
      *
-     * @param obj Component
+     * @param obj Component (Workspace object)
      */
     public void addComponentToToolbar(WorkSpaceObject obj) {
         if (obj != null) {
@@ -1118,64 +1333,172 @@ public class MainWindow extends JFrame implements LSComponent {
     /**
      * Add component to combobox with last added components
      *
-     * @param obj
+     * @param obj New workspace object
      */
-    public void addComponentToLastAdded(WorkSpaceObject obj) {     
+    public void addComponentToLastAdded(WorkSpaceObject obj) {
         if (obj != null) {
             Object[] item = new Object[]{
                 Tools.getComponentName(obj),
                 obj
             };
-            this.jComboBoxLastAdded.addItem(item);
+            this.jComboBoxLastPlaced.addItem(item);
         }
     }
 
+    /**
+     * Get all component that are in combobox and are placed on workspace
+     *
+     * @return List with references on component
+     */
+    public List<Object[]> getLastPlacedComponents() {
+        List<Object[]> list = new ArrayList<>();
+        for (int i = 0; i < this.jComboBoxLastPlaced.getItemCount(); i++) {
+            list.add(this.jComboBoxLastPlaced.getItemAt(i));
+        }
+        return list;
+    }
+
+    /**
+     * Get all component references that are in component toolbar
+     *
+     * @return List with references on component
+     */
+    public List<String> getRefComponents() {
+        List<String> list = new ArrayList<>();
+        for (Component c : this.jToolBarComponents.getComponents()) {
+            if (c instanceof JButton) {
+                list.add(((JButton) c).getToolTipText());
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Run simulation
+     */
+    private void runSimulation() {
+        ProjectFile pf = this.project.getSelectedFile();
+        if (pf != null) {
+            if (pf instanceof WorkSpace) {
+                //run simulation
+                this.comuteCore.setWorkSpace((WorkSpace) pf);
+                this.comuteCore.startComputing();
+                //buttons
+                this.jButtonRun.setEnabled(false);
+                this.jButtonStop.setEnabled(true);
+                this.jButtonStep.setEnabled(false);
+                //menu items
+                this.jMenuItemRun.setEnabled(false);
+                this.jMenuItemStop.setEnabled(true);
+                this.jMenuItemStep.setEnabled(false);
+                return;
+            }
+        }
+        //show message
+        JOptionPane.showMessageDialog(
+                this,
+                "Unable to run simulating for this file",
+                "Error",
+                JOptionPane.ERROR_MESSAGE,
+                null
+        );
+    }
+
+    /**
+     * Stop simulation
+     */
+    private void stopSimulation() {
+        this.comuteCore.stopComputing();
+        //buttins
+        this.jButtonRun.setEnabled(true);
+        this.jButtonStop.setEnabled(false);
+        this.jButtonStep.setEnabled(true);
+        //menu items
+        this.jMenuItemRun.setEnabled(true);
+        this.jMenuItemStop.setEnabled(false);
+        this.jMenuItemStep.setEnabled(true);
+        //label
+        this.jLabelSimulation.setText(" UPS:-");
+    }
+
+    /**
+     * Return project file docking panel for two
+     *
+     * @return
+     */
+    public PFTwoSlotViewer getPFDockingPanel() {
+        return (PFTwoSlotViewer) this.pfdockingPanel;
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JButton jButtonControl;
     private javax.swing.JButton jButtonEdit;
     private javax.swing.JButton jButtonHelp;
     private javax.swing.JButton jButtonNewFile;
     private javax.swing.JButton jButtonNewProject;
-    private javax.swing.JButton jButtonNextstep;
-    private javax.swing.JButton jButtonNextstep1;
     private javax.swing.JButton jButtonOpenProject;
     private javax.swing.JButton jButtonRedo;
     private javax.swing.JButton jButtonRun;
     private javax.swing.JButton jButtonSaveProject;
     private javax.swing.JButton jButtonSettings;
+    private javax.swing.JButton jButtonStep;
     private javax.swing.JButton jButtonStop;
     private javax.swing.JButton jButtonUndo;
-    private javax.swing.JComboBox<Object[]> jComboBoxLastAdded;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabelTiming;
-    private javax.swing.JLabel jLabelUPS;
-    private javax.swing.JLabel jLabelZoom;
+    public javax.swing.JCheckBoxMenuItem jCheckBoxMenuItemShowUpdates;
+    private javax.swing.JComboBox<Object[]> jComboBoxLastPlaced;
+    private javax.swing.JLabel jLabelSimulation;
+    private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenu jMenu3;
+    private javax.swing.JMenu jMenu4;
+    private javax.swing.JMenu jMenu5;
+    private javax.swing.JMenu jMenu6;
     private javax.swing.JMenuBar jMenuBarMain;
     private javax.swing.JMenu jMenuEdit;
     private javax.swing.JMenu jMenuFile;
-    private javax.swing.JMenuItem jMenuItemAddNewFile;
-    private javax.swing.JMenuItem jMenuItemOpen;
+    private javax.swing.JMenuItem jMenuItemAbout;
+    private javax.swing.JMenuItem jMenuItemAddLibrary;
+    private javax.swing.JMenuItem jMenuItemCheckForUpdates;
+    private javax.swing.JMenuItem jMenuItemColors;
+    private javax.swing.JMenuItem jMenuItemEndo;
+    private javax.swing.JMenuItem jMenuItemExit;
+    private javax.swing.JMenuItem jMenuItemExport;
+    private javax.swing.JMenuItem jMenuItemFindObject;
+    private javax.swing.JMenuItem jMenuItemFindText;
+    private javax.swing.JMenuItem jMenuItemMove;
+    private javax.swing.JMenuItem jMenuItemNewFile;
+    private javax.swing.JMenuItem jMenuItemNewFileProject;
+    private javax.swing.JMenuItem jMenuItemOpenProject;
     private javax.swing.JMenuItem jMenuItemPlaceComponent;
-    private javax.swing.JMenuItem jMenuItemPlaceComponent1;
-    private javax.swing.JMenuItem jMenuItemSave;
+    private javax.swing.JMenuItem jMenuItemPrint;
+    private javax.swing.JMenuItem jMenuItemPrint1;
+    private javax.swing.JMenuItem jMenuItemPrint2;
+    private javax.swing.JMenuItem jMenuItemPrintScreen;
+    private javax.swing.JMenuItem jMenuItemRedo;
+    private javax.swing.JMenuItem jMenuItemRename;
+    private javax.swing.JMenuItem jMenuItemReportBugs;
+    private javax.swing.JMenuItem jMenuItemRun;
+    private javax.swing.JMenuItem jMenuItemSaveProject;
+    private javax.swing.JMenuItem jMenuItemSaveProjectAs;
+    private javax.swing.JMenuItem jMenuItemSettings;
+    private javax.swing.JMenuItem jMenuItemSettingsGlobal;
+    private javax.swing.JMenuItem jMenuItemStep;
+    private javax.swing.JMenuItem jMenuItemStop;
+    private javax.swing.JMenuItem jMenuItemTutorials;
+    private javax.swing.JMenuItem jMenuItemWindows;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanelBody;
-    private javax.swing.JPanel jPanelSimulation3;
-    private javax.swing.JProgressBar jProgressBarMemoryUsage;
-    private javax.swing.JRadioButton jRadioButton1;
-    private javax.swing.JRadioButton jRadioButton2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane3;
-    private javax.swing.JScrollPane jScrollPaneSimulation;
-    private javax.swing.JToolBar.Separator jSeparator1;
-    private javax.swing.JToolBar.Separator jSeparator2;
     private javax.swing.JPopupMenu.Separator jSeparator3;
-    private javax.swing.JSlider jSliderUPS;
+    private javax.swing.JPopupMenu.Separator jSeparator4;
+    private javax.swing.JPopupMenu.Separator jSeparator5;
+    private javax.swing.JPopupMenu.Separator jSeparator6;
+    private javax.swing.JPopupMenu.Separator jSeparator7;
+    private javax.swing.JPopupMenu.Separator jSeparator8;
+    private javax.swing.JPopupMenu.Separator jSeparator9;
     private javax.swing.JSplitPane jSplitPaneBody;
     private javax.swing.JSplitPane jSplitPaneLeft;
-    private javax.swing.JSplitPane jSplitPaneRight;
-    private javax.swing.JTabbedPane jTabbedPane;
     private javax.swing.JTable jTableProperties;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JToolBar jToolBarComponents;
@@ -1185,6 +1508,7 @@ public class MainWindow extends JFrame implements LSComponent {
     private javax.swing.JToolBar jToolBarOther;
     private javax.swing.JToolBar jToolBarSimulating;
     private javax.swing.JTree jTreeProject;
-    private javax.swing.JPanel timingGraph;
+    private javax.swing.JPanel pfdockingPanel;
+    private javax.swing.JLabel ups;
     // End of variables declaration//GEN-END:variables
 }

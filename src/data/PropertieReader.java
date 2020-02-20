@@ -18,7 +18,7 @@ import logicSimulator.common.Propertie;
 public class PropertieReader {
 
     public static enum ID {
-        WINDOW, RENDERING, COMPUTING, LIBRARIES, PROJECT;
+        WINDOW, COMPUTING, PROJECT, PLUGINS, SETTINGS;
     }
 
     private PropertieReader.ID id;
@@ -53,7 +53,11 @@ public class PropertieReader {
         String[] propt;
         while ((line = reader.readLine()) != null) {
             propt = line.split("=");
-            ret.add(new Propertie(propt[0], propt[1]));
+            try {
+                ret.add(new Propertie(propt[0], propt[1]));
+            } catch (Exception ex) {
+
+            }
         }
         reader.close();
         return ret;

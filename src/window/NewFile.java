@@ -11,10 +11,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import logicSimulator.Tools;
 import javax.swing.ImageIcon;
-import logicSimulator.ModuleEditor;
+import logicSimulator.projectFile.HEXEditor;
+import logicSimulator.projectFile.ModuleEditor;
 import logicSimulator.Project;
 import logicSimulator.ProjectFile;
-import logicSimulator.WorkSpace;
+import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.common.LogicModule;
 
 /**
@@ -40,7 +41,7 @@ public class NewFile extends javax.swing.JFrame {
         this.project = project;
         //center location
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-        this.setLocation((screen.width - this.getWidth()) / 2, (screen.height - this.getHeight()) / 2);
+        this.setLocationRelativeTo(window);
         this.jListFiles.setSelectedIndex(0);
         this.update();
     }
@@ -54,6 +55,14 @@ public class NewFile extends javax.swing.JFrame {
                 case "Workspace":
                     img = new ImageIcon(this.getClass().getResource("/src/img/workspace_animation.gif"));
                     fileType = "." + logicSimulator.LogicSimulatorCore.WORKSPACE_FILE_TYPE;
+                    break;
+                case "Logic module":
+                    img = null;
+                    fileType = "." + logicSimulator.LogicSimulatorCore.MODULE_FILE_TYPE;
+                    break;
+                case "HEX editor":
+                    img = null;
+                    fileType = "." + logicSimulator.LogicSimulatorCore.HEX_FILE_TYPE;
                     break;
             }
         } catch (Exception ex) {
@@ -121,7 +130,7 @@ public class NewFile extends javax.swing.JFrame {
         jScrollPane1.setBorder(javax.swing.BorderFactory.createTitledBorder("Files"));
 
         jListFiles.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Workspace", "Logic module", "Script module", "Text document" };
+            String[] strings = { "Workspace", "Logic module", "Script module", "HEX editor", "Text document" };
             public int getSize() { return strings.length; }
             public String getElementAt(int i) { return strings[i]; }
         });
@@ -196,20 +205,30 @@ public class NewFile extends javax.swing.JFrame {
             }
         }
         //add file
+        ProjectFile pf;
         switch (this.jListFiles.getSelectedValue()) {
             case "Workspace":
-                WorkSpace w = new WorkSpace(this.lastName, this.project);
-                this.window.displayProjectFile(w);
-                this.project.getProjectFiles().add(w);
+                pf = new WorkSpace(this.lastName, this.project);
+                this.window.getPFDockingPanel().displayProjectFile(pf);
+                this.project.getProjectFiles().add(pf);
                 this.window.updateProjectView();
                 break;
             case "Logic module":
-                ModuleEditor me = new ModuleEditor(this.lastName, this.project, new LogicModule(new Point(0, 0)));
-                this.window.displayProjectFile(me);
-                this.project.getProjectFiles().add(me);
+                pf = new ModuleEditor(this.lastName, this.project, new LogicModule(new Point(0, 0)));
+                this.window.getPFDockingPanel().displayProjectFile(pf);
+                this.project.getProjectFiles().add(pf);
+                this.window.updateProjectView();
+                break;
+            case "HEX editor":
+                pf = new HEXEditor(this.lastName, this.project);
+                this.window.getPFDockingPanel().displayProjectFile(pf);
+                this.project.getProjectFiles().add(pf);
                 this.window.updateProjectView();
                 break;
         }
+
+        this.window.getPFDockingPanel().refreshLayout();
+
         dispose();
     }//GEN-LAST:event_jButtonAddActionPerformed
 

@@ -17,6 +17,9 @@ import window.MainWindow;
  */
 public class Project implements LSComponent {
 
+    /**
+     * Project file ".phl" location
+     */
     private File file;
 
     private LogicSimulatorCore core;
@@ -72,7 +75,10 @@ public class Project implements LSComponent {
 
     @Override
     public void run() {
-        //none
+    }
+    
+    @Override
+    public void stop() {
     }
 
     /**

@@ -4,16 +4,13 @@
  */
 package logicSimulator.common;
 
-import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.Point;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import logicSimulator.ComputeCore;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.Tools;
-import logicSimulator.WorkSpace;
+import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.WorkSpaceObject;
 import logicSimulator.objects.wiring.Input;
 import logicSimulator.objects.wiring.Output;
@@ -22,23 +19,20 @@ import logicSimulator.objects.wiring.Output;
  *
  * @author Martin
  */
-public class LogicModule implements WorkSpaceObject, Serializable {
-
-    private boolean select = false;
-
-    private final Point position;
-
-    private final Model model;
+public class LogicModule extends WorkSpaceObject {
 
     //name of workspace (logic model for this module) is used only for data saving
     private String lastModelName = "";
+
     //this must be set on null before project saving because this is not serializable
     //in opening use 'lastModelName' to reload again
     private List<WorkSpaceObject> logicModel;
 
     public LogicModule(Point position) {
-        this.model = new Model(null, null, null);
-        this.position = position;
+        super(position);
+
+        super.setModel(new Model(new GraphicsObject[0]));
+
         this.logicModel = new ArrayList<>();
     }
 
@@ -65,19 +59,23 @@ public class LogicModule implements WorkSpaceObject, Serializable {
     }
 
     public void refreshIOPins() {
+        if (super.getModel() == null) {
+            return;
+        }
+
         //cleare pin list of this model
-        this.model.getIOPins().clear();
+        super.getPins().clear();
         //add module io pins for all inputs and outputs inside of module
         if (this.logicModel != null) {
             this.logicModel.stream().forEach((obj) -> {
                 if (obj instanceof Input) {
                     //add input pin to module
-                    this.model.getIOPins().add(
+                    super.getPins().add(
                             ((Input) obj).getInput()
                     );
                 } else if (obj instanceof Output) {
                     //add output to module
-                    this.model.getIOPins().add(
+                    super.getPins().add(
                             ((Output) obj).getOutput()
                     );
                 }
@@ -85,13 +83,13 @@ public class LogicModule implements WorkSpaceObject, Serializable {
         }
         //move
         L1:
-        for (int i = 0; i < this.model.getIOPins().size(); i++) {
-            IOPin pin1 = this.model.getIOPins().get(i);
+        for (int i = 0; i < super.getPins().size(); i++) {
+            IOPin pin1 = super.getPins().get(i);
             Point.Double p1 = pin1.getPosition();
             if (p1 == null) {
                 continue;
             }
-            for (IOPin pin2 : this.model.getIOPins()) {
+            for (IOPin pin2 : super.getPins()) {
                 Point.Double p2 = pin2.getPosition();
                 if (pin1 == pin2 || p2 == null) {
                     continue;
@@ -104,55 +102,6 @@ public class LogicModule implements WorkSpaceObject, Serializable {
                 }
             }
         }
-    }
-
-    @Override
-    public Point getPosition() {
-        return this.position;
-    }
-
-    @Override
-    public Dimension getSize() {
-        return new Dimension(this.model.getWidth(), this.model.getHeight());
-    }
-
-    @Override
-    public void render(Graphics2D g2, Point offset, Dimension screen) {
-        this.model.renderModel(g2, this.position, offset, screen, this.select);
-    }
-
-    @Override
-    public Propertie[] getProperties() {
-        return null;
-    }
-
-    @Override
-    public void changePropertie(Propertie arg0) {
-
-    }
-
-    @Override
-    public boolean select(Point cursor) {
-        if (this.model.intersect(cursor, this.position)) {
-            this.select = true;
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public void unSelect() {
-        this.select = false;
-    }
-
-    @Override
-    public boolean isSelected() {
-        return this.select;
-    }
-
-    @Override
-    public Model getModel() {
-        return this.model;
     }
 
     @Override
@@ -169,15 +118,10 @@ public class LogicModule implements WorkSpaceObject, Serializable {
         return false;
     }
 
-    @Override
-    public List<IOPin> getPins() {
-        return this.model.getIOPins();
-    }
-
     public WorkSpaceObject cloneObject() {
-        LogicModule lm = new LogicModule(new Point(this.position.x, this.position.y));
+        LogicModule lm = new LogicModule(Tools.copy(super.getPosition()));
         //clone model
-        lm.getModel().clone(this.model);
+        lm.getModel().clone(super.getModel());
         //clone logic model data
         this.logicModel.stream().forEach((obj) -> {
             try {

@@ -5,13 +5,10 @@
 
 import logicSimulator.ui.SystemResources;
 import data.PropertieReader;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -21,7 +18,6 @@ import logicSimulator.LogicSimulatorCore;
 import window.MainWindow;
 import logicSimulator.LSComponent;
 import logicSimulator.Project;
-import logicSimulator.Tools;
 import window.ProjectWizard;
 
 /**
@@ -35,10 +31,9 @@ public class HLSimulator extends SystemResources implements LogicSimulatorCore {
 
     public static Splash splash;
 
-    public HLSimulator() throws IOException {
+    public HLSimulator() throws Exception {
         super();
         this.components = new ArrayList<>();
-        //Settings.HIGH_RENDER_QUALITY = true;
     }
 
     /**
@@ -93,6 +88,7 @@ public class HLSimulator extends SystemResources implements LogicSimulatorCore {
         );
         this.components.add(component);
 
+        //load settings from file
     }
 
     /**
@@ -121,7 +117,7 @@ public class HLSimulator extends SystemResources implements LogicSimulatorCore {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-
+                
         //set LookAndFeel 
         try {
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
@@ -135,28 +131,47 @@ public class HLSimulator extends SystemResources implements LogicSimulatorCore {
         }
         SwingUtilities.invokeLater(() -> {
             try {
-                
+
                 //splash
                 HLSimulator.splash = new Splash("/src/img/splash.png", 900, 450);
                 HLSimulator.splash.setVisible(true);
-                
+
                 //HL simulator
                 HLSimulator logicSimulator = new HLSimulator();
-                
+
                 //propertie files
                 PropertieReader[] proptList = new PropertieReader[]{
-                    new PropertieReader(PROPT_PROJECTS, PropertieReader.ID.PROJECT)
+                    new PropertieReader(
+                    LogicSimulatorCore.PROPT_PROJECTS,
+                    PropertieReader.ID.PROJECT
+                    ),
+                    new PropertieReader(
+                    LogicSimulatorCore.PROPT_WINDOW,
+                    PropertieReader.ID.WINDOW
+                    ),
+                    new PropertieReader(
+                    LogicSimulatorCore.PROPT_COMPUTING,
+                    PropertieReader.ID.COMPUTING
+                    )
                 };
-                
+
                 //init
                 logicSimulator.init(proptList);
-                
+
                 //run
                 logicSimulator.run();
-                
+
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(null, ex.getStackTrace(), "Error", JOptionPane.ERROR_MESSAGE, null);
+                HLSimulator.splash.setVisible(false);
+                JOptionPane.showMessageDialog(
+                        null,
+                        ex.getStackTrace(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE,
+                        null
+                );
                 Logger.getLogger(HLSimulator.class.getName()).log(Level.SEVERE, null, ex);
+                System.exit(0);
             }
         });
     }

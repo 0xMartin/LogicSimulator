@@ -15,7 +15,7 @@ import java.util.List;
  *
  * @author Martin
  */
-public class Line implements Serializable {
+public class Line implements Serializable, GraphicsObject {
 
     public Point.Double p1, p2;
     //graphics node
@@ -77,6 +77,7 @@ public class Line implements Serializable {
         }
     }
 
+    @Override
     public void draw(Graphics2D g2, int xOff, int yOff) {
         //line
         g2.drawLine(
@@ -104,6 +105,7 @@ public class Line implements Serializable {
         return Math.sqrt(Math.pow(this.p1.x - this.p2.x, 2) + Math.pow(this.p1.y - this.p2.y, 2));
     }
 
+    @Override
     public Line cloneObject() {
         Line l = new Line(Tools.copy(this.p1), Tools.copy(this.p2));
         l.n1 = this.n1;
@@ -111,11 +113,9 @@ public class Line implements Serializable {
         return l;
     }
     
-    public List<Point.Double> getPoints(){
-        List<Point.Double> list = new ArrayList<>();
-        list.add(this.p1);
-        list.add(this.p2);
-        return list;
+    @Override
+    public Point.Double[] getPoints() {
+        return new Point.Double[]{this.p1, this.p2};
     }
 
 }

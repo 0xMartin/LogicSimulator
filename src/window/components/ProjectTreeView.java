@@ -19,11 +19,12 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreePath;
+import logicSimulator.projectFile.HEXEditor;
 import logicSimulator.LogicSimulatorCore;
-import logicSimulator.ModuleEditor;
+import logicSimulator.projectFile.ModuleEditor;
 import logicSimulator.Project;
 import logicSimulator.ProjectFile;
-import logicSimulator.WorkSpace;
+import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.Tools;
 import window.MainWindow;
 import window.NewFile;
@@ -70,12 +71,14 @@ public class ProjectTreeView extends JTree implements MouseListener {
         List<ProjectFile> projectFiles = this.project.getProjectFiles();
 
         //count number of items in sections
-        int count_project = 0, count_module = 0;
+        int count_project = 0, count_module = 0, count_hex = 0;
         for (ProjectFile pf : projectFiles) {
             if (pf instanceof WorkSpace) {
                 count_project++;
             } else if (pf instanceof ModuleEditor) {
                 count_module++;
+            } else if (pf instanceof HEXEditor) {
+                count_hex++;
             }
         }
 
@@ -109,6 +112,21 @@ public class ProjectTreeView extends JTree implements MouseListener {
                 if (projectFiles.get(i) instanceof ModuleEditor) {
                     folder[(index++) + 1] = projectFiles.get(i).getComp().getName()
                             + "." + LogicSimulatorCore.MODULE_FILE_TYPE;
+                }
+            }
+        }
+        //hex files
+        folder = new String[Math.max(count_hex + 1, 2)];
+        data.add(folder);
+        folder[0] = "HEX files";
+        if (count_hex == 0) {
+            folder[1] = "";
+        } else {
+            int index = 0;
+            for (int i = 0; i < projectFiles.size() && index < count_hex; i++) {
+                if (projectFiles.get(i) instanceof HEXEditor) {
+                    folder[(index++) + 1] = projectFiles.get(i).getComp().getName()
+                            + "." + LogicSimulatorCore.HEX_FILE_TYPE;
                 }
             }
         }
@@ -200,7 +218,8 @@ public class ProjectTreeView extends JTree implements MouseListener {
 
     private void displayFile() {
         if (this.selected != null) {
-            this.window.displayProjectFile(this.selected);
+            this.window.getPFDockingPanel().displayProjectFile(this.selected);
+            this.window.getPFDockingPanel().refreshLayout();
         }
     }
 
@@ -245,56 +264,6 @@ public class ProjectTreeView extends JTree implements MouseListener {
         item.addActionListener((ActionEvent evt) -> {
             //rename file
             this.window.deleteFile(this.selected);
-        });
-        menu.add(item);
-
-        //> add Analitics
-        menu = new JMenu("Analitics");
-        this.menu.add(menu);
-        //Input-Output analitics
-        item = new JMenuItem("Input-Output analitics");
-        item.addActionListener((ActionEvent evt) -> {
-
-        });
-        menu.add(item);
-        //map
-        item = new JMenuItem("Map");
-        item.addActionListener((ActionEvent evt) -> {
-
-        });
-        menu.add(item);
-        //Status graphs
-        item = new JMenuItem("Status graphs");
-        item.addActionListener((ActionEvent evt) -> {
-
-        });
-        menu.add(item);
-        //Circuit info
-        item = new JMenuItem("Circuit info");
-        item.addActionListener((ActionEvent evt) -> {
-
-        });
-        menu.add(item);
-
-        //> add Analitics
-        menu = new JMenu("Tools");
-        this.menu.add(menu);
-        //print
-        item = new JMenuItem("Print");
-        item.addActionListener((ActionEvent evt) -> {
-
-        });
-        menu.add(item);
-        //print screen
-        item = new JMenuItem("Printscreen");
-        item.addActionListener((ActionEvent evt) -> {
-
-        });
-        menu.add(item);
-        //clone
-        item = new JMenuItem("Clone");
-        item.addActionListener((ActionEvent evt) -> {
-
         });
         menu.add(item);
 

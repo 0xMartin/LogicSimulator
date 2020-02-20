@@ -4,18 +4,20 @@
  */
 package logicSimulator;
 
+import logicSimulator.projectFile.WorkSpace;
 import data.PropertieReader;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JLabel;
 import logicSimulator.common.IOPin;
 import logicSimulator.common.Line;
+import logicSimulator.common.Propertie;
 import logicSimulator.objects.wiring.Bridge;
 import logicSimulator.objects.wiring.Wire;
 import logicSimulator.timing.ConstantTimeLoop;
-import window.components.Graph;
 
 /**
  * Compute core Support logic circuit simulating, step by step simuating,
@@ -25,20 +27,59 @@ import window.components.Graph;
  */
 public class ComputeCore implements LSComponent {
 
+    private WorkSpace work;
+
     //rendering thread
     private Thread thread;
 
+    //loop for constant timing
     private ConstantTimeLoop ctl;
 
-    public boolean RUN = false;
-
+    //opened project
     private Project project;
 
+    //current ticks
     private int CURRENT_TICKS = 0;
+
+    /**
+     * current updates, and last updates (last is used for detectig change and
+     * on change repaint workspace)
+     */
     private int CURRENT_UPDATES = 0, LAST_UPDATES = 0;
 
+    //1 sec listener
+    private ActionListener invoke1Sec;
+
+    /**
+     * Set workspace for simulation
+     *
+     * @param work
+     */
+    public void setWorkSpace(WorkSpace work) {
+        this.work = work;
+    }
+
+    public WorkSpace getWorkspace() {
+        return this.work;
+    }
+
+    /**
+     * Open project
+     *
+     * @param prj Project
+     */
     public void openProject(Project prj) {
         this.project = prj;
+    }
+
+    /**
+     * Add one second action listener (call one time per second when simulation
+     * run)
+     *
+     * @param action
+     */
+    public void add1Sec(ActionListener action) {
+        this.invoke1Sec = action;
     }
 
     @Override
@@ -62,12 +103,48 @@ public class ComputeCore implements LSComponent {
             update();
         });
         this.thread.setName("ComputeCore");
+
+        //properties
+        try {
+            List<Propertie> propts = propt.readFile();
+            propts.stream().forEach((p -> {
+                try {
+                    switch (p.getName()) {
+                        case "RPS":
+                            this.ctl.setTicksPerSecond(p.getValueInt());
+                            break;
+                    }
+                } catch (NumberFormatException ex) {
+                }
+            }));
+        } catch (Exception ex) {
+            System.out.println("ComputeCore: Propertie file not found");
+        }
     }
 
+    /**
+     * Run compute core thread
+     */
     @Override
     public void run() {
         this.thread.start();
         this.ctl.run();
+    }
+
+    private boolean abort = false;
+
+    @Override
+    public void stop() {
+        this.abort = true;
+    }
+
+    /**
+     * Get constat time loop for this computing core
+     *
+     * @return
+     */
+    public ConstantTimeLoop getCTL() {
+        return this.ctl;
     }
 
     /**
@@ -78,17 +155,6 @@ public class ComputeCore implements LSComponent {
     public void setUPS(int value) {
         this.ctl.setTicksPerSecond(value);
         this.ctl.reset();
-    }
-
-    /**
-     * Set USP label
-     */
-    private JLabel upsLabel;
-    private Graph upsGraph;
-
-    public void setUPSDisplay(JLabel lab, Graph g) {
-        this.upsLabel = lab;
-        this.upsGraph = g;
     }
 
     /**
@@ -105,34 +171,35 @@ public class ComputeCore implements LSComponent {
         this.ctl.run();
     }
 
+    private boolean step = false;
+
     /**
      * Compute one step, computing must be stoped
      */
-    private boolean step = false;
-
     public void step() {
         this.step = true;
     }
 
+    private long last = System.nanoTime();
+
     /**
      * Diagnostic
      */
-    private long last = System.nanoTime();
-
     private void diagnostic() {
         this.CURRENT_TICKS++;
-        if (System.nanoTime() - last >= 1e9) {
+        if (System.nanoTime() - this.last >= 1e9) {
             this.last = System.nanoTime();
-            //graph
-            if (this.upsGraph != null) {
-                this.upsGraph.POINTS.add(new Point.Double(this.upsGraph.getWidth(), this.CURRENT_UPDATES));
-                this.upsGraph.move(-this.upsGraph.getWidth() / 50d, 0d);
-                this.upsGraph.repaint();
+            //send invoke listener
+            if (this.invoke1Sec != null) {
+                ActionEvent e = new ActionEvent(
+                        this,
+                        0,
+                        "UPS=" + this.CURRENT_TICKS + ";" //updates pre second
+                        + "UPDATES=" + this.CURRENT_UPDATES //how many object update
+                );
+                this.invoke1Sec.actionPerformed(e);
             }
-            //label
-            if (this.upsLabel != null) {
-                this.upsLabel.setText("Timing: " + this.CURRENT_TICKS + " ups");
-            }
+            //reset diagnostic variables
             this.CURRENT_TICKS = 0;
             this.CURRENT_UPDATES = 0;
         }
@@ -144,29 +211,29 @@ public class ComputeCore implements LSComponent {
      */
     private void update() {
         while (true) {
+            if (this.abort) {
+                break;
+            }
             try {
 
-                if (this.ctl.isStoped() || !this.RUN) {
+                if (this.ctl.isStoped()) {
                     Thread.sleep(100);
-                }
-
-                if (!this.RUN) {
-                    continue;
                 }
 
                 if (this.ctl.tickCheck() || this.step) {
                     //diagnostic
                     diagnostic();
-                    this.step = false;
 
                     //selected file of project must be instance of workspace
                     if (!(this.project.getSelectedFile() instanceof WorkSpace)) {
                         continue;
                     }
 
-                    //get selected workspace
-                    WorkSpace work = (WorkSpace) this.project.getSelectedFile();
-                    if (work.getObjects() == null) {
+                    if (this.work == null) {
+                        continue;
+                    }
+
+                    if (this.work.getObjects() == null) {
                         continue;
                     }
 
@@ -174,13 +241,16 @@ public class ComputeCore implements LSComponent {
                     this.CURRENT_UPDATES += ComputeCore.compute(work.getObjects());
 
                     //repaint selected workspace if something change
-                    if (this.CURRENT_UPDATES != this.LAST_UPDATES) {
-                        work.getHandler().repaint();
+                    if (this.CURRENT_UPDATES != this.LAST_UPDATES || this.step) {
+                        this.step = false;
+                        work.getHandler().repaintPF();
                     }
                     this.LAST_UPDATES = this.CURRENT_UPDATES;
                 }
-            } catch (InterruptedException ex) {
-                Logger.getLogger(ComputeCore.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (Exception ex) {
+                System.out.println(">>Compute core error");
+                Logger.getLogger(ComputeCore.class
+                        .getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -239,6 +309,7 @@ public class ComputeCore implements LSComponent {
             }
         }
         return current_updates;
+
     }
 
     /**
@@ -261,26 +332,7 @@ public class ComputeCore implements LSComponent {
             deleteAllPinConnections(objects);
 
             //splite wire path on wires with one line of this path
-            for (int i = 0; i < objects.size(); i++) {
-                if (objects.get(i) instanceof Wire) {
-                    Wire w = (Wire) objects.get(i);
-                    if (w.getPath().size() > 1) {
-                        //add new wires for each line of path
-                        w.getPath().stream().forEach((line) -> {
-                            Wire subWire = new Wire();
-                            if (w.getSelectedLines().stream().anyMatch((o1) -> (o1 == line))) {
-                                subWire.getSelectedLines().add(line);
-                            }
-                            subWire.value = w.value;
-                            subWire.getPath().add(line);
-                            objects.add(subWire);
-                        });
-                        //remove wire
-                        objects.remove(i);
-                        i -= 1;
-                    }
-                }
-            }
+            splitWireOnSingleLineWires(objects);
 
             //connect wires with wires
             Object1For:
@@ -293,13 +345,13 @@ public class ComputeCore implements LSComponent {
                         }
                         if (obj2 instanceof Wire) {
                             for (Line l : ((Wire) obj2).getPath()) {
-                                if (Tools.isOnLine(obj1, Tools.ptToInt(l.p1)) != null) {
+                                if (Tools.isOnLine((Wire) obj1, l.p1, null) != null) {
                                     objects.remove(obj1);
                                     objects.remove(obj2);
                                     objects.add(Tools.connectWires((Wire) obj1, (Wire) obj2));
                                     i = - 1;
                                     continue Object1For;
-                                } else if (Tools.isOnLine(obj1, Tools.ptToInt(l.p2)) != null) {
+                                } else if (Tools.isOnLine((Wire) obj1, l.p2, null) != null) {
                                     objects.remove(obj1);
                                     objects.remove(obj2);
                                     objects.add(Tools.connectWires((Wire) obj1, (Wire) obj2));
@@ -322,11 +374,11 @@ public class ComputeCore implements LSComponent {
                                         .filter((obj2) -> !(obj == obj2))
                                         .filter((obj2) -> (obj2 instanceof Wire))
                                         .forEachOrdered((obj2) -> {
-                                            Point p = new Point(
-                                                    (int) (obj.getPosition().x + pin.getPosition().x),
-                                                    (int) (obj.getPosition().y + pin.getPosition().y)
+                                            Point.Double p = new Point.Double(
+                                                    obj.getPosition().x + pin.getPosition().x,
+                                                    obj.getPosition().y + pin.getPosition().y
                                             );
-                                            if (Tools.isOnLine(obj2, p) != null) {
+                                            if (Tools.isOnLine((Wire) obj2, p, null) != null) {
                                                 //add pin to wire pin list because interset with
                                                 pin.setWire((Wire) obj2);
                                                 obj2.getPins().add(pin);
@@ -354,24 +406,89 @@ public class ComputeCore implements LSComponent {
                         ((Wire) wire).getPath().stream().forEach((line) -> {
                             //set node vibility for node 1 and 2 of line
                             //node 1
-                            if (Tools.endOfLine(((Wire) wire).getPath(), line.p1)) {
-                                line.n1 = Tools.isOnLine(wire, Tools.ptToInt(line.p1)) != line;
+                            if (Tools.endOfPath(((Wire) wire).getPath(), line.p1)) {
+                                line.n1 = Tools.isOnLine((Wire) wire, line.p1, line) != null;
                             } else {
                                 line.n1 = false;
                             }
                             //node 2
-                            if (Tools.endOfLine(((Wire) wire).getPath(), line.p2)) {
-                                line.n2 = Tools.isOnLine(wire, Tools.ptToInt(line.p2)) != line;
+                            if (Tools.endOfPath(((Wire) wire).getPath(), line.p2)) {
+                                line.n2 = Tools.isOnLine((Wire) wire, line.p2, line) != null;
                             } else {
                                 line.n2 = false;
                             }
                         });
                     });
 
+            /**
+             * all wires with HIGH(1) value or if they are BUS(-1) and no
+             * connected output pins go to the LOW
+             */
+            objects.stream()
+                    .filter((obj) -> (obj instanceof Wire))
+                    .forEachOrdered((wire) -> {
+                        //in high
+                        if (((Wire) wire).value == 1 || ((Wire) wire).value == -1) {
+                            boolean outExist = false;
+                            for (IOPin pin : ((Wire) wire).getPins()) {
+                                if (pin.mode == IOPin.MODE.OUTPUT) {
+                                    outExist = true;
+                                    break;
+                                }
+                            }
+                            //set low is output pin not connected to the wire
+                            if (!outExist) {
+                                //set value of wire
+                                ((Wire) wire).value = 0;
+                                //write low on all connected input pins
+                                for (IOPin pin : ((Wire) wire).getPins()) {
+                                    if (pin.mode == IOPin.MODE.INPUT) {
+                                        pin.setValue(false);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    });
         }
 
         /**
-         * Group all lines in wire
+         * Splite wire path on wires with one streight line of this path
+         *
+         * @param objects List with objects
+         */
+        public static void splitWireOnSingleLineWires(List<WorkSpaceObject> objects) {
+            for (int i = 0; i < objects.size(); i++) {
+                //is wire ?
+                if (objects.get(i) instanceof Wire) {
+                    Wire w = (Wire) objects.get(i);
+                    //if wire path is from more then one line
+                    if (w.getPath().size() > 1) {
+                        //add new wires for each line of path
+                        w.getPath().stream().forEach((line) -> {
+                            Wire subWire = new Wire();
+                            //copy line selection
+                            Line lCopy = line.cloneObject();
+                            if (w.getSelectedLines().stream().anyMatch((o1) -> (o1 == line))) {
+                                subWire.getSelectedLines().add(lCopy);
+                            }
+                            //add one line of wire path to one line wire
+                            subWire.value = w.value;
+                            subWire.getPath().add(lCopy);
+                            objects.add(subWire);
+                        });
+                        //remove wire
+                        objects.remove(i);
+                        i -= 1;
+                    }
+                }
+            }
+        }
+
+        /**
+         * Group all lines in wire => if point from line 1 and point from line 2
+         * are on same position (+-4px) then point from line 1 will be referenc
+         * on point from line 2
          *
          * @param objects list with objects
          */

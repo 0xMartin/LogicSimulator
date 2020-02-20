@@ -4,7 +4,10 @@
  */
 package logicSimulator;
 
-import data.IOProject;
+import logicSimulator.projectFile.ModuleEditor;
+import logicSimulator.projectFile.WorkSpace;
+import logicSimulator.projectFile.HEXEditor;
+import java.awt.Color;
 import logicSimulator.ui.Colors;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
@@ -17,21 +20,29 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.ObjectInputStream;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import javax.swing.JTextArea;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import logicSimulator.common.Circle;
 import logicSimulator.common.Curve;
+import logicSimulator.common.GraphicsObject;
 import logicSimulator.common.IOPin;
 import logicSimulator.common.Line;
 import logicSimulator.common.LogicModule;
+import logicSimulator.common.Model;
 import logicSimulator.objects.Text;
 import logicSimulator.objects.wiring.BitGet;
 import logicSimulator.objects.control.Button;
+import logicSimulator.objects.control.Clock;
+import logicSimulator.objects.control.RandomGenerator;
 import logicSimulator.objects.displays.Bulp;
+import logicSimulator.objects.displays.RasterScreen;
+import logicSimulator.objects.displays.VectorScreen;
 import logicSimulator.objects.gates.And;
 import logicSimulator.objects.gates.Buffer;
 import logicSimulator.objects.gates.Nand;
@@ -40,6 +51,8 @@ import logicSimulator.objects.gates.Not;
 import logicSimulator.objects.gates.Nxor;
 import logicSimulator.objects.gates.Or;
 import logicSimulator.objects.gates.Xor;
+import logicSimulator.objects.memory.Counter;
+import logicSimulator.objects.memory.ROMRAM;
 import logicSimulator.objects.wiring.BitSet;
 import logicSimulator.objects.wiring.Bridge;
 import logicSimulator.objects.wiring.Input;
@@ -248,6 +261,24 @@ public class Tools {
         } else if (obj instanceof Bridge) {
             //BRIDGE
             return ((Bridge) obj).cloneObject();
+        } else if (obj instanceof Clock) {
+            //CLOCK
+            return ((Clock) obj).cloneObject();
+        } else if (obj instanceof RasterScreen) {
+            //RASTER SCREEN
+            return ((RasterScreen) obj).cloneObject();
+        } else if (obj instanceof RandomGenerator) {
+            //RANDOM GENERATOR
+            return ((RandomGenerator) obj).cloneObject();
+        } else if (obj instanceof VectorScreen) {
+            //VECTOR SCREEN
+            return ((VectorScreen) obj).cloneObject();
+        } else if (obj instanceof ROMRAM) {
+            //ROM RAM
+            return ((ROMRAM) obj).cloneObject();
+        } else if (obj instanceof Counter) {
+            //Counter
+            return ((Counter) obj).cloneObject();
         }
         return null;
     }
@@ -307,6 +338,24 @@ public class Tools {
         } else if (obj instanceof Bridge) {
             //BRIDGE
             return "BRIDGE";
+        } else if (obj instanceof Clock) {
+            //BRIDGE
+            return "CLOCK";
+        } else if (obj instanceof RasterScreen) {
+            //RASTER SCREEN
+            return "RASTER SCREEN";
+        } else if (obj instanceof RandomGenerator) {
+            //RANDOM GENERATOR
+            return "RANDOM GENERATOR";
+        } else if (obj instanceof VectorScreen) {
+            //VECTOR SCREEN
+            return "VECTOR SCREEN";
+        } else if (obj instanceof ROMRAM) {
+            //ROM RAM
+            return "ROM RAM";
+        } else if (obj instanceof Counter) {
+            //ROM RAM
+            return "COUNTER";
         }
         return null;
     }
@@ -371,6 +420,16 @@ public class Tools {
      */
     public static Point ptToInt(Point.Double p) {
         return new Point((int) p.x, (int) p.y);
+    }
+
+    /**
+     * Convert int point to double point
+     *
+     * @param p int point
+     * @return
+     */
+    public static Point.Double ptToDouble(Point p) {
+        return new Point.Double(p.x, p.y);
     }
 
     /**
@@ -443,27 +502,30 @@ public class Tools {
      * Is point in some line of wire path ? delta x or y must be 0
      *
      * @param w Wire
-     * @param cursor Cursor position
+     * @param point Point position
+     * @param ignore this line will be ignored
      * @return
      */
-    public static Line isOnLine(WorkSpaceObject w, Point cursor) {
-        if (w instanceof Wire) {
-            int x = cursor.x;
-            int y = cursor.y;
-            for (Line l : ((Wire) w).getPath()) {
-                double start, end;
-                if (Math.abs(l.p1.x - l.p2.x) < 0.1d) {
-                    start = Math.min(l.p1.y, l.p2.y) - LogicSimulatorCore.WORK_SPACE_STEP / 2;
-                    end = Math.max(l.p1.y, l.p2.y) + LogicSimulatorCore.WORK_SPACE_STEP / 2;
-                    if (y >= start && y <= end && Math.abs(l.p1.x - x) < 4) {
-                        return l;
-                    }
-                } else {
-                    start = Math.min(l.p1.x, l.p2.x) - LogicSimulatorCore.WORK_SPACE_STEP / 2;
-                    end = Math.max(l.p1.x, l.p2.x) + LogicSimulatorCore.WORK_SPACE_STEP / 2;
-                    if (x >= start && x <= end && Math.abs(l.p1.y - y) < 4) {
-                        return l;
-                    }
+    public static Line isOnLine(Wire w, Point.Double point, Line ignore) {
+        double x = point.x;
+        double y = point.y;
+        for (Line l : w.getPath()) {
+            if (ignore == l) {
+                continue;
+            }
+            if (Math.abs(l.p1.x - l.p2.x) < 1d) {
+                //x1 = x2 (tolerance 1 px)
+                double start = Math.min(l.p1.y, l.p2.y) - LogicSimulatorCore.WORK_SPACE_STEP / 2;
+                double end = Math.max(l.p1.y, l.p2.y) + LogicSimulatorCore.WORK_SPACE_STEP / 2;
+                if (y >= start && y <= end && Math.abs(l.p1.x - x) < 2) {
+                    return l;
+                }
+            } else {
+                //y1 = y2
+                double start = Math.min(l.p1.x, l.p2.x) - LogicSimulatorCore.WORK_SPACE_STEP / 2;
+                double end = Math.max(l.p1.x, l.p2.x) + LogicSimulatorCore.WORK_SPACE_STEP / 2;
+                if (x >= start && x <= end && Math.abs(l.p1.y - y) < 2) {
+                    return l;
                 }
             }
         }
@@ -558,7 +620,7 @@ public class Tools {
      * @param p Int point
      * @return
      */
-    public static boolean endOfLine(List<Line> lines, Point.Double p) {
+    public static boolean endOfPath(List<Line> lines, Point.Double p) {
         /*
         if p is on position of some point of line from path then
         if this point is once time in this path then is end of line
@@ -566,7 +628,7 @@ public class Tools {
         int count = 0;
         for (Line line : lines) {
             //if point p is same as point in path then increment count (int) var
-            //toleranc is sqrt(4) px
+            //tolerance is sqrt(4) px
             if (Tools.dist(line.p1, p) < 4) {
                 count++;
             } else if (Tools.dist(line.p2, p) < 4) {
@@ -675,6 +737,13 @@ public class Tools {
      * @param angle
      */
     public static void rotate(List<WorkSpaceObject> objects, int angle) {
+
+        /**
+         * this list provide that every point of wire path change position only
+         * once time
+         */
+        List<Point.Double> pointPathMap = new ArrayList<>();
+
         try {
             //find center
             Point min = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
@@ -690,10 +759,11 @@ public class Tools {
                 max.x = Math.max(max.x, obj.getPosition().x + width);
                 max.y = Math.max(max.y, obj.getPosition().y + height);
             });
-            Point center = new Point(
+            Point.Double center = new Point.Double(
                     min.x + (max.x - min.x) / 2,
                     min.y + (max.y - min.y) / 2
             );
+
             //rotate with all objects
             double a = (double) angle * Math.PI / 2d;
             objects.stream().forEach((obj) -> {
@@ -701,18 +771,18 @@ public class Tools {
                     if (obj instanceof Wire) {
                         if (((Wire) obj).getPath() != null) {
                             ((Wire) obj).getPath().forEach((line) -> {
-                                //point 1
-                                line.p1.x -= center.x;
-                                line.p1.y -= center.y;
-                                Tools.rotatePoint(line.p1, a);
-                                line.p1.x += center.x;
-                                line.p1.y += center.y;
-                                //point 2
-                                line.p2.x -= center.x;
-                                line.p2.y -= center.y;
-                                Tools.rotatePoint(line.p2, a);
-                                line.p2.x += center.x;
-                                line.p2.y += center.y;
+                                for (Point.Double p : line.getPoints()) {
+                                    //point musnt be in point map
+                                    if (pointPathMap.stream().allMatch((pm) -> (pm != p))) {
+                                        p.x -= center.x;
+                                        p.y -= center.y;
+                                        Tools.rotatePoint(p, a);
+                                        p.x += center.x;
+                                        p.y += center.y;
+                                        //addd pt to map
+                                        pointPathMap.add(p);
+                                    }
+                                }
                                 //step
                                 Tools.step(line.p1, LogicSimulatorCore.WORK_SPACE_STEP);
                                 Tools.step(line.p2, LogicSimulatorCore.WORK_SPACE_STEP);
@@ -734,6 +804,7 @@ public class Tools {
             });
         } catch (Exception ex) {
         }
+
     }
 
     /**
@@ -875,7 +946,7 @@ public class Tools {
      */
     public static void loadWorkspaceFromFile(File f, Project project) throws FileNotFoundException {
         FileInputStream fileIn = new FileInputStream(f);
-        try ( ObjectInputStream objectIn = new ObjectInputStream(fileIn)) {
+        try (ObjectInputStream objectIn = new ObjectInputStream(fileIn)) {
             //objects
             List<WorkSpaceObject> objects = (List<WorkSpaceObject>) objectIn.readObject();
             //workspace, name of worksapce is name of file
@@ -895,16 +966,34 @@ public class Tools {
      * @param project Project
      * @throws FileNotFoundException
      */
-    public static void loadModuleEditorFromFile(File f, Project project) throws FileNotFoundException {
+    public static void loadModuleEditorFromFile(File f, Project project) throws Exception {
         FileInputStream fileIn = new FileInputStream(f);
-        try ( ObjectInputStream objectIn = new ObjectInputStream(fileIn)) {
-            //objects
-            LogicModule module = (LogicModule) objectIn.readObject();
+        ObjectInputStream objectIn = new ObjectInputStream(fileIn);
+        //objects
+        LogicModule module = (LogicModule) objectIn.readObject();
+        //workspace, name of worksapce is name of file
+        ModuleEditor lm = new ModuleEditor(Tools.fileName(f.getName()), project, module);
+        project.getProjectFiles().add(lm);
+
+    }
+
+    /**
+     * Read hex editor from file and add it to the project
+     *
+     * @param f File
+     * @param project Project
+     * @throws FileNotFoundException
+     */
+    public static void loadHEXEditorFromFile(File f, Project project) throws FileNotFoundException {
+        FileInputStream fileIn = new FileInputStream(f);
+        try (ObjectInputStream objectIn = new ObjectInputStream(fileIn)) {
+            //text
+            Object[] data = (Object[]) objectIn.readObject();
             //workspace, name of worksapce is name of file
-            ModuleEditor lm = new ModuleEditor(Tools.fileName(f.getName()), project, module);
-            project.getProjectFiles().add(lm);
+            HEXEditor he = new HEXEditor(Tools.fileName(f.getName()), project);
+            he.setData(data);
+            project.getProjectFiles().add(he);
         } catch (Exception ex) {
-            Logger.getLogger(IOProject.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -921,69 +1010,6 @@ public class Tools {
             return LogicSimulatorCore.MODULE_FILE_TYPE;
         }
         return "";
-    }
-
-    /**
-     * Resize list and add new object on end of list
-     *
-     * @param list List<Line>
-     * @param obj Line
-     * @return
-     */
-    public static Line[] addLine(Line[] list, Line obj) {
-        if (list == null) {
-            return new Line[]{obj};
-        } else {
-            //create risize copy of list
-            Line[] newList = new Line[list.length + 1];
-            System.arraycopy(list, 0, newList, 0, list.length);
-            //obj add on end of list
-            newList[list.length] = obj;
-
-            return newList;
-        }
-    }
-
-    /**
-     * Resize list and add new object on end of list
-     *
-     * @param list List <Circle>
-     * @param obj Circle
-     * @return
-     */
-    public static Circle[] addCircle(Circle[] list, Circle obj) {
-        if (list == null) {
-            return new Circle[]{obj};
-        } else {
-            //create risize copy of list
-            Circle[] newList = new Circle[list.length + 1];
-            System.arraycopy(list, 0, newList, 0, list.length);
-            //obj add on end of list
-            newList[list.length] = obj;
-
-            return newList;
-        }
-    }
-
-    /**
-     * Resize list and add new object on end of list
-     *
-     * @param list List <Curve>
-     * @param obj Circle
-     * @return
-     */
-    public static Curve[] addCurve(Curve[] list, Curve obj) {
-        if (list == null) {
-            return new Curve[]{obj};
-        } else {
-            //create risize copy of list
-            Curve[] newList = new Curve[list.length + 1];
-            System.arraycopy(list, 0, newList, 0, list.length);
-            //obj add on end of list
-            newList[list.length] = obj;
-
-            return newList;
-        }
     }
 
     /**
@@ -1160,6 +1186,297 @@ public class Tools {
                 new Dimension(size, size)
         );
         return img;
+    }
+
+    /**
+     * Get all points of model
+     *
+     * @param model Model
+     * @return
+     */
+    public static List<Point.Double> getPoints(Model model) {
+        List<Point.Double> pts = new ArrayList<>();
+        //for graphics objects
+        if (model.graphicsObjects != null) {
+            for (GraphicsObject go : model.graphicsObjects) {
+                if (go == null) {
+                    continue;
+                }
+                pts.addAll(Arrays.asList(go.getPoints()));
+            }
+        }
+        //for io pins
+        if (model.getIOPins() != null) {
+            model.getIOPins().stream().forEach((pin) -> {
+                pts.addAll(Arrays.asList(pin.getPosition()));
+            });
+        }
+        return pts;
+    }
+
+    /**
+     * Resize list and add new object on end of list
+     *
+     * @param list List with GraphicsObjects
+     * @param obj new objects
+     * @return
+     */
+    public static GraphicsObject[] addGraphicsObjects(GraphicsObject[] list, GraphicsObject[] obj) {
+        if (list == null) {
+            return obj;
+        } else {
+            //create risize copy of list
+            GraphicsObject[] newList = new GraphicsObject[list.length + obj.length];
+            System.arraycopy(list, 0, newList, 0, list.length);
+            //obj add on end of list
+            System.arraycopy(obj, 0, newList, list.length, obj.length);
+            return newList;
+        }
+    }
+
+    /**
+     * Resize list and add new object on end of list
+     *
+     * @param list List with GraphicsObjects
+     * @param obj Object for remove
+     * @return
+     */
+    public static GraphicsObject[] removeGraphicsObject(GraphicsObject[] list, GraphicsObject obj) {
+        if (list != null) {
+            GraphicsObject[] newList = new GraphicsObject[list.length - 1];
+            int index = 0;
+            for (GraphicsObject go : list) {
+                if (go != obj && index < list.length) {
+                    newList[index++] = go;
+                }
+            }
+            return newList;
+        }
+        return null;
+    }
+
+    public static void generateJavaModel(Model model) {
+        String out = "this.model = new Model(\nnew GraphicsObject[]{";
+        for (GraphicsObject go : model.graphicsObjects) {
+            if (go instanceof Line) {
+                Line l = (Line) go;
+                out += "\n   new Line(new Point.Double(" + l.p1.x + ", " + l.p1.y + "), new Point.Double(" + l.p2.x + ", " + l.p2.y + ")),";
+            } else if (go instanceof Circle) {
+                Circle c = (Circle) go;
+                out += "\n   new Circle(new Point.Double(" + c.p1.x + ", " + c.p1.y + "), " + c.radius + "),";
+            } else if (go instanceof Curve) {
+                Curve c = (Curve) go;
+                out += "\n   new Curve(new Point.Double(" + c.p1.x + ", " + c.p1.y + "), new Point.Double(" + c.control.x + ", " + c.control.y + "), new Point.Double(" + c.p2.x + ", " + c.p2.y + ")),";
+            }
+        }
+        out += "\n}\n);\n\n";
+        //io pin
+        for (IOPin pin : model.getIOPins()) {
+            String mx = pin.mode == IOPin.MODE.INPUT ? "INPUT" : "OUTPUT";
+            out += "this.model.getIOPins().add(new IOPin(IOPin.MODE." + mx + ", bits, \"\", new Point.Double(" + pin.getPosition().x + ", " + pin.getPosition().y + ")));\n";
+        }
+        JOptionPane.showMessageDialog(null, new JTextArea(out));
+    }
+
+    /**
+     * Convert binary number to decimal number, on 0 index of array is bin with
+     * lower value
+     *
+     * @param bin Binary number
+     * @return
+     */
+    public static int binToDec(boolean[] bin) {
+        int dec = 0;
+
+        for (int i = 0; i < bin.length; i++) {
+            if (bin[i]) {
+                dec += (int) Math.pow(2, i);
+            }
+        }
+        return dec;
+    }
+
+    /**
+     * Convert binary number to decimal number, on 0 index of array is bin with
+     * lower value
+     *
+     * @param bin Binary number
+     * @return
+     */
+    public static int binToDec(List<Boolean> bin) {
+        int dec = 0;
+
+        int i = 0;
+        for (Boolean bit : bin) {
+            if (bit) {
+                dec += (int) Math.pow(2, i);
+            }
+            i++;
+        }
+        return dec;
+    }
+
+    /**
+     * Convert decimal number to bin and get number digits of bin number
+     *
+     * @param dec Decimal number
+     * @return
+     */
+    public static int binLength(int dec) {
+        int length = 1;
+        while (dec >= 2) {
+            dec -= dec % 2 == 0 ? 0 : 1;
+            length++;
+            dec /= 2;
+        }
+        return length;
+    }
+
+    /**
+     *
+     * @param number Number in decadic base
+     * @param base Base of final number
+     * @return
+     */
+    public static String convertToNumber(int number, int base) {
+        if (base < 1 || number < 0 || base > 36) {
+            return "";
+        }
+
+        if (base == 10) {
+            return number + "";
+        }
+
+        String ret = "";
+
+        while (number >= base) {
+            ret = toHexDigit(number % base) + ret;
+            number -= number % base;
+            number /= base;
+        }
+
+        ret = toHexDigit(number) + ret;
+
+        return ret;
+    }
+
+    /**
+     * Convert number to hex digit (0 <-> Z)
+     *
+     * @param number decimal int
+     * @return
+     */
+    public static char toHexDigit(int number) {
+        if (number < 10) {
+            return (char) (number + 48);
+        } else {
+            return (char) (number + 55);
+        }
+    }
+
+    /**
+     * Convert hex to bin
+     *
+     * @param hex hex number
+     * @return
+     */
+    public static boolean[] hexToBinArray(String hex) {
+        //from hex string to bin string
+        String str = Integer.toString(Integer.parseInt(hex, 16), 2);
+
+        //from bin string to bit array
+        boolean[] bin = new boolean[str.length()];
+        for (int i = 0; i < bin.length; i++) {
+            bin[i] = str.charAt(str.length() - i - 1) == '1';
+        }
+        return bin;
+    }
+
+    /**
+     * Conver 8 bit data to color, indexs: blue[0,1], green[2,3,4], red[5,6,7]
+     * (higher priority on right side)
+     *
+     * @param bits boolean[8]
+     * @return Color
+     */
+    public static Color get8BitColor(boolean[] bits) {
+        if (bits.length < 8) {
+            return null;
+        }
+        int r = (bits[7] ? 146 : 0) + (bits[6] ? 73 : 0) + (bits[5] ? 36 : 0);
+        int g = (bits[4] ? 146 : 0) + (bits[3] ? 73 : 0) + (bits[2] ? 36 : 0);
+        int b = (bits[1] ? 170 : 0) + (bits[0] ? 85 : 0);
+        return new Color(r, g, b);
+    }
+
+    /**
+     * Draw line in pixel data buffer
+     *
+     * @param pixels pixel data buffer
+     * @param width Width of pixel buffer
+     * @param height Height of pixel buffer
+     * @param p1 Point 1 of lineF
+     * @param p2 Point 2 of line
+     * @param color Color
+     */
+    public static void drawLine(int[] pixels, int width, int height, Point p1, Point p2, int color) {
+        float dx = p2.x - p1.x;
+        float dy = p2.y - p1.y;
+
+        float steps;
+        if (Math.abs(dx) >= Math.abs(dy)) {
+            steps = Math.abs(dx);
+        } else {
+            steps = Math.abs(dy);
+        }
+
+        if (steps == 0) {
+            return;
+        }
+
+        dx = dx / steps;
+        dy = dy / steps;
+
+        float x = p1.x;
+        float y = p1.y;
+
+        for (int i = 0; i <= steps; i++) {
+            if (x >= 0 && y >= 0 && x < width && y < height) {
+                pixels[(int) x + (int) y * width] = color;
+            }
+            x += dx;
+            y += dy;
+        }
+    }
+
+    /**
+     * Draw circle in pixel data buffer
+     *
+     * @param pixels pixel data buffer
+     * @param width Width of pixel buffer
+     * @param height Height of pixel buffer
+     * @param p1 Point 1 of lineF
+     * @param radius Radius of circle
+     * @param color Color
+     */
+    public static void drawCircle(int[] pixels, int width, int height, Point p1, int radius, int color) {
+
+    }
+
+    /**
+     * Draw polygon in pixel data buffer
+     *
+     * @param pixels pixel data buffer
+     * @param width Width of pixel buffer
+     * @param height Height of pixel buffer
+     * @param points List with points
+     * @param color Color
+     */
+    public static void drawPolygon(int[] pixels, int width, int height, List<Point> points, int color) {
+        for (int i = 0; i < points.size(); i++) {
+            int next = i + 1 == points.size() ? 0 : i + 1;
+            drawLine(pixels, width, height, points.get(i), points.get(next), color);
+        }
     }
 
 }

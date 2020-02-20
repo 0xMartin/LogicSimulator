@@ -6,6 +6,7 @@ package logicSimulator.ui;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import logicSimulator.Tools;
 
@@ -15,6 +16,13 @@ import logicSimulator.Tools;
  */
 public class ButtonHQ extends JButton {
 
+    public ButtonHQ(){
+    }
+    
+    public ButtonHQ(Icon icon){
+        super(icon);
+    }
+    
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
