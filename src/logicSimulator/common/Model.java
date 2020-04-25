@@ -4,6 +4,8 @@
  */
 package logicSimulator.common;
 
+import logicSimulator.objects.IOPin;
+import logicSimulator.graphics.GraphicsObject;
 import java.awt.AlphaComposite;
 import logicSimulator.Tools;
 import logicSimulator.ui.Colors;
@@ -45,12 +47,22 @@ public class Model implements Serializable {
     public boolean rotation = true;
 
     //graphics objects
-    public GraphicsObject[] graphicsObjects;
+    private final List<GraphicsObject> graphicsObjects;
 
-    public Model(GraphicsObject[] graphicsObjects) {
+    public Model() {
+        this.graphicsObjects = new ArrayList<>();
+        this.pins = new ArrayList<>();
+        computeSize();
+    }
+
+    public Model(List<GraphicsObject> graphicsObjects) {
         this.graphicsObjects = graphicsObjects;
         this.pins = new ArrayList<>();
         computeSize();
+    }
+
+    public List<GraphicsObject> getGraphicsObjects() {
+        return this.graphicsObjects;
     }
 
     /**
@@ -74,6 +86,13 @@ public class Model implements Serializable {
      */
     public int getAngle() {
         return this.angle;
+    }
+
+    /**
+     * Reset angle orientation of model
+     */
+    public void resetAngle() {
+        this.angle = 0;
     }
 
     /**
@@ -106,20 +125,34 @@ public class Model implements Serializable {
     /**
      * Compute size of this model
      */
-    public void computeSize() {
+    public final void computeSize() {
         this.max = new Point.Double(Integer.MIN_VALUE, Integer.MIN_VALUE);
         this.min = new Point.Double(Integer.MAX_VALUE, Integer.MAX_VALUE);
         //find max and min for x and y axis
         if (this.graphicsObjects != null) {
-            for (GraphicsObject go : this.graphicsObjects) {
-                for (Point.Double pt : go.getPoints()) {
-                    this.max.x = Math.max(this.max.x, pt.x);
-                    this.max.y = Math.max(this.max.y, pt.y);
-                    this.min.x = Math.min(this.min.x, pt.x);
-                    this.min.y = Math.min(this.min.y, pt.y);
+            this.graphicsObjects.forEach((go) -> {
+                if (go.getPoints() != null) {
+                    for (Point.Double pt : go.getPoints()) {
+                        if (pt != null) {
+                            this.max.x = Math.max(this.max.x, pt.x);
+                            this.max.y = Math.max(this.max.y, pt.y);
+                            this.min.x = Math.min(this.min.x, pt.x);
+                            this.min.y = Math.min(this.min.y, pt.y);
+                        }
+                    }
                 }
-            }
+            });
         }
+        //pins
+        this.pins.stream().forEach((pin) -> {
+            Point.Double pt = pin.getPosition();
+            if (pt != null) {
+                this.max.x = Math.max(this.max.x, pt.x);
+                this.max.y = Math.max(this.max.y, pt.y);
+                this.min.x = Math.min(this.min.x, pt.x);
+                this.min.y = Math.min(this.min.y, pt.y);
+            }
+        });
         //compute width and height
         this.width = (int) (this.max.x - this.min.x);
         this.height = (int) (this.max.y - this.min.y);
@@ -163,11 +196,11 @@ public class Model implements Serializable {
         double A = (double) angle * Math.PI / 2d;
         //line
         if (this.graphicsObjects != null) {
-            for (GraphicsObject go : this.graphicsObjects) {
+            this.graphicsObjects.forEach((go) -> {
                 for (Point.Double pt : go.getPoints()) {
                     Tools.rotatePoint(pt, A);
                 }
-            }
+            });
         }
         //pins
         this.pins.stream().forEach((pin) -> {
@@ -180,7 +213,7 @@ public class Model implements Serializable {
     }
 
     /**
-     * Intersect ?
+     * Intersect cursor with model
      *
      * @param cursor Position of cursor
      * @param mPosition Model position
@@ -196,6 +229,30 @@ public class Model implements Serializable {
                 && x <= mPosition.x + this.max.x) {
             if (y >= mPosition.y + this.min.y
                     && y <= mPosition.y + this.max.y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Intersect cursor with model
+     *
+     * @param cursor Position of cursor
+     * @param mPosition Model position
+     * @param offset Offset of model size [offset > 0: model will be bigger]
+     * @return boolean
+     */
+    public boolean intersect(Point cursor, Point mPosition, int offset) {
+        if (mPosition == null || cursor == null) {
+            return false;
+        }
+        int x = cursor.x;
+        int y = cursor.y;
+        if (x >= mPosition.x + this.min.x - offset
+                && x <= mPosition.x + this.max.x + offset) {
+            if (y >= mPosition.y + this.min.y - offset
+                    && y <= mPosition.y + this.max.y + offset) {
                 return true;
             }
         }
@@ -219,11 +276,11 @@ public class Model implements Serializable {
     public Model cloneObject() {
 
         //copy all graphics objects
-        GraphicsObject[] go_copy = null;
+        List<GraphicsObject> go_copy = null;
         if (this.graphicsObjects != null) {
-            go_copy = new GraphicsObject[this.graphicsObjects.length];
-            for (int i = 0; i < go_copy.length; i++) {
-                go_copy[i] = this.graphicsObjects[i].cloneObject();
+            go_copy = new ArrayList<>();
+            for (GraphicsObject go : this.graphicsObjects) {
+                go_copy.add(go.cloneObject());
             }
         }
 
@@ -254,9 +311,9 @@ public class Model implements Serializable {
 
         //draw all lines
         if (this.graphicsObjects != null) {
-            for (GraphicsObject go : this.graphicsObjects) {
+            this.graphicsObjects.forEach((go) -> {
                 go.draw(g2, x, y);
-            }
+            });
         }
         //render pints
         this.pins.stream().forEach((pin) -> {
@@ -377,12 +434,19 @@ public class Model implements Serializable {
      */
     public void clone(Model model) {
         Model m = model.cloneObject();
-        this.graphicsObjects = m.graphicsObjects;
-        this.pins.clear();
+
+        this.graphicsObjects.clear();
+        m.graphicsObjects.stream().forEach((go) -> {
+            this.graphicsObjects.add(go);
+        });
+
         this.angle = m.angle;
+
+        this.pins.clear();
         m.pins.stream().forEach((p) -> {
             this.pins.add(p);
         });
+
         computeSize();
     }
 
@@ -399,9 +463,9 @@ public class Model implements Serializable {
             try {
                 //get line points
                 if (this.graphicsObjects != null) {
-                    for (GraphicsObject go : this.graphicsObjects) {
+                    this.graphicsObjects.forEach((go) -> {
                         ret.addAll(Arrays.asList(go.getPoints()));
-                    }
+                    });
                 }
                 return ret;
             } catch (Exception ex) {

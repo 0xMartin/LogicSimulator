@@ -26,12 +26,9 @@ public class CopyObjectVector {
         this.objects = new ArrayList<>();
         objects.stream().forEach((obj) -> {
             if (obj.isSelected()) {
-                try {
-                    WorkSpaceObject copy = Tools.clone(obj);
-                    if (copy != null) {
-                        this.objects.add(copy);
-                    }
-                } catch (CloneNotSupportedException ex) {
+                WorkSpaceObject copy = obj.cloneObject();
+                if (copy != null) {
+                    this.objects.add(copy);
                 }
             }
         });
@@ -40,12 +37,9 @@ public class CopyObjectVector {
     public List<WorkSpaceObject> getObjects() {
         List<WorkSpaceObject> ret = new ArrayList<>();
         objects.stream().forEach((obj) -> {
-            try {
-                WorkSpaceObject copy = Tools.clone(obj);
-                if (copy != null) {
-                    ret.add(copy);
-                }
-            } catch (CloneNotSupportedException ex) {
+            WorkSpaceObject copy = obj.cloneObject();
+            if (copy != null) {
+                ret.add(copy);
             }
         });
         return ret;

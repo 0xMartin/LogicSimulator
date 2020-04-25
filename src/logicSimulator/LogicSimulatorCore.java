@@ -25,6 +25,7 @@ public interface LogicSimulatorCore {
     public static final String WORKSPACE_FILE_TYPE = "lwf";
     public static final String MODULE_FILE_TYPE = "mf";
     public static final String HEX_FILE_TYPE = "hef";
+    public static final String DOCUMENTATION_FILE_TYPE = "html";
 
     //properties files
     public static final String PROPT_PROJECTS = "projects.propt";

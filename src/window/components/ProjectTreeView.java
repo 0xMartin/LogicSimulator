@@ -19,13 +19,14 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreePath;
-import logicSimulator.projectFile.HEXEditor;
+import logicSimulator.projectFile.HexEditor;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.projectFile.ModuleEditor;
 import logicSimulator.Project;
 import logicSimulator.ProjectFile;
 import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.Tools;
+import logicSimulator.projectFile.DocumentationEditor;
 import window.MainWindow;
 import window.NewFile;
 
@@ -71,14 +72,16 @@ public class ProjectTreeView extends JTree implements MouseListener {
         List<ProjectFile> projectFiles = this.project.getProjectFiles();
 
         //count number of items in sections
-        int count_project = 0, count_module = 0, count_hex = 0;
+        int count_project = 0, count_module = 0, count_hex = 0, count_doc = 0;
         for (ProjectFile pf : projectFiles) {
             if (pf instanceof WorkSpace) {
                 count_project++;
             } else if (pf instanceof ModuleEditor) {
                 count_module++;
-            } else if (pf instanceof HEXEditor) {
+            } else if (pf instanceof HexEditor) {
                 count_hex++;
+            }else if (pf instanceof DocumentationEditor) {
+                count_doc++;
             }
         }
 
@@ -100,6 +103,7 @@ public class ProjectTreeView extends JTree implements MouseListener {
                 }
             }
         }
+        
         //modules
         folder = new String[Math.max(count_module + 1, 2)];
         data.add(folder);
@@ -115,6 +119,7 @@ public class ProjectTreeView extends JTree implements MouseListener {
                 }
             }
         }
+        
         //hex files
         folder = new String[Math.max(count_hex + 1, 2)];
         data.add(folder);
@@ -124,17 +129,32 @@ public class ProjectTreeView extends JTree implements MouseListener {
         } else {
             int index = 0;
             for (int i = 0; i < projectFiles.size() && index < count_hex; i++) {
-                if (projectFiles.get(i) instanceof HEXEditor) {
+                if (projectFiles.get(i) instanceof HexEditor) {
                     folder[(index++) + 1] = projectFiles.get(i).getComp().getName()
                             + "." + LogicSimulatorCore.HEX_FILE_TYPE;
                 }
             }
         }
+        
         //libraries
         data.add(new String[]{"Libraries", ""});
-        //documentation
-        data.add(new String[]{"Documentation", ""});
-
+        
+        //documentation files
+        folder = new String[Math.max(count_doc + 1, 2)];
+        data.add(folder);
+        folder[0] = "Documentations";
+        if (count_hex == 0) {
+            folder[1] = "";
+        } else {
+            int index = 0;
+            for (int i = 0; i < projectFiles.size() && index < count_hex; i++) {
+                if (projectFiles.get(i) instanceof DocumentationEditor) {
+                    folder[(index++) + 1] = projectFiles.get(i).getComp().getName()
+                            + "." + LogicSimulatorCore.DOCUMENTATION_FILE_TYPE;
+                }
+            }
+        }
+        
         //build component list  
         this.setModel(Tools.buildTreeModel(data, this.project.getName()));
     }
@@ -160,13 +180,19 @@ public class ProjectTreeView extends JTree implements MouseListener {
             super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 
             String name = value.toString();
-            if (name.endsWith(".lwf")) {
+            if (name.endsWith(LogicSimulatorCore.WORKSPACE_FILE_TYPE)) {
                 //logic worksapce file
                 this.setIcon(SystemResources.LWF_ICON);
-            } else if (name.endsWith(".mf")) {
+            } else if (name.endsWith(LogicSimulatorCore.MODULE_FILE_TYPE)) {
                 //module file
                 this.setIcon(SystemResources.MF_ICON);
-            } else if (name.length() == 0){
+            } else if (name.endsWith(LogicSimulatorCore.HEX_FILE_TYPE)) {
+                //module file
+                this.setIcon(SystemResources.HEF_ICON);
+            }  else if (name.endsWith(LogicSimulatorCore.DOCUMENTATION_FILE_TYPE)) {
+                //module file
+                this.setIcon(SystemResources.DF_ICON);
+            }  else if (name.length() == 0){
                 //module file
                 this.setIcon(SystemResources.PACKAGE_ICON);
             }

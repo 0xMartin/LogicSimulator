@@ -35,7 +35,10 @@ public class NumberChooser extends JLabel implements MouseListener, MouseMotionL
 
     private JWindow ruler;
 
+    private boolean hex = false;
+
     public NumberChooser(String prefix, int value, int step, int min, int max) {
+        super(prefix + "    " + value);
         this.value = value;
         this.step = step;
         this.prefix = prefix;
@@ -70,6 +73,10 @@ public class NumberChooser extends JLabel implements MouseListener, MouseMotionL
         this.ruler.setBackground(new Color(0, 0, 0, 0));
     }
 
+    public void setHexDisplayFormat(boolean b) {
+        this.hex = b;
+    }
+
     public void setMin(int min) {
         this.min = min;
     }
@@ -100,7 +107,10 @@ public class NumberChooser extends JLabel implements MouseListener, MouseMotionL
 
     @Override
     protected void paintComponent(Graphics g) {
-        super.setText(this.prefix + "    " + (this.value + this.offset));
+        int val = (this.value + this.offset);
+         
+        //draw
+        super.setText(this.prefix + "    " + (this.hex ? "0x" + Integer.toString(val, 16) : val));
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
@@ -137,12 +147,13 @@ public class NumberChooser extends JLabel implements MouseListener, MouseMotionL
 
     /**
      * Set value changed listener
+     *
      * @param valueChanged ActionListener
      */
-    public void setValueChangedEvent(ActionListener valueChanged){
+    public void setValueChangedEvent(ActionListener valueChanged) {
         this.valueChanged = valueChanged;
     }
-    
+
     @Override
     public void mousePressed(MouseEvent e) {
         if (!super.isEnabled()) {

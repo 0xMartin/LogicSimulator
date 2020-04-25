@@ -8,7 +8,6 @@ import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Event;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -21,7 +20,13 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.geom.Point2D;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
@@ -30,66 +35,77 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
+import logicSimulator.ComputeCore;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.PFHandler;
-import logicSimulator.PFMode;
 import logicSimulator.Project;
 import logicSimulator.ProjectFile;
 import logicSimulator.Settings;
 import logicSimulator.Tools;
-import logicSimulator.common.LogicModule;
+import logicSimulator.data.FileIO;
+import logicSimulator.objects.LogicModule;
 import logicSimulator.ui.Colors;
-import logicSimulator.common.IOPin;
-import logicSimulator.common.Circle;
-import logicSimulator.common.Line;
-import logicSimulator.common.Curve;
-import logicSimulator.common.GraphicsObject;
-import window.components.ProjectFileToolbar;
+import logicSimulator.objects.IOPin;
+import logicSimulator.graphics.Circle;
+import logicSimulator.graphics.Line;
+import logicSimulator.graphics.Curve;
+import logicSimulator.graphics.GraphicsObject;
 
 /**
  * Allows logic module model editing
  *
  * @author Martin
  */
-public class ModuleEditor extends JPanel implements ProjectFile {
-
-    //project
-    private final Project project;
+public class ModuleEditor extends ProjectFile {
 
     //logic module
-    private final LogicModule module;
+    private LogicModule module;
 
-    //workspace (logic model)
-    private WorkSpace workSpace;
+    private String changeTime = "";
 
-    private final PFMode pfMode = new PFMode(false, false, true);
+    private String logicModelName;
+
+    private final ProjectFileToolbar toolbar;
 
     //handler
     private final EditorHandler editorHandler;
 
     public ModuleEditor(String name, Project project, LogicModule module) {
+        super(project);
         //default
         this.module = module;
-        this.project = project;
-        this.setName(name);
-        this.setBorder(null);
-        this.setLayout(new BorderLayout());
+        super.setName(name);
+        super.setBorder(null);
+        super.setLayout(new BorderLayout());
 
         //toolbar
-        this.add(new ProjectFileToolbar(this), BorderLayout.NORTH);
+        this.toolbar = new ProjectFileToolbar(this);
+        super.add(this.toolbar, BorderLayout.NORTH);
 
         //editor handler
-        this.editorHandler = new EditorHandler();
-        this.add(this.editorHandler, BorderLayout.CENTER);
+        this.editorHandler = new EditorHandler(this);
+        super.add(this.editorHandler, BorderLayout.CENTER);
+
     }
 
-    /**
-     * Get editor handler
-     *
-     * @return
-     */
-    public EditorHandler getEditorHandler() {
-        return this.editorHandler;
+    @Override
+    public void backUpData(String projectDirectoryPath) throws Exception {
+        FileIO.writeObject(
+                new File(projectDirectoryPath + this.getName() + "." + LogicSimulatorCore.MODULE_FILE_TYPE),
+                new Object[]{this.module, this.logicModelName}
+        );
+    }
+
+    @Override
+    public void restoreData(File file) throws Exception {
+        //read LogicModule from file
+        Object[] data = (Object[]) FileIO.readObject(file);
+        this.module = (LogicModule) data[0];
+        this.logicModelName = (String) data[1];
+    }
+
+    public ProjectFileToolbar getToolBar() {
+        return this.toolbar;
     }
 
     /**
@@ -98,16 +114,24 @@ public class ModuleEditor extends JPanel implements ProjectFile {
      * @param workspace
      */
     public void setWorkSpace(WorkSpace workspace) {
-        this.workSpace = workspace;
+        //set logic model
+        this.module.setLogicModel(workspace.getObjects());
+        //get name of workspace (logic model)
+        this.logicModelName = workspace.getName() == null ? "" : workspace.getName();
+        //time of last change
+        this.changeTime = LogicSimulatorCore.getDate("HH:mm:ss - dd.MM.yyyy");
+
+        //for each child of this module set new workspace
+        applyChanges();
     }
 
     /**
-     * Get workspace
+     * Get name of current logic model
      *
      * @return
      */
-    public WorkSpace getWorkSpace() {
-        return this.workSpace;
+    public String getLogicModelName() {
+        return this.logicModelName;
     }
 
     /**
@@ -120,30 +144,8 @@ public class ModuleEditor extends JPanel implements ProjectFile {
     }
 
     @Override
-    public PFMode getPFMode() {
-        return this.pfMode;
-    }
-
-    @Override
-    public Component getComp() {
-        return this;
-    }
-
-    @Override
     public PFHandler getHandler() {
         return this.editorHandler;
-    }
-
-    @Override
-    public Project getProject() {
-        return this.project;
-    }
-
-    @Override
-    public void selectInProject() {
-        if (this.project != null) {
-            this.project.setSelectedFile(this);
-        }
     }
 
     public void selecteAllGraphicsObjects() {
@@ -155,21 +157,68 @@ public class ModuleEditor extends JPanel implements ProjectFile {
     }
 
     /**
+     * Apply all changes for all childs of this module in project
+     */
+    private boolean changed = false;
+
+    public void applyChanges() {
+        Project p = super.getProject();
+        if (p != null) {
+            if (p.getProjectFiles() != null) {
+                //find out childs of this module in each workspaces of projects
+                p.getProjectFiles().stream()
+                        .filter((pf) -> (pf instanceof WorkSpace))
+                        .forEachOrdered((pf) -> {
+                            //workspace
+                            WorkSpace w = (WorkSpace) pf;
+                            changed = false;
+                            w.getObjects().stream()
+                                    .filter((obj) -> (obj instanceof LogicModule))
+                                    .forEachOrdered((obj) -> {
+                                        LogicModule child = (LogicModule) obj;
+                                        if (child.getModuleName().equals(this.module.getModuleName())) {
+                                            //clone
+                                            child.cloneModule(this.module);
+                                            changed = true;
+                                        }
+                                    });
+                            //if some module changed than must refresh connectivity
+                            if (changed) {
+                                ComputeCore.CircuitHandler.refreshConnectivity(w.getObjects());
+                            }
+                        });
+                //change time
+                this.changeTime = LogicSimulatorCore.getDate("HH:mm:ss - dd.MM.yyyy");
+                this.editorHandler.repaint();
+            }
+        }
+    }
+
+    /**
      * Handler for logic module editor (rendering, model editing, linking logic
      * model, ...)
      */
     private class EditorHandler extends JPanel implements PFHandler,
-            MouseListener, MouseMotionListener {
+            MouseListener, MouseMotionListener, MouseWheelListener {
 
         //menu for model editor
-        private final JPopupMenu menu;
+        private JPopupMenu menu;
 
-        public EditorHandler() {
-            super();
+        private final ModuleEditor owner;
 
-            this.addMouseListener(this);
-            this.addMouseMotionListener(this);
-            this.addFocusListener(new FocusAdapter() {
+        private float scale = 1.0f;
+
+        /**
+         * Create handler for module editor
+         *
+         * @param owner Owner of this handler
+         */
+        public EditorHandler(ModuleEditor owner) {
+            this.owner = owner;
+            super.addMouseListener(this);
+            super.addMouseMotionListener(this);
+            super.addMouseWheelListener(this);
+            super.addFocusListener(new FocusAdapter() {
                 @Override
                 public void focusGained(FocusEvent e) {
                     if (module != null) {
@@ -177,6 +226,12 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                     }
                 }
             });
+            initMenu();
+            //paint zoom value on toolbar
+            this.zoom(0);
+        }
+
+        private void initMenu() {
 
             //init menu
             this.menu = new JPopupMenu();
@@ -196,7 +251,7 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                 chooseLogicModel();
             };
             item.addActionListener(action);
-            this.registerKeyboardAction(
+            super.registerKeyboardAction(
                     action, KeyStroke.getKeyStroke(KeyEvent.VK_X, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
             );
 
@@ -230,8 +285,7 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                 );
                 Tools.step(p, LogicSimulatorCore.WORK_SPACE_STEP);
                 this.line = new Line(p, Tools.copy(p));
-                module.getModel().graphicsObjects = Tools.addGraphicsObjects(
-                        module.getModel().graphicsObjects, new GraphicsObject[]{this.line});
+                module.getModel().getGraphicsObjects().add(this.line);
                 this.repaint();
             };
             item.addActionListener(action);
@@ -245,8 +299,7 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                         this.pressed.y - this.getHeight() / 2
                 );
                 this.circle = new Circle(p, LogicSimulatorCore.WORK_SPACE_STEP);
-                module.getModel().graphicsObjects = Tools.addGraphicsObjects(
-                        module.getModel().graphicsObjects, new GraphicsObject[]{this.circle});
+                module.getModel().getGraphicsObjects().add(this.circle);
                 this.repaint();
             };
             item.addActionListener(action);
@@ -261,8 +314,7 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                 );
                 Tools.step(p, LogicSimulatorCore.WORK_SPACE_STEP);
                 this.curve = new Curve(p, Tools.copy(p), Tools.copy(p));
-                module.getModel().graphicsObjects = Tools.addGraphicsObjects(
-                        module.getModel().graphicsObjects, new GraphicsObject[]{this.curve});
+                module.getModel().getGraphicsObjects().add(this.curve);
                 this.repaint();
             };
             item.addActionListener(action);
@@ -282,9 +334,7 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                     new Line(new Point.Double(p.x + a, p.y), new Point.Double(p.x + a, p.y + a)),
                     new Line(new Point.Double(p.x, p.y + a), new Point.Double(p.x + a, p.y + a))
                 };
-                for (GraphicsObject go : rect) {
-                    this.GOBuffer.add(go);
-                }
+                this.GOBuffer.addAll(Arrays.asList(rect));
             };
             item.addActionListener(action);
 
@@ -310,7 +360,7 @@ public class ModuleEditor extends JPanel implements ProjectFile {
             item = new JMenuItem("Clear graphics model");
             m.add(item);
             action = (ActionEvent evt) -> {
-                module.getModel().graphicsObjects = null;
+                module.getModel().getGraphicsObjects().clear();
                 this.repaint();
             };
             item.addActionListener(action);
@@ -341,7 +391,7 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                 this.repaint();
             };
             item.addActionListener(action);
-            this.registerKeyboardAction(
+            super.registerKeyboardAction(
                     action, KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW
             );
 
@@ -352,7 +402,7 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                 copySelectedGraphicsObjects();
             };
             item.addActionListener(action);
-            this.registerKeyboardAction(
+            super.registerKeyboardAction(
                     action, KeyStroke.getKeyStroke(KeyEvent.VK_C, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
             );
 
@@ -368,7 +418,7 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                 });
             };
             item.addActionListener(action);
-            this.registerKeyboardAction(
+            super.registerKeyboardAction(
                     action, KeyStroke.getKeyStroke(KeyEvent.VK_V, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
             );
 
@@ -380,13 +430,32 @@ public class ModuleEditor extends JPanel implements ProjectFile {
             item.addActionListener(action);
         }
 
+        @Override
+        public void zoom(int ration) {
+            if (ration != 0) {
+                this.scale -= 0.1f * ration;
+                this.scale = this.scale < 1.0f ? 1.0f : this.scale;
+                this.scale = this.scale > 3f ? 3f : this.scale;
+                //repaint
+                this.repaint();
+            }
+            //set zoom info
+            this.owner.getToolBar().setRightString(String.format("%.2f", this.scale * 100) + "%");
+        }
+
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            //zoom out or in
+            zoom(e.getWheelRotation());
+        }
+
         /**
          * Choose logic model (workspace) for module
          */
         public void chooseLogicModel() {
             //load all workspaces from project
             List<WorkSpace> works = new ArrayList<>();
-            project.getProjectFiles().stream().forEach((pf) -> {
+            this.owner.getProject().getProjectFiles().stream().forEach((pf) -> {
                 if (pf instanceof WorkSpace) {
                     works.add((WorkSpace) pf);
                 }
@@ -419,23 +488,24 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                 for (int i = 0; i < works.size(); i++) {
                     if (input.equals(works.get(i).getName())) {
                         //set
-                        module.setLogicModel(works.get(i));
-                        workSpace = works.get(i);
+                        setWorkSpace(works.get(i));
                     }
                 }
             }
         }
 
         @Override
-        public void repaintPF(){
+        public void repaintPF() {
             this.repaint();
         }
-        
+
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponents(g);
 
             Graphics2D g2 = (Graphics2D) g;
+
+            g2.scale(this.scale, this.scale);
 
             //set high rendering quality (if is allowed in core)
             if (Settings.HIGH_RENDER_QUALITY) {
@@ -446,13 +516,13 @@ public class ModuleEditor extends JPanel implements ProjectFile {
             g2.fillRect(0, 0, this.getWidth(), this.getHeight());
 
             //center of screen
-            int cW = this.getWidth() / 2;
-            int cH = this.getHeight() / 2;
+            int cW = (int) (this.getWidth() / 2 / this.scale);
+            int cH = (int) (this.getHeight() / 2 / this.scale);
 
             //find start [x, y] for grid
             g2.setColor(Colors.ME_GRID);
-            int startX = this.getWidth() / 2;
-            int startY = this.getHeight() / 2;
+            int startX = (int) (this.getWidth() / 2 / this.scale);
+            int startY = (int) (this.getHeight() / 2 / this.scale);
             while (startX > 0) {
                 startX -= LogicSimulatorCore.WORK_SPACE_STEP;
             }
@@ -491,34 +561,54 @@ public class ModuleEditor extends JPanel implements ProjectFile {
             //draw cross cursor pointer
             if (this.cursor != null) {
                 g2.setColor(Colors.ME_CURSORCROSS);
-                g2.drawLine(this.cursor.x, 0, this.cursor.x, this.getHeight());
-                g2.drawLine(0, this.cursor.y, this.getWidth(), this.cursor.y);
+                g2.drawLine(
+                        (int) (this.cursor.x / this.scale),
+                        0,
+                        (int) (this.cursor.x / this.scale),
+                        this.getHeight()
+                );
+                g2.drawLine(
+                        0,
+                        (int) (this.cursor.y / this.scale),
+                        this.getWidth(),
+                        (int) (this.cursor.y / this.scale)
+                );
             }
 
             //draw cross mouse press pointer
             if (this.pressed != null) {
                 g2.setColor(Colors.ME_GRID);
-                g2.drawLine(this.pressed.x, - 10 + this.pressed.y, this.pressed.x, 10 + this.pressed.y);
-                g2.drawLine(this.pressed.x - 10, this.pressed.y, this.pressed.x + 10, this.pressed.y);
+                g2.drawLine(
+                        (int) (this.pressed.x / this.scale),
+                        (int) (this.pressed.y / this.scale - 10),
+                        (int) (this.pressed.x / this.scale),
+                        (int) (this.pressed.y / this.scale + 10)
+                );
+                g2.drawLine(
+                        (int) (this.pressed.x / this.scale - 10),
+                        (int) (this.pressed.y / this.scale),
+                        (int) (this.pressed.x / this.scale + 10),
+                        (int) (this.pressed.y / this.scale)
+                );
             }
 
             //draw model size
             if (module != null) {
                 if (module.getModel() != null) {
-                    g2.setColor(Colors.ME_GRID);
+                    g2.setColor(Colors.ME_CENTER);
                     g2.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0));
                     for (int i = -1; i <= 1; i += 2) {
                         g2.drawLine(
-                                this.getWidth() / 2 + i * module.getModel().getWidth() / 2,
+                                cW + i * module.getModel().getWidth() / 2,
                                 0,
-                                this.getWidth() / 2 + i * module.getModel().getWidth() / 2,
-                                this.getHeight()
+                                cW + i * module.getModel().getWidth() / 2,
+                                (int) (this.getHeight() / this.scale)
                         );
                         g2.drawLine(
                                 0,
-                                this.getHeight() / 2 + i * module.getModel().getHeight() / 2,
-                                this.getWidth(),
-                                this.getHeight() / 2 + i * module.getModel().getHeight() / 2
+                                cH + i * module.getModel().getHeight() / 2,
+                                (int) (this.getWidth() / this.scale),
+                                cH + i * module.getModel().getHeight() / 2
                         );
                     }
                     g2.setStroke(new BasicStroke(1));
@@ -533,20 +623,20 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                 g2.setColor(logicSimulator.ui.Colors.SELECT_RECT2);
                 g2.setStroke(new BasicStroke(1));
                 g2.setComposite(AlphaComposite.SrcOver.derive(0.3f));
-                int w = this.last.x - this.pressed.x;
-                int h = this.last.y - this.pressed.y;
+                int w = (int) ((this.last.x - this.pressed.x) / this.scale);
+                int h = (int) ((this.last.y - this.pressed.y) / this.scale);
                 g2.fillRect(
-                        this.pressed.x + (w < 0 ? w : 0),
-                        this.pressed.y + (h < 0 ? h : 0),
-                        Math.abs(this.last.x - this.pressed.x),
-                        Math.abs(this.last.y - this.pressed.y)
+                        (int) ((this.pressed.x + (w < 0 ? w : 0)) / this.scale),
+                        (int) ((this.pressed.y + (h < 0 ? h : 0)) / this.scale),
+                        (int) (Math.abs(this.last.x - this.pressed.x) / this.scale),
+                        (int) (Math.abs(this.last.y - this.pressed.y) / this.scale)
                 );
                 g2.setComposite(AlphaComposite.SrcOver.derive(1.0f));
                 g2.drawRect(
-                        this.pressed.x + (w < 0 ? w : 0),
-                        this.pressed.y + (h < 0 ? h : 0),
-                        Math.abs(this.last.x - this.pressed.x),
-                        Math.abs(this.last.y - this.pressed.y)
+                        (int) ((this.pressed.x + (w < 0 ? w : 0)) / this.scale),
+                        (int) ((this.pressed.y + (h < 0 ? h : 0)) / this.scale),
+                        (int) (Math.abs(this.last.x - this.pressed.x) / this.scale),
+                        (int) (Math.abs(this.last.y - this.pressed.y) / this.scale)
                 );
             }
 
@@ -557,27 +647,38 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                     for (int i = 0; i < pts.size(); i++) {
                         Point.Double p = pts.get(i);
                         if (p != null) {
+                            IOPin pin = isPointPinPosition(p);
                             if (this.select.stream().anyMatch((pt) -> (p == pt))) {
                                 g2.setColor(logicSimulator.ui.Colors.SELECT_RECT);
                             } else {
-                                g2.setColor(Color.BLUE);
+                                g2.setColor(pin != null ? Color.BLUE : Color.GRAY);
                             }
                             g2.fillRect(
-                                    (int) (p.x - 2) + this.getWidth() / 2,
-                                    (int) (p.y - 2) + this.getHeight() / 2,
+                                    (int) (p.x - 2 + cW),
+                                    (int) (p.y - 2 + cH),
                                     4,
                                     4
                             );
+                            if (pin != null) {
+                                g2.setColor(Color.blue);
+                                int xoff = pin.getPosition().x < 0
+                                        ? -g2.getFontMetrics().stringWidth(pin.getLabel()) - 10 : 10;
+                                g2.drawString(
+                                        pin.getLabel(),
+                                        (int) (p.x + xoff + cW),
+                                        (int) (p.y + cH)
+                                );
+                            }
                         }
                     }
                 }
             }
 
+            g2.scale(1f / this.scale, 1f / this.scale);
+
             //module info table
-            String lm = "";
             int co = 0, in = 0, out = 0;
-            if (workSpace != null) {
-                lm = workSpace.getName();
+            if (module != null) {
                 co = module.getLogicModel().size();
                 for (IOPin p : module.getPins()) {
                     if (p.mode == IOPin.MODE.INPUT) {
@@ -588,15 +689,15 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                 }
             }
             g2.setColor(Colors.ME_BACKGROUND);
-            g2.fillRect(10, 8, 200, 65);
+            g2.fillRect(10, 8, 200, 80);
             g2.setColor(Colors.ME_MODEL);
-            if (workSpace != null) {
-                g2.drawRect(10, 8, 200, 65);
-            }
-            g2.drawString("Logic model: " + lm, 20, 20);
+            g2.drawRect(10, 8, 200, 80);
+
+            g2.drawString("Logic model: " + logicModelName, 20, 20);
             g2.drawString("Complexity: " + co, 20, 35);
             g2.drawString("Inputs: " + in, 20, 50);
             g2.drawString("Output: " + out, 20, 65);
+            g2.drawString("Last change: " + changeTime, 20, 80);
 
             //info table
             if (this.cursor != null && this.pressed != null) {
@@ -644,7 +745,10 @@ public class ModuleEditor extends JPanel implements ProjectFile {
         }
 
         @Override
-        public void mousePressed(MouseEvent evt) {            
+        public void mousePressed(MouseEvent evt) {
+            //select this project file in project
+            this.owner.selectInProject();
+
             this.isPressed = true;
             this.pressed = evt.getPoint();
 
@@ -660,10 +764,8 @@ public class ModuleEditor extends JPanel implements ProjectFile {
                         Tools.step(pt, LogicSimulatorCore.WORK_SPACE_STEP / 2);
                     }
                 }
-                //add buffer to model
-                module.getModel().graphicsObjects = Tools.addGraphicsObjects(
-                        module.getModel().graphicsObjects, buf
-                );
+                //add all elements of buffer to model
+                module.getModel().getGraphicsObjects().addAll(Arrays.asList(buf));
                 this.GOBuffer.clear();
             }
 
@@ -896,8 +998,7 @@ public class ModuleEditor extends JPanel implements ProjectFile {
             //try remove graphics object
             GraphicsObject go = getOwner(p);
             if (go != null) {
-                module.getModel().graphicsObjects = Tools.removeGraphicsObject(
-                        module.getModel().graphicsObjects, go);
+                module.getModel().getGraphicsObjects().add(go);
             }
         }
 
@@ -908,8 +1009,8 @@ public class ModuleEditor extends JPanel implements ProjectFile {
          * @return
          */
         private GraphicsObject getOwner(Point.Double p) {
-            if (module.getModel().graphicsObjects != null) {
-                for (GraphicsObject go : module.getModel().graphicsObjects) {
+            if (module.getModel().getGraphicsObjects() != null) {
+                for (GraphicsObject go : module.getModel().getGraphicsObjects()) {
                     if (go == null) {
                         continue;
                     }
@@ -940,13 +1041,17 @@ public class ModuleEditor extends JPanel implements ProjectFile {
         }
 
         @Override
-        public void zoom(int ration) {
-            //not suported
-        }
-
-        @Override
         public Point getCursorPosition() {
             return this.cursor;
+        }
+
+        private IOPin isPointPinPosition(Point2D.Double p) {
+            for (IOPin pin : module.getModel().getIOPins()) {
+                if (pin.getPosition() == p) {
+                    return pin;
+                }
+            }
+            return null;
         }
 
     }

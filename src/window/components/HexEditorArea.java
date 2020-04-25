@@ -6,34 +6,47 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.io.Serializable;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter.DefaultHighlightPainter;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.Highlighter;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
-import logicSimulator.Tools;
+import logicSimulator.Convert;
+import logicSimulator.common.LinkASM;
 
 public class HexEditorArea extends JScrollPane {
 
-    private final JTextArea number, hex;
+    /**
+     * text area for line indexing and text pane for code editing
+     */
+    private final JTextArea number;
     private final JTextPane code;
 
+    //list with start and end indexes of all onstructionos in program
+    private final List<Point> commandPositions = new ArrayList<>();
+
+    //font
     public String fontName = "Consolas";
     public int fontSize = 16;
 
-    private final List<Integer> errorSigns = new ArrayList<>();
-
+    //list for code translating
     private final List<LinkASM> translator = new ArrayList<>();
 
     //coloring AttributeSets
@@ -55,24 +68,47 @@ public class HexEditorArea extends JScrollPane {
         public void insertString(int offset, String str, AttributeSet a) throws BadLocationException {
             super.insertString(offset, str, a);
             colorizeWords();
+            refreshLineNumbers();
+            refreshCurrentInstruction(this, offset);
         }
 
+        @Override
         public void remove(int offs, int len) throws BadLocationException {
             super.remove(offs, len);
             colorizeWords();
+            refreshLineNumbers();
+            refreshCurrentInstruction(this, offs - 1);
         }
 
     };
 
+    //current word
+    private String currentInstruction = "";
+    //if is true than show list with instructions
+    private boolean showInstructions = false;
+
+    /**
+     * Set current writed word
+     *
+     * @param doc StyledDocument
+     * @param offset Caret offset
+     */
+    private void refreshCurrentInstruction(StyledDocument doc, int offset) {
+        try {
+            String text = doc.getText(0, doc.getLength());
+            currentInstruction = "";
+            for (int i = offset; i >= 0; i--) {
+                char c = text.charAt(i);
+                if (c == ' ' || c == '\n' || c == '\r') {
+                    break;
+                }
+                currentInstruction = c + currentInstruction;
+            }
+        } catch (BadLocationException ex) {
+        }
+    }
+
     public HexEditorArea() {
-        super();
-
-        translator.add(new LinkASM("ADD", "0x01"));
-        translator.add(new LinkASM("MOV", "0x02"));
-        translator.add(new LinkASM("RMV", "0x03"));
-        translator.add(new LinkASM("JMP", "0x04"));
-        translator.add(new LinkASM("EQ", "0x05"));
-
         //textarea with number of line
         this.number = new JTextArea(" 1 ");
         this.number.setForeground(Color.BLUE);
@@ -83,107 +119,101 @@ public class HexEditorArea extends JScrollPane {
         this.code = new JTextPane(this.doc) {
             @Override
             protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g;
-                //vertical line divider
-                g2.setColor(Color.BLACK);
-                g2.setStroke(new BasicStroke(2));
-                g2.drawLine(0, 0, 0, super.getHeight());
-                //sigs
+                g.setColor(Color.white);
+                g.fillRect(0, 0, super.getWidth(), super.getHeight());
+
+                //highlight curent line
                 try {
-                    g2.setColor(Color.RED);
-                    int height = g2.getFontMetrics().getHeight();
-                    errorSigns.stream().forEach((sign) -> {
-                        g2.fillRect(0, sign * height, 3, height);
-                    });
-                } catch (Exception ex) {
+                    Rectangle rect = super.modelToView(getCaretPosition());
+                    if (rect != null) {
+                        g.setColor(new Color(230, 230, 250));
+                        g.fillRect(0, rect.y, super.getWidth(), rect.height);
+                    }
+                } catch (BadLocationException e) {
                 }
+
+                //paint component
+                super.paintComponent(g);
+
+                //vertical line divider
+                g.setColor(Color.BLACK);
+                g.drawLine(0, 0, 0, super.getHeight());
+
+                //paint instruction list (ctrl + space)
+                if (showInstructions) {
+                    try {
+                        Rectangle rect = super.modelToView(getCaretPosition());
+                        List<String> view = new ArrayList<>();
+                        String w = currentInstruction.toLowerCase();
+                        //add all similar instructions to list
+                        translator.stream()
+                                .filter((link) -> (link.Mnemonic.startsWith(w) && !w.equals(link.Mnemonic)))
+                                .forEachOrdered((link) -> {
+                                    view.add(link.Mnemonic + " >> 0x" + link.Hex);
+                                });
+                        //draw all items
+                        for (int i = 0; i < view.size(); i++) {
+                            //bg
+                            g.setColor(i % 2 == 0 ? new Color(190, 190, 220) : new Color(160, 160, 190));
+                            g.fillRect(0, rect.y + 7 + (i + 1) * rect.height, 350, rect.height);
+                            //text
+                            g.setColor(i % 2 == 0 ? Color.black : Color.white);
+                            g.drawString(view.get(i), 5, rect.y + 2 + (i + 2) * rect.height);
+                        }
+                    } catch (BadLocationException e) {
+                    }
+                }
+            }
+
+            @Override
+            public void repaint(long tm, int x, int y, int width, int height) {
+                super.repaint(tm, 0, 0, getWidth(), getHeight());
             }
         };
         this.code.addKeyListener(new KeyAdapter() {
-            public void keyReleased(KeyEvent e) {
-                translate();
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                switch (evt.getKeyCode()) {
+                    case KeyEvent.VK_SPACE:
+                        //show available instructions (ctrl + space)
+                        if (evt.isControlDown()) {
+                            showInstructions = true;
+                        }
+                        break;
+                    case KeyEvent.VK_UP:
+                    case KeyEvent.VK_DOWN:
+                    case KeyEvent.VK_LEFT:
+                    case KeyEvent.VK_RIGHT:
+                        //hide available instructions
+                        showInstructions = false;
+                        break;
+                }
             }
         });
-        this.doc.addDocumentListener(new DocumentListener() {
+        this.code.addMouseListener(new MouseAdapter() {
             @Override
-            public void insertUpdate(DocumentEvent e) {
-                codeChanged();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                codeChanged();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
+            public void mousePressed(MouseEvent e) {
+                //hide available instructions
+                showInstructions = false;
             }
         });
-
-        this.code.setBackground(Color.white);
-
-        this.hex = new JTextArea() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g;
-                //vertical line divider
-                g2.setColor(Color.BLACK);
-                g2.setStroke(new BasicStroke(2));
-                g2.drawLine(0, 0, 0, super.getHeight());
-            }
-        };
-        this.hex.setForeground(Color.GRAY);
-        this.hex.setEditable(false);
+        this.code.setOpaque(false);
 
         this.refreshFont(this.fontSize);
-
         JPanel body = new JPanel();
         body.setLayout(new BorderLayout());
-
         body.add(this.number, BorderLayout.WEST);
         body.add(this.code, BorderLayout.CENTER);
-        body.add(this.hex, BorderLayout.EAST);
-
         super.setViewportView(body);
     }
 
-    private void codeChanged() {
-        //refresh number
-        refreshLineNumbers();
-
-        //find errors + higlight
-        try {
-            String[] lines = this.code.getText().split("\n");
-            this.errorSigns.clear();
-
-            int index = 0;
-            for (String line : lines) {
-                String[] words = line.replace("\r", "").toLowerCase().split(" ");
-
-                boolean error = false;
-                for (String word : words) {
-                    if (word.contains("//")) {
-                        break;
-                    }
-                    if (!word.startsWith("0x")
-                            && !this.translator.stream().anyMatch((o) -> (o.oldStr.equals(word)))
-                            && !word.matches("[01]*")) {
-                        error = true;
-                        break;
-                    }
-                }
-
-                if (error) {
-                    this.errorSigns.add(index);
-                }
-
-                index++;
-            }
-        } catch (Exception ex) {
-        }
-
+    /**
+     * Return code text pane
+     *
+     * @return
+     */
+    public JTextPane getCodePanel() {
+        return this.code;
     }
 
     /**
@@ -195,7 +225,6 @@ public class HexEditorArea extends JScrollPane {
         this.fontSize = size;
         this.number.setFont(new Font(this.fontName, Font.PLAIN, size));
         this.code.setFont(new Font(this.fontName, Font.PLAIN, size));
-        this.hex.setFont(new Font(this.fontName, Font.PLAIN, size));
     }
 
     private void refreshLineNumbers() {
@@ -225,86 +254,76 @@ public class HexEditorArea extends JScrollPane {
         }
     }
 
-    private void translate() {
-        this.hex.setText("");
-        String[] lines = this.code.getText().split("\n");
-        for (String line : lines) {
-            String[] words = line.toLowerCase().split(" ");
-
-            WORD_LOOP:
-            for (String word : words) {
-                try {
-                    String prefix = "  0x"
-                            + Tools.convertToNumber(this.hex.getLineCount() - 1, 16);
-                    for (LinkASM link : this.translator) {
-                        if (link.oldStr.equals(word)) {
-                            this.hex.append(prefix + " : " + link.newStr + "  \n");
-                            continue WORD_LOOP;
-                        }
-                    }
-                    //link not found
-                    if (!word.contains("//")) {
-                        if (word.startsWith("0x")) {
-                            //value is in hex fromat
-                            this.hex.append(
-                                    prefix + " : "
-                                    + word.substring(2).replace("\r", "") + "  \n"
-                            );
-
-                        } else {
-                            //value is in bin format
-                            this.hex.append(
-                                    prefix + " : "
-                                    + Integer.toString(Integer.parseInt(word.replace("\r", ""), 2), 16) + "  \n"
-                            );
-                        }
-                    } else {
-                        //comment -> next commands on line
-                        break;
-                    }
-                } catch (Exception ex) {
-                }
-            }
-        }
-    }
-
     /**
-     * Get translated code
+     * Translate and get program in hex
      *
      * @return
      */
-    public List<String> getHexData() {
-        List<String> hexData = new ArrayList<>();
+    public List<Byte> getHexData() {
+        List<Byte> hexData = new ArrayList<>();
+
+        this.commandPositions.clear();
+        int index = 0;
+
         //replace all linkers
         String[] lines = this.code.getText().split("\n");
         for (String line : lines) {
+
+            //remove \r symbol
+            line = line.replace("\r", "");
+            //get words
             String[] words = line.toLowerCase().split(" ");
+
+            boolean comment = false;
+
             word_loop:
             for (String word : words) {
-                //if word is only one whitespace than continue to next word
-                if (word.length() == 1 && word.charAt(0) == ' ') {
+
+                index += word.length() + 1;
+
+                if (comment) {
                     continue;
                 }
+
+                //if word is only one whitespace than continue to next word
+                if (word.length() == 1 && word.charAt(0) == ' ' || word.length() == 0) {
+                    continue;
+                }
+
                 for (LinkASM link : this.translator) {
-                    if (link.oldStr.equals(word)) {
-                        hexData.add(link.newStr);
+                    if (link.Mnemonic.equals(word)) {
+                        hexData.add(Convert.hexToByte(link.Hex));
+                        //add positon of command in text to list
+                        this.commandPositions.add(new Point(index - word.length(), index));
                         continue word_loop;
                     }
                 }
+
                 //link not found
                 if (!word.contains("//")) {
                     if (word.startsWith("0x")) {
                         //value is in hex fromat
-                        hexData.add(word.substring(2).replace("\r", ""));
-
+                        hexData.add(Convert.hexToByte(word.substring(2)));
+                        //add positon of command in text to list
+                        this.commandPositions.add(new Point(index - word.length(), index));
+                    } else if (word.startsWith("'")) {
+                        //value is char format (for loading chars)
+                        for (int i = 1; i < word.length(); i++) {
+                            int dec = (int) word.charAt(i);
+                            hexData.add(Convert.hexToByte(Integer.toString(dec, 16)));
+                            //add positon of command in text to list
+                            this.commandPositions.add(new Point(index - word.length() + i, index - word.length() + i + 1));
+                        }
                     } else {
                         //value is in bin format
-                        hexData.add(Integer.toString(Integer.parseInt(word.replace("\r", ""), 2), 16));
+                        hexData.add(Convert.binToByte(word));
+                        //add positon of command in text to list
+                        this.commandPositions.add(new Point(index - word.length(), index));
                     }
                 } else {
-                    //comment -> next commands on line
-                    break;
+                    comment = true;
                 }
+
             }
         }
 
@@ -327,12 +346,12 @@ public class HexEditorArea extends JScrollPane {
      */
     public void setText(String text) {
         this.code.setText(text);
-        translate();
     }
 
     /**
      * Get text (code)
      *
+     * @return
      */
     public String getText() {
         return this.code.getText();
@@ -353,7 +372,7 @@ public class HexEditorArea extends JScrollPane {
             boolean comment = false;
             for (String word : words) {
                 if (!comment) {
-                    if (translator.stream().anyMatch((l) -> (l.oldStr.equals(word)))) {
+                    if (translator.stream().anyMatch((l) -> (l.Mnemonic.equals(word)))) {
                         //function
                         this.doc.setCharacterAttributes(index, word.length(), asetCommand, true);
                     } else if (word.startsWith("0x")) {
@@ -363,6 +382,10 @@ public class HexEditorArea extends JScrollPane {
                         int start_c = index + word.indexOf("//");
                         int end_c = index + line.length();
                         this.doc.setCharacterAttributes(start_c, end_c - start_c, asetComment, true);
+                        comment = true;
+
+                    } else if (word.startsWith("'")) {
+                        this.doc.setCharacterAttributes(index, word.length(), asetValueBin, true);
                         comment = true;
 
                     } else if (word.matches("[01]*")) {
@@ -375,20 +398,28 @@ public class HexEditorArea extends JScrollPane {
         }
     }
 
-    public static class LinkASM implements Serializable {
+    /**
+     * Highlight command in code pane
+     *
+     * @param address address of highlighted command
+     */
+    public void highlight(int address) {
+        Highlighter highlighter = this.code.getHighlighter();
+        //remove all highlight
+        highlighter.removeAllHighlights();
 
-        public String oldStr, newStr;
+        //find start and end index of command in program
+        Point p;
+        if (address < this.commandPositions.size() && address >= 0) {
+            p = this.commandPositions.get(address);
+        } else {
+            return;
+        }
 
-        public LinkASM(String oldStr, String newStr) {
-            this.oldStr = oldStr.toLowerCase();
-            if (newStr.startsWith("0x")) {
-                //value is in hex fromat
-                this.newStr = newStr.substring(2);
-
-            } else {
-                //value is in bin format
-                this.newStr = Integer.toString(Integer.parseInt(newStr, 2), 16);
-            }
+        //highlight
+        try {
+            highlighter.addHighlight(p.x - 1, p.y - 1, new DefaultHighlightPainter(Color.orange));
+        } catch (BadLocationException ex) {
         }
 
     }

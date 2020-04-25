@@ -6,8 +6,8 @@ package logicSimulator;
 
 import logicSimulator.projectFile.ModuleEditor;
 import logicSimulator.projectFile.WorkSpace;
-import logicSimulator.projectFile.HEXEditor;
 import java.awt.Color;
+import java.awt.Component;
 import logicSimulator.ui.Colors;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
@@ -16,43 +16,57 @@ import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.math.BigInteger;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
+import javax.swing.text.DefaultStyledDocument;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
-import logicSimulator.common.Circle;
-import logicSimulator.common.Curve;
-import logicSimulator.common.GraphicsObject;
-import logicSimulator.common.IOPin;
-import logicSimulator.common.Line;
-import logicSimulator.common.LogicModule;
+import logicSimulator.graphics.Circle;
+import logicSimulator.graphics.Curve;
+import logicSimulator.graphics.GraphicsObject;
+import logicSimulator.objects.IOPin;
+import logicSimulator.graphics.Line;
+import logicSimulator.objects.LogicModule;
 import logicSimulator.common.Model;
-import logicSimulator.objects.Text;
 import logicSimulator.objects.wiring.BitGet;
-import logicSimulator.objects.control.Button;
-import logicSimulator.objects.control.Clock;
-import logicSimulator.objects.control.RandomGenerator;
-import logicSimulator.objects.displays.Bulp;
-import logicSimulator.objects.displays.RasterScreen;
-import logicSimulator.objects.displays.VectorScreen;
-import logicSimulator.objects.gates.And;
-import logicSimulator.objects.gates.Buffer;
-import logicSimulator.objects.gates.Nand;
-import logicSimulator.objects.gates.Nor;
-import logicSimulator.objects.gates.Not;
-import logicSimulator.objects.gates.Nxor;
-import logicSimulator.objects.gates.Or;
-import logicSimulator.objects.gates.Xor;
+import logicSimulator.objects.input.Button;
+import logicSimulator.objects.input.Clock;
+import logicSimulator.objects.input.RandomGenerator;
+import logicSimulator.objects.output.Bulp;
+import logicSimulator.objects.output.RasterScreen;
+import logicSimulator.objects.output.VectorScreen;
+import logicSimulator.objects.gate.And;
+import logicSimulator.objects.gate.Buffer;
+import logicSimulator.objects.gate.DMUX;
+import logicSimulator.objects.gate.MUX;
+import logicSimulator.objects.gate.Nand;
+import logicSimulator.objects.gate.Nor;
+import logicSimulator.objects.gate.Not;
+import logicSimulator.objects.gate.Nxor;
+import logicSimulator.objects.gate.Or;
+import logicSimulator.objects.gate.Xor;
+import logicSimulator.objects.input.KeyBoard;
 import logicSimulator.objects.memory.Counter;
+import logicSimulator.objects.memory.DFlipFlop;
+import logicSimulator.objects.memory.JKFlipFlop;
 import logicSimulator.objects.memory.ROMRAM;
+import logicSimulator.objects.memory.RSFlipFlop;
+import logicSimulator.objects.memory.TFlipFlop;
+import logicSimulator.objects.output.SevenSeg;
+import logicSimulator.objects.output.TextScreen;
 import logicSimulator.objects.wiring.BitSet;
 import logicSimulator.objects.wiring.Bridge;
 import logicSimulator.objects.wiring.Input;
@@ -66,20 +80,20 @@ import logicSimulator.objects.wiring.Wire;
 public class Tools {
 
     /**
-     * Is object in list ?
+     * Convert decimal number to bin and get number digits of bin number: dec:
+     * 16 -> length: 5
      *
-     * @param list List with objects
-     * @param obj Object
+     * @param dec Decimal number
      * @return
      */
-    public static boolean isInList(List<Object> list, Object obj) {
-        if (list == null || obj == null) {
-            return false;
+    public static int binLength(int dec) {
+        int length = 1;
+        while (dec >= 2) {
+            dec -= dec % 2 == 0 ? 0 : 1;
+            length++;
+            dec /= 2;
         }
-        if (list.isEmpty()) {
-            return false;
-        }
-        return list.stream().anyMatch((element) -> (element == obj));
+        return length;
     }
 
     /**
@@ -195,90 +209,11 @@ public class Tools {
         return min;
     }
 
-    public static IOPin getLast(List<IOPin> pins) {
-        return pins.get(pins.size() - 1);
-    }
-
-    /**
-     * Clone WorkSpaceObject
-     *
-     * @param obj Object ot clone
-     * @return
-     * @throws CloneNotSupportedException
-     */
-    public static WorkSpaceObject clone(WorkSpaceObject obj) throws CloneNotSupportedException {
-        if (obj instanceof Not) {
-            //NOT
-            return ((Not) obj).cloneObject();
-        } else if (obj instanceof Buffer) {
-            //BUFFER
-            return ((Buffer) obj).cloneObject();
-        } else if (obj instanceof And) {
-            //AND
-            return ((And) obj).cloneObject();
-        } else if (obj instanceof Nand) {
-            //NAND
-            return ((Nand) obj).cloneObject();
-        } else if (obj instanceof Or) {
-            //OR
-            return ((Or) obj).cloneObject();
-        } else if (obj instanceof Nor) {
-            //NOR
-            return ((Nor) obj).cloneObject();
-        } else if (obj instanceof Xor) {
-            //XOR
-            return ((Xor) obj).cloneObject();
-        } else if (obj instanceof Nxor) {
-            //NXOR
-            return ((Nxor) obj).cloneObject();
-        } else if (obj instanceof Wire) {
-            //WIRE
-            return ((Wire) obj).cloneObject();
-        } else if (obj instanceof Button) {
-            //BUTTON
-            return ((Button) obj).cloneObject();
-        } else if (obj instanceof Bulp) {
-            //BULP
-            return ((Bulp) obj).cloneObject();
-        } else if (obj instanceof BitGet) {
-            //BIT GET
-            return ((BitGet) obj).cloneObject();
-        } else if (obj instanceof BitSet) {
-            //BIT SET
-            return ((BitSet) obj).cloneObject();
-        } else if (obj instanceof Input) {
-            //INPUT
-            return ((Input) obj).cloneObject();
-        } else if (obj instanceof Output) {
-            //OUTPUT
-            return ((Output) obj).cloneObject();
-        } else if (obj instanceof LogicModule) {
-            //LOGIC MODUL
-            return ((LogicModule) obj).cloneObject();
-        } else if (obj instanceof Text) {
-            //TEXT
-            return ((Text) obj).cloneObject();
-        } else if (obj instanceof Bridge) {
-            //BRIDGE
-            return ((Bridge) obj).cloneObject();
-        } else if (obj instanceof Clock) {
-            //CLOCK
-            return ((Clock) obj).cloneObject();
-        } else if (obj instanceof RasterScreen) {
-            //RASTER SCREEN
-            return ((RasterScreen) obj).cloneObject();
-        } else if (obj instanceof RandomGenerator) {
-            //RANDOM GENERATOR
-            return ((RandomGenerator) obj).cloneObject();
-        } else if (obj instanceof VectorScreen) {
-            //VECTOR SCREEN
-            return ((VectorScreen) obj).cloneObject();
-        } else if (obj instanceof ROMRAM) {
-            //ROM RAM
-            return ((ROMRAM) obj).cloneObject();
-        } else if (obj instanceof Counter) {
-            //Counter
-            return ((Counter) obj).cloneObject();
+    public static IOPin getOutput(List<IOPin> pins) {
+        for (IOPin pin : pins) {
+            if (pin.mode == IOPin.MODE.OUTPUT) {
+                return pin;
+            }
         }
         return null;
     }
@@ -334,7 +269,7 @@ public class Tools {
             return "OUTPUT";
         } else if (obj instanceof LogicModule) {
             //LOGIC MODUL
-            return ((LogicModule) obj).getNameOfLastLogicModel();
+            return ((LogicModule) obj).getModuleName();
         } else if (obj instanceof Bridge) {
             //BRIDGE
             return "BRIDGE";
@@ -356,6 +291,33 @@ public class Tools {
         } else if (obj instanceof Counter) {
             //ROM RAM
             return "COUNTER";
+        } else if (obj instanceof RSFlipFlop) {
+            //RS FLIP FLOP
+            return "RS FLIP FLOP";
+        } else if (obj instanceof JKFlipFlop) {
+            //JK FLIP FLOP
+            return "JK FLIP FLOP";
+        } else if (obj instanceof DFlipFlop) {
+            //D FLIP FLOP
+            return "D FLIP FLOP";
+        } else if (obj instanceof TFlipFlop) {
+            //T FLIP FLOP
+            return "T FLIP FLOP";
+        } else if (obj instanceof MUX) {
+            //MUX
+            return "MUX";
+        } else if (obj instanceof DMUX) {
+            //DMUX
+            return "DMUX";
+        } else if (obj instanceof SevenSeg) {
+            //7 SEG
+            return "7 SEG";
+        } else if (obj instanceof KeyBoard) {
+            //KEYBOARD
+            return "KEYBOARD";
+        } else if (obj instanceof TextScreen) {
+            //TEXT SCREEN
+            return "TEXT SCREEN";
         }
         return null;
     }
@@ -640,20 +602,6 @@ public class Tools {
     }
 
     /**
-     * Convert boolean[] to string
-     *
-     * @param bin boolean[]
-     * @return
-     */
-    public static String binToString(boolean[] bin) {
-        String ret = "";
-        for (boolean b : bin) {
-            ret += b ? '1' : '0' + " ";
-        }
-        return ret;
-    }
-
-    /**
      * Test if all pin of same mode have same bit width
      *
      * @param pins Pins
@@ -850,15 +798,12 @@ public class Tools {
 
     public static List<WorkSpaceObject> getSelected(List<WorkSpaceObject> objects) {
         List<WorkSpaceObject> ret = new ArrayList<>();
-        for (WorkSpaceObject obj : objects) {
-            if (obj == null) {
-                continue;
-            }
-            if (!obj.isSelected()) {
-                continue;
-            }
-            ret.add(obj);
-        }
+        objects.stream()
+                .filter((obj) -> !(obj == null))
+                .filter((obj) -> !(!obj.isSelected()))
+                .forEachOrdered((obj) -> {
+                    ret.add(obj);
+                });
         return ret;
     }
 
@@ -891,11 +836,11 @@ public class Tools {
      * @param core LS core
      */
     public static void removeProject(LogicSimulatorCore core) {
-        for (LSComponent comp : core.getLSComponents()) {
-            if (comp instanceof Project) {
-                core.getLSComponents().remove(comp);
-            }
-        }
+        core.getLSComponents().stream()
+                .filter((comp) -> (comp instanceof Project))
+                .forEachOrdered((comp) -> {
+                    core.getLSComponents().remove(comp);
+                });
     }
 
     /**
@@ -935,66 +880,6 @@ public class Tools {
             return file;
         }
         return file.substring(pos + 1, file.length());
-    }
-
-    /**
-     * Read workspace from file and add it to the project
-     *
-     * @param f File
-     * @param project Project
-     * @throws FileNotFoundException
-     */
-    public static void loadWorkspaceFromFile(File f, Project project) throws FileNotFoundException {
-        FileInputStream fileIn = new FileInputStream(f);
-        try (ObjectInputStream objectIn = new ObjectInputStream(fileIn)) {
-            //objects
-            List<WorkSpaceObject> objects = (List<WorkSpaceObject>) objectIn.readObject();
-            //workspace, name of worksapce is name of file
-            WorkSpace w = new WorkSpace(Tools.fileName(f.getName()), project);
-            objects.stream().forEach((obj) -> {
-                w.getObjects().add(obj);
-            });
-            project.getProjectFiles().add(w);
-        } catch (Exception ex) {
-        }
-    }
-
-    /**
-     * Read module editor from file and add it to the project
-     *
-     * @param f File
-     * @param project Project
-     * @throws FileNotFoundException
-     */
-    public static void loadModuleEditorFromFile(File f, Project project) throws Exception {
-        FileInputStream fileIn = new FileInputStream(f);
-        ObjectInputStream objectIn = new ObjectInputStream(fileIn);
-        //objects
-        LogicModule module = (LogicModule) objectIn.readObject();
-        //workspace, name of worksapce is name of file
-        ModuleEditor lm = new ModuleEditor(Tools.fileName(f.getName()), project, module);
-        project.getProjectFiles().add(lm);
-
-    }
-
-    /**
-     * Read hex editor from file and add it to the project
-     *
-     * @param f File
-     * @param project Project
-     * @throws FileNotFoundException
-     */
-    public static void loadHEXEditorFromFile(File f, Project project) throws FileNotFoundException {
-        FileInputStream fileIn = new FileInputStream(f);
-        try (ObjectInputStream objectIn = new ObjectInputStream(fileIn)) {
-            //text
-            Object[] data = (Object[]) objectIn.readObject();
-            //workspace, name of worksapce is name of file
-            HEXEditor he = new HEXEditor(Tools.fileName(f.getName()), project);
-            he.setData(data);
-            project.getProjectFiles().add(he);
-        } catch (Exception ex) {
-        }
     }
 
     /**
@@ -1066,23 +951,6 @@ public class Tools {
     }
 
     /**
-     * Return a, b, c of parametric form of line
-     *
-     * @param start Start point of line
-     * @param end End point of line
-     * @return a, b, c
-     */
-    public static double[] lineABC(Point.Double start, Point.Double end) {
-        double[] abc = new double[3];
-        double dx = end.x - start.x;
-        double dy = end.y - start.y;
-        abc[0] = dy;
-        abc[1] = -dx;
-        abc[2] = -abc[0] * start.x - abc[1] * start.y;
-        return abc;
-    }
-
-    /**
      * Test if point p is in bounds
      *
      * @param p1 Corner 1
@@ -1119,21 +987,6 @@ public class Tools {
     public static boolean isInBounds(Point min, Point max, Point p) {
         //is in bounds
         return p.x >= min.x && p.y >= min.y && p.x <= max.x && p.y <= max.y;
-    }
-
-    public static Line lineItersect(Line[] lines, Point.Double cursor) {
-        if (lines != null) {
-            for (Line line : lines) {
-                double[] abc = Tools.lineABC(line.p1, line.p2);
-                double dist = (abc[0] * cursor.x + abc[1] * cursor.y + abc[2]) / Math.sqrt(abc[0] * abc[0] + abc[1] * abc[1]);
-                //dist < 3
-                if (dist < 3 && Tools.isInBounds(line.p1, line.p2, cursor)) {
-                    System.out.println(line);
-                    return line;
-                }
-            }
-        }
-        return null;
     }
 
     /**
@@ -1197,13 +1050,12 @@ public class Tools {
     public static List<Point.Double> getPoints(Model model) {
         List<Point.Double> pts = new ArrayList<>();
         //for graphics objects
-        if (model.graphicsObjects != null) {
-            for (GraphicsObject go : model.graphicsObjects) {
-                if (go == null) {
-                    continue;
-                }
-                pts.addAll(Arrays.asList(go.getPoints()));
-            }
+        if (model.getGraphicsObjects() != null) {
+            model.getGraphicsObjects().stream()
+                    .filter((go) -> !(go == null))
+                    .forEachOrdered((go) -> {
+                        pts.addAll(Arrays.asList(go.getPoints()));
+                    });
         }
         //for io pins
         if (model.getIOPins() != null) {
@@ -1214,50 +1066,9 @@ public class Tools {
         return pts;
     }
 
-    /**
-     * Resize list and add new object on end of list
-     *
-     * @param list List with GraphicsObjects
-     * @param obj new objects
-     * @return
-     */
-    public static GraphicsObject[] addGraphicsObjects(GraphicsObject[] list, GraphicsObject[] obj) {
-        if (list == null) {
-            return obj;
-        } else {
-            //create risize copy of list
-            GraphicsObject[] newList = new GraphicsObject[list.length + obj.length];
-            System.arraycopy(list, 0, newList, 0, list.length);
-            //obj add on end of list
-            System.arraycopy(obj, 0, newList, list.length, obj.length);
-            return newList;
-        }
-    }
-
-    /**
-     * Resize list and add new object on end of list
-     *
-     * @param list List with GraphicsObjects
-     * @param obj Object for remove
-     * @return
-     */
-    public static GraphicsObject[] removeGraphicsObject(GraphicsObject[] list, GraphicsObject obj) {
-        if (list != null) {
-            GraphicsObject[] newList = new GraphicsObject[list.length - 1];
-            int index = 0;
-            for (GraphicsObject go : list) {
-                if (go != obj && index < list.length) {
-                    newList[index++] = go;
-                }
-            }
-            return newList;
-        }
-        return null;
-    }
-
     public static void generateJavaModel(Model model) {
         String out = "this.model = new Model(\nnew GraphicsObject[]{";
-        for (GraphicsObject go : model.graphicsObjects) {
+        for (GraphicsObject go : model.getGraphicsObjects()) {
             if (go instanceof Line) {
                 Line l = (Line) go;
                 out += "\n   new Line(new Point.Double(" + l.p1.x + ", " + l.p1.y + "), new Point.Double(" + l.p2.x + ", " + l.p2.y + ")),";
@@ -1278,205 +1089,57 @@ public class Tools {
         JOptionPane.showMessageDialog(null, new JTextArea(out));
     }
 
-    /**
-     * Convert binary number to decimal number, on 0 index of array is bin with
-     * lower value
-     *
-     * @param bin Binary number
-     * @return
-     */
-    public static int binToDec(boolean[] bin) {
-        int dec = 0;
-
-        for (int i = 0; i < bin.length; i++) {
-            if (bin[i]) {
-                dec += (int) Math.pow(2, i);
-            }
-        }
-        return dec;
-    }
-
-    /**
-     * Convert binary number to decimal number, on 0 index of array is bin with
-     * lower value
-     *
-     * @param bin Binary number
-     * @return
-     */
-    public static int binToDec(List<Boolean> bin) {
-        int dec = 0;
-
-        int i = 0;
-        for (Boolean bit : bin) {
-            if (bit) {
-                dec += (int) Math.pow(2, i);
-            }
-            i++;
-        }
-        return dec;
-    }
-
-    /**
-     * Convert decimal number to bin and get number digits of bin number
-     *
-     * @param dec Decimal number
-     * @return
-     */
-    public static int binLength(int dec) {
-        int length = 1;
-        while (dec >= 2) {
-            dec -= dec % 2 == 0 ? 0 : 1;
-            length++;
-            dec /= 2;
-        }
-        return length;
-    }
-
-    /**
-     *
-     * @param number Number in decadic base
-     * @param base Base of final number
-     * @return
-     */
-    public static String convertToNumber(int number, int base) {
-        if (base < 1 || number < 0 || base > 36) {
-            return "";
-        }
-
-        if (base == 10) {
-            return number + "";
-        }
-
+    public static String randomNumber(int lenght) {
         String ret = "";
-
-        while (number >= base) {
-            ret = toHexDigit(number % base) + ret;
-            number -= number % base;
-            number /= base;
+        for (int i = 0; i < lenght; i++) {
+            ret += (int) (Math.random() * 10);
         }
-
-        ret = toHexDigit(number) + ret;
-
         return ret;
     }
 
     /**
-     * Convert number to hex digit (0 <-> Z)
+     * Get 8 bit color
      *
-     * @param number decimal int
-     * @return
-     */
-    public static char toHexDigit(int number) {
-        if (number < 10) {
-            return (char) (number + 48);
-        } else {
-            return (char) (number + 55);
-        }
-    }
-
-    /**
-     * Convert hex to bin
-     *
-     * @param hex hex number
-     * @return
-     */
-    public static boolean[] hexToBinArray(String hex) {
-        //from hex string to bin string
-        String str = Integer.toString(Integer.parseInt(hex, 16), 2);
-
-        //from bin string to bit array
-        boolean[] bin = new boolean[str.length()];
-        for (int i = 0; i < bin.length; i++) {
-            bin[i] = str.charAt(str.length() - i - 1) == '1';
-        }
-        return bin;
-    }
-
-    /**
-     * Conver 8 bit data to color, indexs: blue[0,1], green[2,3,4], red[5,6,7]
-     * (higher priority on right side)
-     *
-     * @param bits boolean[8]
+     * @param val Value
      * @return Color
      */
-    public static Color get8BitColor(boolean[] bits) {
-        if (bits.length < 8) {
-            return null;
-        }
-        int r = (bits[7] ? 146 : 0) + (bits[6] ? 73 : 0) + (bits[5] ? 36 : 0);
-        int g = (bits[4] ? 146 : 0) + (bits[3] ? 73 : 0) + (bits[2] ? 36 : 0);
-        int b = (bits[1] ? 170 : 0) + (bits[0] ? 85 : 0);
-        return new Color(r, g, b);
+    public static Color get8BitColor(int val) {
+        return new Color(
+                ((val >> 5) & 0x7) * 36,
+                ((val >> 2) & 0x7) * 36,
+                (val & 0x3) * 85
+        );
     }
 
     /**
-     * Draw line in pixel data buffer
+     * Get component with equeal name as arg: "name"
      *
-     * @param pixels pixel data buffer
-     * @param width Width of pixel buffer
-     * @param height Height of pixel buffer
-     * @param p1 Point 1 of lineF
-     * @param p2 Point 2 of line
-     * @param color Color
+     * @param components List with components
+     * @param name Name of searched component
+     * @return
      */
-    public static void drawLine(int[] pixels, int width, int height, Point p1, Point p2, int color) {
-        float dx = p2.x - p1.x;
-        float dy = p2.y - p1.y;
-
-        float steps;
-        if (Math.abs(dx) >= Math.abs(dy)) {
-            steps = Math.abs(dx);
-        } else {
-            steps = Math.abs(dy);
-        }
-
-        if (steps == 0) {
-            return;
-        }
-
-        dx = dx / steps;
-        dy = dy / steps;
-
-        float x = p1.x;
-        float y = p1.y;
-
-        for (int i = 0; i <= steps; i++) {
-            if (x >= 0 && y >= 0 && x < width && y < height) {
-                pixels[(int) x + (int) y * width] = color;
+    public static Component getComponent(Component[] components, String name) {
+        for (Component c : components) {
+            if (c.getName() != null) {
+                if (c.getName().equals(name)) {
+                    return c;
+                }
             }
-            x += dx;
-            y += dy;
         }
+        return null;
     }
 
     /**
-     * Draw circle in pixel data buffer
-     *
-     * @param pixels pixel data buffer
-     * @param width Width of pixel buffer
-     * @param height Height of pixel buffer
-     * @param p1 Point 1 of lineF
-     * @param radius Radius of circle
-     * @param color Color
+     * Clone all objects of array
+     * @param objects Array with objects
+     * @return 
      */
-    public static void drawCircle(int[] pixels, int width, int height, Point p1, int radius, int color) {
-
-    }
-
-    /**
-     * Draw polygon in pixel data buffer
-     *
-     * @param pixels pixel data buffer
-     * @param width Width of pixel buffer
-     * @param height Height of pixel buffer
-     * @param points List with points
-     * @param color Color
-     */
-    public static void drawPolygon(int[] pixels, int width, int height, List<Point> points, int color) {
-        for (int i = 0; i < points.size(); i++) {
-            int next = i + 1 == points.size() ? 0 : i + 1;
-            drawLine(pixels, width, height, points.get(i), points.get(next), color);
-        }
+    public static List<WorkSpaceObject> cloneWObjects(List<WorkSpaceObject> objects) {
+        List<WorkSpaceObject> ret = new ArrayList<>();
+        objects.stream().forEach((obj) -> {
+            ret.add(obj.cloneObject());
+        });
+        return ret;
     }
 
 }

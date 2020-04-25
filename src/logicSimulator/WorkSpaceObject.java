@@ -9,7 +9,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.io.Serializable;
 import java.util.List;
-import logicSimulator.common.IOPin;
+import logicSimulator.objects.IOPin;
 import logicSimulator.common.Model;
 import logicSimulator.common.Propertie;
 
@@ -18,6 +18,8 @@ import logicSimulator.common.Propertie;
  * @author Martin
  */
 public class WorkSpaceObject implements Serializable {
+
+    private static final long serialversionUID = 2982792849L;
 
     //position of object
     private final Point position;
@@ -172,4 +174,20 @@ public class WorkSpaceObject implements Serializable {
         }
     }
 
+    /**
+     * This call after project open, restore component
+     */
+    public void restore() {
+    }
+
+    /**
+     * Clone object
+     *
+     * @return
+     */
+    public WorkSpaceObject cloneObject() {
+        WorkSpaceObject ret = new WorkSpaceObject(Tools.copy(this.position));
+        ret.model = this.model.cloneObject();
+        return ret;
+    }
 }

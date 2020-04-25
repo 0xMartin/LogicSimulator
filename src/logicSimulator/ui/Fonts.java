@@ -12,8 +12,8 @@ import java.awt.Font;
  */
 public class Fonts {
 
-    public static final Font LABEL = new Font("tahoma", Font.PLAIN, 14);
-    public static final Font IOPIN = new Font("tahoma", Font.PLAIN, 10);
-    public static final Font STATUS = new Font("tahoma", Font.BOLD, 16);   
-    
+    public static final Font SMALL = new Font("tahoma", Font.PLAIN, 10);
+    public static final Font MEDIUM = new Font("tahoma", Font.PLAIN, 14);
+    public static final Font BIG = new Font("tahoma", Font.BOLD, 16);
+
 }

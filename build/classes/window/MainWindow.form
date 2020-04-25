@@ -878,28 +878,6 @@
               </Properties>
 
               <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBoxLayout"/>
-              <SubComponents>
-                <Component class="javax.swing.JComboBox" name="jComboBoxLastPlaced">
-                  <Properties>
-                    <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
-                      <StringArray count="0"/>
-                    </Property>
-                    <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-                      <Dimension value="[95, 26]"/>
-                    </Property>
-                    <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-                      <Dimension value="[95, 26]"/>
-                    </Property>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jComboBoxLastPlacedActionPerformed"/>
-                  </Events>
-                  <AuxValues>
-                    <AuxValue name="JavaCodeGenerator_AddingCodePost" type="java.lang.String" value="jComboBoxLastPlaced.setRenderer(&#xa;(JList&lt;? extends Object[]&gt; list, Object[] value, int index, boolean isSelected, boolean cellHasFocus) -&gt; {&#xa;    String text = &quot;&quot;;&#xa;    if(value != null){&#xa;        if(value[0] == null){&#xa;            return null;&#xa;        }else{&#xa;            text = (String) value[0];&#xa;        }&#xa;    }&#xa;    JLabel l = new JLabel(text); &#xa;    return l;&#xa;});"/>
-                    <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;Object[]&gt;"/>
-                  </AuxValues>
-                </Component>
-              </SubComponents>
             </Container>
           </SubComponents>
         </Container>

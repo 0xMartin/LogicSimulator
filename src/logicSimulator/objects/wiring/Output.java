@@ -7,10 +7,12 @@ package logicSimulator.objects.wiring;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
 import logicSimulator.WorkSpaceObject;
-import logicSimulator.common.GraphicsObject;
-import logicSimulator.common.IOPin;
-import logicSimulator.common.Line;
+import logicSimulator.graphics.GraphicsObject;
+import logicSimulator.objects.IOPin;
+import logicSimulator.graphics.Line;
 import logicSimulator.common.Model;
 import logicSimulator.common.Propertie;
 import logicSimulator.ui.Colors;
@@ -31,18 +33,18 @@ public class Output extends WorkSpaceObject {
         super(position);
 
         //model
-        Model model = new Model(
-                new GraphicsObject[]{
-                    new Line(new Point.Double(0.0, -14.0), new Point.Double(0.0, 14.0)),
-                    new Line(new Point.Double(0.0, 14.0), new Point.Double(14.0, 0.0)),
-                    new Line(new Point.Double(0.0, 14.0), new Point.Double(-14.0, 0.0))
-                }
-        );
+        List<GraphicsObject> GOList = new ArrayList<>();
+        Model model = new Model(GOList);
+        GOList.add(new Line(0, -14, 0, 14));
+        GOList.add(new Line(0, 14, 14, 0));
+        GOList.add(new Line(0, 14, -14, 0));
+
         //pins
         this.output = new IOPin(IOPin.MODE.OUTPUT, bits, "", new Point.Double(0, 0));
         model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, bits, "", new Point.Double(0.0, -14.0)));
 
         super.setModel(model);
+        model.computeSize();
     }
 
     public IOPin getOutput() {
@@ -63,7 +65,7 @@ public class Output extends WorkSpaceObject {
         if (stat) //draw label
         {
             g2.setColor(Colors.OBJECT);
-            g2.setFont(Fonts.LABEL);
+            g2.setFont(Fonts.MEDIUM);
             //draw label
             g2.drawString(
                     this.label,
@@ -107,6 +109,7 @@ public class Output extends WorkSpaceObject {
         return this.output.setValue(pin.getValue());
     }
 
+    @Override
     public WorkSpaceObject cloneObject() {
         Output ret = new Output(
                 new Point(super.getPosition().x, super.getPosition().y),
@@ -114,7 +117,7 @@ public class Output extends WorkSpaceObject {
         );
         ret.output = this.output.cloneObject();
         ret.label = this.label;
-        ret.getModel().clone(super.getModel());
+        ret.getModel().rotate(super.getModel().getAngle());
         return ret;
     }
 

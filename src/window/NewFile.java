@@ -4,19 +4,18 @@
  */
 package window;
 
-import java.awt.Dimension;
 import java.awt.Point;
-import java.awt.Toolkit;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import logicSimulator.Tools;
 import javax.swing.ImageIcon;
-import logicSimulator.projectFile.HEXEditor;
+import logicSimulator.projectFile.HexEditor;
 import logicSimulator.projectFile.ModuleEditor;
 import logicSimulator.Project;
 import logicSimulator.ProjectFile;
 import logicSimulator.projectFile.WorkSpace;
-import logicSimulator.common.LogicModule;
+import logicSimulator.objects.LogicModule;
+import logicSimulator.projectFile.DocumentationEditor;
 
 /**
  *
@@ -40,8 +39,7 @@ public class NewFile extends javax.swing.JFrame {
         this.window = window;
         this.project = project;
         //center location
-        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-        this.setLocationRelativeTo(window);
+        super.setLocationRelativeTo(window);
         this.jListFiles.setSelectedIndex(0);
         this.update();
     }
@@ -61,6 +59,10 @@ public class NewFile extends javax.swing.JFrame {
                     fileType = "." + logicSimulator.LogicSimulatorCore.MODULE_FILE_TYPE;
                     break;
                 case "HEX editor":
+                    img = null;
+                    fileType = "." + logicSimulator.LogicSimulatorCore.HEX_FILE_TYPE;
+                    break;
+                case "Documentation":
                     img = null;
                     fileType = "." + logicSimulator.LogicSimulatorCore.HEX_FILE_TYPE;
                     break;
@@ -130,7 +132,7 @@ public class NewFile extends javax.swing.JFrame {
         jScrollPane1.setBorder(javax.swing.BorderFactory.createTitledBorder("Files"));
 
         jListFiles.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Workspace", "Logic module", "Script module", "HEX editor", "Text document" };
+            String[] strings = { "Workspace", "Logic module", "Script module", "HEX editor", "Documentation" };
             public int getSize() { return strings.length; }
             public String getElementAt(int i) { return strings[i]; }
         });
@@ -195,41 +197,54 @@ public class NewFile extends javax.swing.JFrame {
         if (this.lastName.length() == 0) {
             return;
         }
-        //if name exist then return
-        for (ProjectFile pf : this.project.getProjectFiles()) {
-            try {
-                if (pf.getComp().getName().endsWith(this.lastName)) {
-                    return;
-                }
-            } catch (Exception ex) {
-            }
-        }
+
         //add file
-        ProjectFile pf;
+        ProjectFile pf = null;
+        Class<?> fileType = null;
         switch (this.jListFiles.getSelectedValue()) {
             case "Workspace":
                 pf = new WorkSpace(this.lastName, this.project);
-                this.window.getPFDockingPanel().displayProjectFile(pf);
-                this.project.getProjectFiles().add(pf);
-                this.window.updateProjectView();
+                fileType = WorkSpace.class;
                 break;
             case "Logic module":
-                pf = new ModuleEditor(this.lastName, this.project, new LogicModule(new Point(0, 0)));
-                this.window.getPFDockingPanel().displayProjectFile(pf);
-                this.project.getProjectFiles().add(pf);
-                this.window.updateProjectView();
+                pf = new ModuleEditor(this.lastName, this.project, new LogicModule(new Point(0, 0), this.lastName));
+                fileType = ModuleEditor.class;
                 break;
             case "HEX editor":
-                pf = new HEXEditor(this.lastName, this.project);
-                this.window.getPFDockingPanel().displayProjectFile(pf);
-                this.project.getProjectFiles().add(pf);
-                this.window.updateProjectView();
+                pf = new HexEditor(this.lastName, this.project);
+                fileType = HexEditor.class;
+                break;
+            case "Documentation":
+                pf = new DocumentationEditor(this.lastName, this.project);
+                fileType = DocumentationEditor.class;
                 break;
         }
 
-        this.window.getPFDockingPanel().refreshLayout();
+        if (pf != null) {
 
-        dispose();
+            //if name exist then return
+            for (ProjectFile pf2 : this.project.getProjectFiles()) {
+                try {
+                    if (pf2.getComp().getName().endsWith(this.lastName)) {
+                        if(fileType.isInstance(pf2)){
+                            return;
+                        }
+                    }
+                } catch (Exception ex) {
+                }
+            }
+
+            //add file to project add display it
+            this.window.getPFDockingPanel().displayProjectFile(pf);
+            this.project.getProjectFiles().add(pf);
+            this.window.updateProjectView();
+
+            //refresh layout of docking pane
+            this.window.getPFDockingPanel().refreshLayout();
+            
+            //dispose this window
+            dispose();
+        }
     }//GEN-LAST:event_jButtonAddActionPerformed
 
     private void jListFilesMouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jListFilesMouseReleased

@@ -4,7 +4,7 @@
  */
 package logicSimulator;
 
-import data.PropertieReader;
+import logicSimulator.data.PropertieReader;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,14 +24,19 @@ public class Project implements LSComponent {
 
     private LogicSimulatorCore core;
 
+    //selected project file
     private ProjectFile selectedFile = null;
 
+    //all project files
     private final List<ProjectFile> projectFiles;
 
     //copy
     public CopyObjectVector copyObjects = null;
 
+    //name of project
     private String name;
+
+    //true -> edit mode activated (for circuit editing, ...), false -> control mode
     public boolean editMode = true;
 
     public Project(String name) {
@@ -39,18 +44,28 @@ public class Project implements LSComponent {
         this.projectFiles = new LinkedList<>();
     }
 
+    /**
+     * Get selected project file
+     *
+     * @return
+     */
     public ProjectFile getSelectedFile() {
         return this.selectedFile;
     }
 
+    /**
+     * Select project file
+     *
+     * @param projectFile ProjectFile
+     */
     public void setSelectedFile(ProjectFile projectFile) {
-        this.selectedFile = projectFile;
+        this.selectedFile = projectFile;      
     }
 
     /**
      * Add object to propertie editor
      *
-     * @param obj
+     * @param obj WorkSpaceObject
      */
     public void editPropt(WorkSpaceObject obj) {
         if (this.core == null) {
@@ -76,7 +91,7 @@ public class Project implements LSComponent {
     @Override
     public void run() {
     }
-    
+
     @Override
     public void stop() {
     }

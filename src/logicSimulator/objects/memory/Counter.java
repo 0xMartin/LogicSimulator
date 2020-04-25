@@ -7,11 +7,14 @@ package logicSimulator.objects.memory;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
+import logicSimulator.Convert;
 import logicSimulator.Tools;
 import logicSimulator.WorkSpaceObject;
-import logicSimulator.common.GraphicsObject;
-import logicSimulator.common.IOPin;
-import logicSimulator.common.Line;
+import logicSimulator.graphics.GraphicsObject;
+import logicSimulator.objects.IOPin;
+import logicSimulator.graphics.Line;
 import logicSimulator.common.Model;
 import logicSimulator.common.Propertie;
 import logicSimulator.ui.Fonts;
@@ -23,7 +26,7 @@ import logicSimulator.ui.Colors;
  */
 public class Counter extends WorkSpaceObject {
 
-    private final IOPin clock, set, dataIn, dataOut, overflow;
+    private final IOPin clk, set, address, dataOut, overflow;
 
     /**
      * Create counter
@@ -33,28 +36,31 @@ public class Counter extends WorkSpaceObject {
      */
     public Counter(Point position, int bits) {
         super(position);
+        //model
+        List<GraphicsObject> GOList = new ArrayList<>();
+        Model model = new Model(GOList);
+        GOList.add(new Line(-56, -28, -56, 28));
+        GOList.add(new Line(-56, -28, 56, -28));
+        GOList.add(new Line(56, -28, 56, 28));
+        GOList.add(new Line(-56, 28, 56, 28));
 
-        Model model = new Model(
-                new GraphicsObject[]{
-                    new Line(new Point.Double(-56.0, -28.0), new Point.Double(-56.0, 28.0)),
-                    new Line(new Point.Double(-56.0, -28.0), new Point.Double(56.0, -28.0)),
-                    new Line(new Point.Double(56.0, -28.0), new Point.Double(56.0, 28.0)),
-                    new Line(new Point.Double(-56.0, 28.0), new Point.Double(56.0, 28.0)),}
-        );
-
-        this.dataIn = new IOPin(IOPin.MODE.INPUT, bits, "DATA IN", new Point.Double(-56.0, -14.0));
-        this.clock = new IOPin(IOPin.MODE.INPUT, 1, "CLK", new Point.Double(-56.0, 0.0));
+        //pins
+        this.address = new IOPin(IOPin.MODE.INPUT, bits, "ADDRESS", new Point.Double(-56.0, -14.0));
+        this.clk = new IOPin(IOPin.MODE.INPUT, 1, "CLK", new Point.Double(-56.0, 0.0));
+        this.clk.drawClkSymbol = true;
         this.set = new IOPin(IOPin.MODE.INPUT, 1, "SET", new Point.Double(-56.0, 14.0));
         this.dataOut = new IOPin(IOPin.MODE.OUTPUT, bits, "DATA OUT", new Point.Double(56.0, -14.0));
         this.overflow = new IOPin(IOPin.MODE.OUTPUT, 1, "OVERFLOW", new Point.Double(56.0, 14.0));
-
-        model.getIOPins().add(this.dataIn);
+        model.getIOPins().add(this.address);
         model.getIOPins().add(this.dataOut);
-        model.getIOPins().add(this.clock);
+        model.getIOPins().add(this.clk);
         model.getIOPins().add(this.set);
         model.getIOPins().add(this.overflow);
 
         super.setModel(model);
+        model.computeSize();
+        model.disableRotation();
+
     }
 
     @Override
@@ -62,21 +68,21 @@ public class Counter extends WorkSpaceObject {
         Point pos = super.getPosition();
         boolean stat = super.getModel().renderModel(g2, pos, offset, screen, super.isSelected());
         if (stat) {
-            g2.setFont(Fonts.STATUS);
+            g2.setFont(Fonts.BIG);
             g2.setColor(Colors.TEXT);
             g2.drawString(
                     "COUNTER",
                     pos.x - g2.getFontMetrics().stringWidth("COUNTER") / 2,
                     pos.y - 10
             );
-            g2.setFont(Fonts.LABEL);
+            g2.setFont(Fonts.MEDIUM);
             String s = this.dataOut.getValue().length + " bit";
             g2.drawString(
                     s,
                     pos.x - g2.getFontMetrics().stringWidth(s) / 2,
                     pos.y + Tools.centerYString(g2.getFontMetrics())
             );
-            s = "0x" + Tools.convertToNumber(Tools.binToDec(this.dataOut.getValue()), 16);;
+            s = "0x" + Convert.bitsToHex(this.dataOut.getValue());
             g2.drawString(
                     s,
                     pos.x - g2.getFontMetrics().stringWidth(s) / 2,
@@ -97,7 +103,7 @@ public class Counter extends WorkSpaceObject {
         try {
             switch (propt.getName()) {
                 case "Bits":
-                    this.dataIn.changeBitWidth(propt.getValueInt());
+                    this.address.changeBitWidth(propt.getValueInt());
                     this.dataOut.changeBitWidth(propt.getValueInt());
                     break;
             }
@@ -114,7 +120,7 @@ public class Counter extends WorkSpaceObject {
 
         //set
         if (this.set.getValue()[0]) {
-            boolean[] in = this.dataIn.getValue();
+            boolean[] in = this.address.getValue();
             if (in.length == this.dataOut.getValue().length) {
                 this.dataOut.setValue(in);
             }
@@ -123,7 +129,7 @@ public class Counter extends WorkSpaceObject {
         }
 
         //clk
-        if (this.clock.getValue()[0]) {
+        if (this.clk.getValue()[0]) {
             if (!this.r_edge) {
 
                 //add 1 to counter
@@ -135,7 +141,7 @@ public class Counter extends WorkSpaceObject {
                         counter_reg[i] = !counter_reg[i];
                     }
                 }
-                
+
                 //overflow
                 if (carry) {
                     this.overflow.getValue()[0] = true;
@@ -151,6 +157,7 @@ public class Counter extends WorkSpaceObject {
         return false;
     }
 
+    @Override
     public WorkSpaceObject cloneObject() {
         return new Counter(Tools.copy(super.getPosition()), super.getPins().get(0).getValue().length);
     }

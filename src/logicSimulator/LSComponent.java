@@ -4,7 +4,7 @@
  */
 package logicSimulator;
 
-import data.PropertieReader;
+import logicSimulator.data.PropertieReader;
 
 /**
  * Logic simulator component

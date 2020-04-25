@@ -131,7 +131,7 @@
                 <StringItem index="1" value="Logic module"/>
                 <StringItem index="2" value="Script module"/>
                 <StringItem index="3" value="HEX editor"/>
-                <StringItem index="4" value="Text document"/>
+                <StringItem index="4" value="Documentation"/>
               </StringArray>
             </Property>
           </Properties>

@@ -10,7 +10,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import javax.swing.JTabbedPane;
-import logicSimulator.ProjectFile;
+import javax.swing.event.ChangeEvent;
 import window.components.DockingButton;
 import window.components.TabbedPaneTitle;
 
@@ -30,8 +30,23 @@ public class PFViewer extends JTabbedPane implements
     public PFViewer(PFTwoSlotViewer parent) {
         this.dockingButton = new DockingButton(this, DockingButton.Type.CENTER);
         this.parent = parent;
-        this.addMouseListener(this);
-        this.addMouseMotionListener(this);
+        super.addMouseListener(this);
+        super.addMouseMotionListener(this);
+        //when is tab changed then must change value of "VISIBLE" boolean in PFMode
+        super.addChangeListener((ChangeEvent e) -> {
+            //set visible true for selected component
+            ProjectFile selectedPF = (ProjectFile) this.getSelectedComponent();
+            selectedPF.getPFMode().VISIBLE = true;
+            //set visble false for all remaining components
+            for (Component c : super.getComponents()) {
+                if (c instanceof ProjectFile) {
+                    ProjectFile pf = (ProjectFile) c;
+                    if (pf != selectedPF) {
+                        pf.getPFMode().VISIBLE = false;
+                    }
+                }
+            }
+        });
     }
 
     public PFTwoSlotViewer getDockingPanel() {

@@ -22,6 +22,7 @@ public class Colors {
     //objects
     public static Color OBJECT = Color.BLACK;
     public static Color IOPIN = Color.BLUE;
+    public static Color IOPIN_BUS = new Color(153, 0, 153);
     public static Color WIRE_1 = new Color(0, 200, 0);
     public static Color WIRE_0 = new Color(70, 120, 70);
     public static Color WIRE_BUS = Color.BLACK;

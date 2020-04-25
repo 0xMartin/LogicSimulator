@@ -23,6 +23,9 @@ public interface PFHandler {
      */
     public Point getCursorPosition();
     
+    /**
+     * Repaint hanlder
+     */
     public void repaintPF();
     
 }

@@ -4,9 +4,9 @@
  */
 package window;
 
-import data.IOProject;
-import data.PropertieReader;
-import data.SystemClosing;
+import logicSimulator.data.IOProject;
+import logicSimulator.data.PropertieReader;
+import logicSimulator.data.SystemClosing;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -24,7 +24,6 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
 import logicSimulator.ComputeCore;
@@ -72,7 +71,7 @@ public class MainWindow extends JFrame implements LSComponent {
         initComponents();
 
         //maximize window
-        this.setExtendedState(this.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+        super.setExtendedState(this.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 
         //create instances of utils
         this.componentChooser = new ComponentChooser(this);
@@ -124,7 +123,6 @@ public class MainWindow extends JFrame implements LSComponent {
         jToolBarOther = new javax.swing.JToolBar();
         jButtonHelp = new ButtonHQ();
         jToolBarComponents = new javax.swing.JToolBar();
-        jComboBoxLastPlaced = new javax.swing.JComboBox<>();
         jSplitPaneBody = new javax.swing.JSplitPane();
         jSplitPaneLeft = new javax.swing.JSplitPane();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -415,376 +413,353 @@ public class MainWindow extends JFrame implements LSComponent {
 
         jToolBarComponents.setRollover(true);
         jToolBarComponents.setName("Components"); // NOI18N
+        jToolBarMain.add(jToolBarComponents);
 
-        jComboBoxLastPlaced.setMaximumSize(new java.awt.Dimension(95, 26));
-        jComboBoxLastPlaced.setMinimumSize(new java.awt.Dimension(95, 26));
-        jComboBoxLastPlaced.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jComboBoxLastPlacedActionPerformed(evt);
+        jSplitPaneBody.setBorder(null);
+        jSplitPaneBody.setDividerSize(5);
+
+        jSplitPaneLeft.setBorder(null);
+        jSplitPaneLeft.setDividerSize(5);
+        jSplitPaneLeft.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+        jSplitPaneLeft.setMinimumSize(new java.awt.Dimension(200, 27));
+
+        jScrollPane1.setBorder(javax.swing.BorderFactory.createTitledBorder("Project explorer"));
+        jScrollPane1.setViewportView(jTreeProject);
+
+        jSplitPaneLeft.setTopComponent(jScrollPane1);
+
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Object properties"));
+
+        jScrollPane3.setBorder(null);
+
+        jTableProperties.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "Propertie", "Value"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, true
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
             }
         });
-        jToolBarComponents.add(jComboBoxLastPlaced);
-        jComboBoxLastPlaced.setRenderer(
-            (JList<? extends Object[]> list, Object[] value, int index, boolean isSelected, boolean cellHasFocus) -> {
-                String text = "";
-                if(value != null){
-                    if(value[0] == null){
-                        return null;
-                    }else{
-                        text = (String) value[0];
-                    }
-                }
-                JLabel l = new JLabel(text);
-                return l;
-            });
-
-            jToolBarMain.add(jToolBarComponents);
-
-            jSplitPaneBody.setBorder(null);
-            jSplitPaneBody.setDividerSize(5);
-
-            jSplitPaneLeft.setBorder(null);
-            jSplitPaneLeft.setDividerSize(5);
-            jSplitPaneLeft.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
-            jSplitPaneLeft.setMinimumSize(new java.awt.Dimension(200, 27));
-
-            jScrollPane1.setBorder(javax.swing.BorderFactory.createTitledBorder("Project explorer"));
-            jScrollPane1.setViewportView(jTreeProject);
-
-            jSplitPaneLeft.setTopComponent(jScrollPane1);
-
-            jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Object properties"));
-
-            jScrollPane3.setBorder(null);
-
-            jTableProperties.setModel(new javax.swing.table.DefaultTableModel(
-                new Object [][] {
-
-                },
-                new String [] {
-                    "Propertie", "Value"
-                }
-            ) {
-                Class[] types = new Class [] {
-                    java.lang.String.class, java.lang.String.class
-                };
-                boolean[] canEdit = new boolean [] {
-                    false, true
-                };
-
-                public Class getColumnClass(int columnIndex) {
-                    return types [columnIndex];
-                }
-
-                public boolean isCellEditable(int rowIndex, int columnIndex) {
-                    return canEdit [columnIndex];
-                }
-            });
-            jScrollPane3.setViewportView(jTableProperties);
-
-            javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-            jPanel1.setLayout(jPanel1Layout);
-            jPanel1Layout.setHorizontalGroup(
-                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 190, Short.MAX_VALUE)
-            );
-            jPanel1Layout.setVerticalGroup(
-                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 427, Short.MAX_VALUE)
-            );
-
-            jSplitPaneLeft.setRightComponent(jPanel1);
-
-            jSplitPaneBody.setLeftComponent(jSplitPaneLeft);
-
-            javax.swing.GroupLayout pfdockingPanelLayout = new javax.swing.GroupLayout(pfdockingPanel);
-            pfdockingPanel.setLayout(pfdockingPanelLayout);
-            pfdockingPanelLayout.setHorizontalGroup(
-                pfdockingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGap(0, 565, Short.MAX_VALUE)
-            );
-            pfdockingPanelLayout.setVerticalGroup(
-                pfdockingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGap(0, 495, Short.MAX_VALUE)
-            );
-
-            jSplitPaneBody.setRightComponent(pfdockingPanel);
-            pfdockingPanel.setLayout(new GridLayout());
-
-            javax.swing.GroupLayout jPanelBodyLayout = new javax.swing.GroupLayout(jPanelBody);
-            jPanelBody.setLayout(jPanelBodyLayout);
-            jPanelBodyLayout.setHorizontalGroup(
-                jPanelBodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(jToolBarMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jSplitPaneBody)
-            );
-            jPanelBodyLayout.setVerticalGroup(
-                jPanelBodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanelBodyLayout.createSequentialGroup()
-                    .addComponent(jToolBarMain, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, 0)
-                    .addComponent(jSplitPaneBody, javax.swing.GroupLayout.DEFAULT_SIZE, 495, Short.MAX_VALUE))
-            );
-
-            jToolBar1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-            jToolBar1.setFloatable(false);
-
-            jLabelSimulation.setText(" UPS:-");
-            jToolBar1.add(jLabelSimulation);
-
-            jMenuFile.setText("File");
-
-            jMenuItemNewFileProject.setIcon(SystemResources.TOOLBAR_NEWPROJECT);
-            jMenuItemNewFileProject.setText("New project");
-            jMenuItemNewFileProject.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemNewFileProjectActionPerformed(evt);
-                }
-            });
-            jMenuFile.add(jMenuItemNewFileProject);
-
-            jMenuItemNewFile.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, java.awt.event.InputEvent.CTRL_MASK));
-            jMenuItemNewFile.setIcon(SystemResources.TOOLBAR_NEWFILE);
-            jMenuItemNewFile.setText("New file");
-            jMenuItemNewFile.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemNewFileActionPerformed(evt);
-                }
-            });
-            jMenuFile.add(jMenuItemNewFile);
-            jMenuFile.add(jSeparator5);
-
-            jMenuItemOpenProject.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
-            jMenuItemOpenProject.setIcon(SystemResources.TOOLBAR_OPENPROJECT);
-            jMenuItemOpenProject.setText("Open project");
-            jMenuItemOpenProject.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemOpenProjectActionPerformed(evt);
-                }
-            });
-            jMenuFile.add(jMenuItemOpenProject);
-            jMenuFile.add(jSeparator3);
-
-            jMenuItemSaveProject.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
-            jMenuItemSaveProject.setIcon(SystemResources.TOOLBAR_SAVE);
-            jMenuItemSaveProject.setText("Save project");
-            jMenuItemSaveProject.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemSaveProjectActionPerformed(evt);
-                }
-            });
-            jMenuFile.add(jMenuItemSaveProject);
-
-            jMenuItemSaveProjectAs.setIcon(SystemResources.TOOLBAR_SAVE);
-            jMenuItemSaveProjectAs.setText("Save project as...");
-            jMenuItemSaveProjectAs.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemSaveProjectAsActionPerformed(evt);
-                }
-            });
-            jMenuFile.add(jMenuItemSaveProjectAs);
-            jMenuFile.add(jSeparator4);
-
-            jMenuItemExport.setText("Export library");
-            jMenuFile.add(jMenuItemExport);
-            jMenuFile.add(jSeparator9);
-
-            jMenuItemExit.setText("Exit");
-            jMenuItemExit.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemExitActionPerformed(evt);
-                }
-            });
-            jMenuFile.add(jMenuItemExit);
-
-            jMenuBarMain.add(jMenuFile);
-
-            jMenuEdit.setText("Edit");
-
-            jMenuItemEndo.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, java.awt.event.InputEvent.CTRL_MASK));
-            jMenuItemEndo.setIcon(SystemResources.TOOLBAR_UNDO);
-            jMenuItemEndo.setText("Endo");
-            jMenuItemEndo.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemEndoActionPerformed(evt);
-                }
-            });
-            jMenuEdit.add(jMenuItemEndo);
-
-            jMenuItemRedo.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Y, java.awt.event.InputEvent.CTRL_MASK));
-            jMenuItemRedo.setIcon(SystemResources.TOOLBAR_REDO);
-            jMenuItemRedo.setText("Redo");
-            jMenuItemRedo.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemRedoActionPerformed(evt);
-                }
-            });
-            jMenuEdit.add(jMenuItemRedo);
-            jMenuEdit.add(jSeparator7);
-
-            jMenuItemFindText.setText("Find text");
-            jMenuItemFindText.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemFindTextActionPerformed(evt);
-                }
-            });
-            jMenuEdit.add(jMenuItemFindText);
-            jMenuEdit.add(jSeparator6);
-
-            jMenuItemFindObject.setText("Find object");
-            jMenuItemFindObject.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemFindObjectActionPerformed(evt);
-                }
-            });
-            jMenuEdit.add(jMenuItemFindObject);
-
-            jMenuItemPlaceComponent.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W, java.awt.event.InputEvent.CTRL_MASK));
-            jMenuItemPlaceComponent.setText("Place component");
-            jMenuItemPlaceComponent.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemPlaceComponentActionPerformed(evt);
-                }
-            });
-            jMenuEdit.add(jMenuItemPlaceComponent);
-
-            jMenuBarMain.add(jMenuEdit);
-
-            jMenu1.setText("Project");
-
-            jMenuItemRename.setText("Rename");
-            jMenu1.add(jMenuItemRename);
-
-            jMenuItemMove.setText("Move");
-            jMenu1.add(jMenuItemMove);
-
-            jMenuItemAddLibrary.setText("Add library");
-            jMenu1.add(jMenuItemAddLibrary);
-
-            jMenuItemSettings.setIcon(SystemResources.TOOLBAR_SETTINGS);
-            jMenuItemSettings.setText("Settings");
-            jMenu1.add(jMenuItemSettings);
-
-            jMenuBarMain.add(jMenu1);
-
-            jMenu2.setText("Simulation");
-
-            jMenuItemRun.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F5, 0));
-            jMenuItemRun.setIcon(SystemResources.TOOLBAR_RUN);
-            jMenuItemRun.setText("Run");
-            jMenuItemRun.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemRunActionPerformed(evt);
-                }
-            });
-            jMenu2.add(jMenuItemRun);
-
-            jMenuItemStop.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F6, 0));
-            jMenuItemStop.setIcon(SystemResources.TOOLBAR_STOP);
-            jMenuItemStop.setText("Stop");
-            jMenuItemStop.setEnabled(false);
-            jMenuItemStop.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemStopActionPerformed(evt);
-                }
-            });
-            jMenu2.add(jMenuItemStop);
-
-            jMenuItemStep.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F7, 0));
-            jMenuItemStep.setIcon(SystemResources.TOOLBAR_STEP);
-            jMenuItemStep.setText("Step");
-            jMenuItemStep.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemStepActionPerformed(evt);
-                }
-            });
-            jMenu2.add(jMenuItemStep);
-
-            jCheckBoxMenuItemShowUpdates.setText("Show updates");
-            jCheckBoxMenuItemShowUpdates.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jCheckBoxMenuItemShowUpdatesActionPerformed(evt);
-                }
-            });
-            jMenu2.add(jCheckBoxMenuItemShowUpdates);
-
-            jMenuBarMain.add(jMenu2);
-
-            jMenu3.setText("Global");
-
-            jMenuItemSettingsGlobal.setIcon(SystemResources.TOOLBAR_SETTINGS);
-            jMenuItemSettingsGlobal.setText("Settings");
-            jMenu3.add(jMenuItemSettingsGlobal);
-
-            jMenuItemColors.setText("Colors");
-            jMenu3.add(jMenuItemColors);
-
-            jMenuItemWindows.setText("Windows");
-            jMenu3.add(jMenuItemWindows);
-
-            jMenuItemCheckForUpdates.setText("Check for updates");
-            jMenu3.add(jMenuItemCheckForUpdates);
-
-            jMenuBarMain.add(jMenu3);
-
-            jMenu4.setText("Tools");
-
-            jMenuItemPrint.setText("Print");
-            jMenu4.add(jMenuItemPrint);
-
-            jMenuItemPrintScreen.setText("PrintScreen");
-            jMenu4.add(jMenuItemPrintScreen);
-            jMenu4.add(jSeparator8);
-
-            jMenuItemPrint1.setText("IO  analysis");
-            jMenu4.add(jMenuItemPrint1);
-
-            jMenuItemPrint2.setText("Object  analysis");
-            jMenu4.add(jMenuItemPrint2);
-
-            jMenu5.setText("Utilities");
-            jMenu4.add(jMenu5);
-
-            jMenuBarMain.add(jMenu4);
-
-            jMenu6.setText("Help");
-
-            jMenuItemTutorials.setText("Tutorials");
-            jMenu6.add(jMenuItemTutorials);
-
-            jMenuItemAbout.setText("About");
-            jMenuItemAbout.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemAboutActionPerformed(evt);
-                }
-            });
-            jMenu6.add(jMenuItemAbout);
-
-            jMenuItemReportBugs.setText("Report bugs");
-            jMenu6.add(jMenuItemReportBugs);
-
-            jMenuBarMain.add(jMenu6);
-
-            setJMenuBar(jMenuBarMain);
-
-            javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-            getContentPane().setLayout(layout);
-            layout.setHorizontalGroup(
-                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        jScrollPane3.setViewportView(jTableProperties);
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 190, Short.MAX_VALUE)
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 427, Short.MAX_VALUE)
+        );
+
+        jSplitPaneLeft.setRightComponent(jPanel1);
+
+        jSplitPaneBody.setLeftComponent(jSplitPaneLeft);
+
+        javax.swing.GroupLayout pfdockingPanelLayout = new javax.swing.GroupLayout(pfdockingPanel);
+        pfdockingPanel.setLayout(pfdockingPanelLayout);
+        pfdockingPanelLayout.setHorizontalGroup(
+            pfdockingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 565, Short.MAX_VALUE)
+        );
+        pfdockingPanelLayout.setVerticalGroup(
+            pfdockingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 495, Short.MAX_VALUE)
+        );
+
+        jSplitPaneBody.setRightComponent(pfdockingPanel);
+        pfdockingPanel.setLayout(new GridLayout());
+
+        javax.swing.GroupLayout jPanelBodyLayout = new javax.swing.GroupLayout(jPanelBody);
+        jPanelBody.setLayout(jPanelBodyLayout);
+        jPanelBodyLayout.setHorizontalGroup(
+            jPanelBodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jToolBarMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jSplitPaneBody)
+        );
+        jPanelBodyLayout.setVerticalGroup(
+            jPanelBodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelBodyLayout.createSequentialGroup()
+                .addComponent(jToolBarMain, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0)
+                .addComponent(jSplitPaneBody, javax.swing.GroupLayout.DEFAULT_SIZE, 495, Short.MAX_VALUE))
+        );
+
+        jToolBar1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jToolBar1.setFloatable(false);
+
+        jLabelSimulation.setText(" UPS:-");
+        jToolBar1.add(jLabelSimulation);
+
+        jMenuFile.setText("File");
+
+        jMenuItemNewFileProject.setIcon(SystemResources.TOOLBAR_NEWPROJECT);
+        jMenuItemNewFileProject.setText("New project");
+        jMenuItemNewFileProject.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemNewFileProjectActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuItemNewFileProject);
+
+        jMenuItemNewFile.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItemNewFile.setIcon(SystemResources.TOOLBAR_NEWFILE);
+        jMenuItemNewFile.setText("New file");
+        jMenuItemNewFile.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemNewFileActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuItemNewFile);
+        jMenuFile.add(jSeparator5);
+
+        jMenuItemOpenProject.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItemOpenProject.setIcon(SystemResources.TOOLBAR_OPENPROJECT);
+        jMenuItemOpenProject.setText("Open project");
+        jMenuItemOpenProject.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemOpenProjectActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuItemOpenProject);
+        jMenuFile.add(jSeparator3);
+
+        jMenuItemSaveProject.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItemSaveProject.setIcon(SystemResources.TOOLBAR_SAVE);
+        jMenuItemSaveProject.setText("Save project");
+        jMenuItemSaveProject.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemSaveProjectActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuItemSaveProject);
+
+        jMenuItemSaveProjectAs.setIcon(SystemResources.TOOLBAR_SAVE);
+        jMenuItemSaveProjectAs.setText("Save project as...");
+        jMenuItemSaveProjectAs.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemSaveProjectAsActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuItemSaveProjectAs);
+        jMenuFile.add(jSeparator4);
+
+        jMenuItemExport.setText("Export library");
+        jMenuFile.add(jMenuItemExport);
+        jMenuFile.add(jSeparator9);
+
+        jMenuItemExit.setText("Exit");
+        jMenuItemExit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemExitActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuItemExit);
+
+        jMenuBarMain.add(jMenuFile);
+
+        jMenuEdit.setText("Edit");
+
+        jMenuItemEndo.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItemEndo.setIcon(SystemResources.TOOLBAR_UNDO);
+        jMenuItemEndo.setText("Endo");
+        jMenuItemEndo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemEndoActionPerformed(evt);
+            }
+        });
+        jMenuEdit.add(jMenuItemEndo);
+
+        jMenuItemRedo.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Y, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItemRedo.setIcon(SystemResources.TOOLBAR_REDO);
+        jMenuItemRedo.setText("Redo");
+        jMenuItemRedo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemRedoActionPerformed(evt);
+            }
+        });
+        jMenuEdit.add(jMenuItemRedo);
+        jMenuEdit.add(jSeparator7);
+
+        jMenuItemFindText.setText("Find text");
+        jMenuItemFindText.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemFindTextActionPerformed(evt);
+            }
+        });
+        jMenuEdit.add(jMenuItemFindText);
+        jMenuEdit.add(jSeparator6);
+
+        jMenuItemFindObject.setText("Find object");
+        jMenuItemFindObject.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemFindObjectActionPerformed(evt);
+            }
+        });
+        jMenuEdit.add(jMenuItemFindObject);
+
+        jMenuItemPlaceComponent.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItemPlaceComponent.setText("Place component");
+        jMenuItemPlaceComponent.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemPlaceComponentActionPerformed(evt);
+            }
+        });
+        jMenuEdit.add(jMenuItemPlaceComponent);
+
+        jMenuBarMain.add(jMenuEdit);
+
+        jMenu1.setText("Project");
+
+        jMenuItemRename.setText("Rename");
+        jMenu1.add(jMenuItemRename);
+
+        jMenuItemMove.setText("Move");
+        jMenu1.add(jMenuItemMove);
+
+        jMenuItemAddLibrary.setText("Add library");
+        jMenu1.add(jMenuItemAddLibrary);
+
+        jMenuItemSettings.setIcon(SystemResources.TOOLBAR_SETTINGS);
+        jMenuItemSettings.setText("Settings");
+        jMenu1.add(jMenuItemSettings);
+
+        jMenuBarMain.add(jMenu1);
+
+        jMenu2.setText("Simulation");
+
+        jMenuItemRun.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F5, 0));
+        jMenuItemRun.setIcon(SystemResources.TOOLBAR_RUN);
+        jMenuItemRun.setText("Run");
+        jMenuItemRun.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemRunActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jMenuItemRun);
+
+        jMenuItemStop.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F6, 0));
+        jMenuItemStop.setIcon(SystemResources.TOOLBAR_STOP);
+        jMenuItemStop.setText("Stop");
+        jMenuItemStop.setEnabled(false);
+        jMenuItemStop.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemStopActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jMenuItemStop);
+
+        jMenuItemStep.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F7, 0));
+        jMenuItemStep.setIcon(SystemResources.TOOLBAR_STEP);
+        jMenuItemStep.setText("Step");
+        jMenuItemStep.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemStepActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jMenuItemStep);
+
+        jCheckBoxMenuItemShowUpdates.setText("Show updates");
+        jCheckBoxMenuItemShowUpdates.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxMenuItemShowUpdatesActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jCheckBoxMenuItemShowUpdates);
+
+        jMenuBarMain.add(jMenu2);
+
+        jMenu3.setText("Global");
+
+        jMenuItemSettingsGlobal.setIcon(SystemResources.TOOLBAR_SETTINGS);
+        jMenuItemSettingsGlobal.setText("Settings");
+        jMenu3.add(jMenuItemSettingsGlobal);
+
+        jMenuItemColors.setText("Colors");
+        jMenu3.add(jMenuItemColors);
+
+        jMenuItemWindows.setText("Windows");
+        jMenu3.add(jMenuItemWindows);
+
+        jMenuItemCheckForUpdates.setText("Check for updates");
+        jMenu3.add(jMenuItemCheckForUpdates);
+
+        jMenuBarMain.add(jMenu3);
+
+        jMenu4.setText("Tools");
+
+        jMenuItemPrint.setText("Print");
+        jMenu4.add(jMenuItemPrint);
+
+        jMenuItemPrintScreen.setText("PrintScreen");
+        jMenu4.add(jMenuItemPrintScreen);
+        jMenu4.add(jSeparator8);
+
+        jMenuItemPrint1.setText("IO  analysis");
+        jMenu4.add(jMenuItemPrint1);
+
+        jMenuItemPrint2.setText("Object  analysis");
+        jMenu4.add(jMenuItemPrint2);
+
+        jMenu5.setText("Utilities");
+        jMenu4.add(jMenu5);
+
+        jMenuBarMain.add(jMenu4);
+
+        jMenu6.setText("Help");
+
+        jMenuItemTutorials.setText("Tutorials");
+        jMenu6.add(jMenuItemTutorials);
+
+        jMenuItemAbout.setText("About");
+        jMenuItemAbout.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemAboutActionPerformed(evt);
+            }
+        });
+        jMenu6.add(jMenuItemAbout);
+
+        jMenuItemReportBugs.setText("Report bugs");
+        jMenu6.add(jMenuItemReportBugs);
+
+        jMenuBarMain.add(jMenu6);
+
+        setJMenuBar(jMenuBarMain);
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPanelBody, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jToolBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
                 .addComponent(jPanelBody, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jToolBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            );
-            layout.setVerticalGroup(
-                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(layout.createSequentialGroup()
-                    .addComponent(jPanelBody, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGap(0, 0, 0)
-                    .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, 0))
-            );
+                .addGap(0, 0, 0)
+                .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0))
+        );
 
-            pack();
-        }// </editor-fold>//GEN-END:initComponents
+        pack();
+    }// </editor-fold>//GEN-END:initComponents
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         //windows opened
@@ -908,6 +883,8 @@ public class MainWindow extends JFrame implements LSComponent {
     }//GEN-LAST:event_formWindowClosing
 
     private void jButtonStepActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStepActionPerformed
+        ProjectFile pf = this.project.getSelectedFile();
+        this.comuteCore.setWorkSpace((WorkSpace) pf);
         this.comuteCore.step();
     }//GEN-LAST:event_jButtonStepActionPerformed
 
@@ -1013,34 +990,6 @@ public class MainWindow extends JFrame implements LSComponent {
         }
     }//GEN-LAST:event_jCheckBoxMenuItemShowUpdatesActionPerformed
 
-    private boolean jComboBoxLastPlaced_lock = true;
-
-    private void jComboBoxLastPlacedActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxLastPlacedActionPerformed
-        if (this.jComboBoxLastPlaced_lock) {
-            this.jComboBoxLastPlaced_lock = false;
-            return;
-        }
-        //place component from combobox
-        Object[] selected = (Object[]) jComboBoxLastPlaced.getSelectedItem();
-        if (selected == null) {
-            return;
-        }
-        if (selected.length < 2) {
-            return;
-        }
-        ProjectFile pf = this.project.getSelectedFile();
-        if (pf instanceof WorkSpace) {
-            List list = new ArrayList<>();
-            try {
-                WorkSpaceObject obj = Tools.clone((WorkSpaceObject) selected[1]);
-                obj.getPosition().x = LogicSimulatorCore.OBJECT_NULL_POSITION;
-                list.add(obj);
-                ((WorkSpace) pf).addNewObjects(list);
-            } catch (CloneNotSupportedException ex) {
-            }
-        }
-    }//GEN-LAST:event_jComboBoxLastPlacedActionPerformed
-
     /**
      * Init this window, must exis compute core and project in Core
      *
@@ -1072,7 +1021,7 @@ public class MainWindow extends JFrame implements LSComponent {
         ((ProjectTreeView) this.jTreeProject).init(this, this.project);
 
         //compute core 1 sec event
-        this.comuteCore.add1Sec((ActionEvent e) -> {
+        this.comuteCore.set1SecListener((ActionEvent e) -> {
             String[] data = e.getActionCommand().split(";");
             for (String d : data) {
                 String[] arr = d.split("=");
@@ -1103,7 +1052,8 @@ public class MainWindow extends JFrame implements LSComponent {
                                     }
                                     //get background color for label
                                     int val = Integer.parseInt(arr[1]);
-                                    float hue = 0.85f * (float) val / w.getObjects().size();
+                                    float hue = 0.85f * (float) val / (w.getObjects().size()
+                                            * this.comuteCore.getCTL().getTicksPerSecond());
                                     hue = hue > 0.85f ? 0.85f : hue;
                                     Color bg = Color.getHSBColor(hue, 0.7f, 0.7f);
                                     JLabel l = ((JLabel) c);
@@ -1118,6 +1068,11 @@ public class MainWindow extends JFrame implements LSComponent {
                 }
             }
         });
+        
+        //compute core workspace closed during running simulation
+        this.comuteCore.setWorkSpaceClosedListener((ActionEvent e) -> {
+            this.stopSimulation();
+        });
 
         //init utils
         this.componentChooser.setProject(this.project);
@@ -1127,11 +1082,6 @@ public class MainWindow extends JFrame implements LSComponent {
             List<Propertie> propts = propt.readFile();
             propts.stream().forEach((p -> {
                 switch (p.getName()) {
-                    case "PlacedComponent":
-                        this.addComponentToLastAdded(
-                                this.componentChooser.selectComponent(p.getValueString())
-                        );
-                        break;
                     case "RefComponent":
                         this.addComponentToToolbar(
                                 this.componentChooser.selectComponent(p.getValueString())
@@ -1313,13 +1263,10 @@ public class MainWindow extends JFrame implements LSComponent {
                 ProjectFile pf = this.project.getSelectedFile();
                 if (pf instanceof WorkSpace) {
                     if (this.project.editMode) {
-                        try {
-                            List<WorkSpaceObject> list = new ArrayList<>();
-                            obj.getPosition().x = LogicSimulatorCore.OBJECT_NULL_POSITION;
-                            list.add(Tools.clone(obj));
-                            ((WorkSpace) pf).addNewObjects(list);
-                        } catch (CloneNotSupportedException ex) {
-                        }
+                        List<WorkSpaceObject> list = new ArrayList<>();
+                        obj.getPosition().x = LogicSimulatorCore.OBJECT_NULL_POSITION;
+                        list.add(obj.cloneObject());
+                        ((WorkSpace) pf).addNewObjects(list);
                     }
                 }
             });
@@ -1328,34 +1275,6 @@ public class MainWindow extends JFrame implements LSComponent {
             //add to toolbar
             this.jToolBarComponents.add(b);
         }
-    }
-
-    /**
-     * Add component to combobox with last added components
-     *
-     * @param obj New workspace object
-     */
-    public void addComponentToLastAdded(WorkSpaceObject obj) {
-        if (obj != null) {
-            Object[] item = new Object[]{
-                Tools.getComponentName(obj),
-                obj
-            };
-            this.jComboBoxLastPlaced.addItem(item);
-        }
-    }
-
-    /**
-     * Get all component that are in combobox and are placed on workspace
-     *
-     * @return List with references on component
-     */
-    public List<Object[]> getLastPlacedComponents() {
-        List<Object[]> list = new ArrayList<>();
-        for (int i = 0; i < this.jComboBoxLastPlaced.getItemCount(); i++) {
-            list.add(this.jComboBoxLastPlaced.getItemAt(i));
-        }
-        return list;
     }
 
     /**
@@ -1445,7 +1364,6 @@ public class MainWindow extends JFrame implements LSComponent {
     private javax.swing.JButton jButtonStop;
     private javax.swing.JButton jButtonUndo;
     public javax.swing.JCheckBoxMenuItem jCheckBoxMenuItemShowUpdates;
-    private javax.swing.JComboBox<Object[]> jComboBoxLastPlaced;
     private javax.swing.JLabel jLabelSimulation;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;

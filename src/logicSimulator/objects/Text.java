@@ -35,7 +35,7 @@ public class Text extends WorkSpaceObject {
 
     public Text(String text, Point position, Font font) {
         super(position);
-        
+
         this.text = new ArrayList<>();
         if (text.length() != 0) {
             this.text.add(text);
@@ -93,17 +93,19 @@ public class Text extends WorkSpaceObject {
 
     @Override
     public Propertie[] getProperties() {
-        Propertie[] p = new Propertie[this.text.size() + 3];
+        Propertie[] p = new Propertie[this.text.size() + 4];
         //font
-        p[0] = new Propertie("Font", this.font.getName() + ", " + this.font.getSize(), Propertie.Type.FONT);
+        p[0] = new Propertie("Font", this.font.getName(), Propertie.Type.FONT);
+        //size
+        p[1] = new Propertie("Size", this.font.getSize());
         //color
-        p[1] = new Propertie("Color", this.color.getRGB(), Propertie.Type.COLOR);
+        p[2] = new Propertie("Color", this.color.getRGB(), Propertie.Type.COLOR);
         //all lines
         for (int i = 0; i < this.text.size(); i++) {
             String line = this.text.get(i);
-            p[i + 2] = new Propertie("Line " + (i + 1), line == null ? "" : line);
+            p[i + 3] = new Propertie("Line " + (i + 1), line == null ? "" : line);
         }
-        p[this.text.size() + 2] = new Propertie("Add", "");
+        p[this.text.size() + 3] = new Propertie("Add", "");
         return p;
     }
 
@@ -112,15 +114,15 @@ public class Text extends WorkSpaceObject {
         try {
             if (propt.getName().equals("Font")) {
                 //change font
-                String[] ff = propt.getValueString().split(",");
-                int fs = Integer.parseInt(ff[1].replaceAll("\\s+", ""));
-                fs = Math.max(5, fs);
-                fs = Math.min(100, fs);
                 this.font = new Font(
-                        ff[0].replaceAll("\\s+", ""),
+                        propt.getValueString(),
                         Font.PLAIN,
-                        fs
+                        this.font.getSize()
                 );
+            } else if (propt.getName().equals("Size")) {
+                //change size
+                int s = Math.max(propt.getValueInt(), 4);
+                this.font = this.font.deriveFont((float) s);
             } else if (propt.getName().equals("Add")) {
                 //add new line
                 if (propt.getValueString().length() != 0) {
@@ -142,7 +144,7 @@ public class Text extends WorkSpaceObject {
                 if (setSomeText) {
                     this.text.set(0, last);
                 }
-            } else if (propt.getName().startsWith("Color")) {
+            } else if (propt.getName().equals("Color")) {
                 //color of text
                 this.color = new Color(Integer.parseInt(propt.getValueString()));
             }
@@ -169,6 +171,7 @@ public class Text extends WorkSpaceObject {
         return false;
     }
 
+    @Override
     public WorkSpaceObject cloneObject() {
         Text copy = new Text(
                 "",

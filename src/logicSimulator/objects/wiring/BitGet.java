@@ -5,11 +5,13 @@
 package logicSimulator.objects.wiring;
 
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
 import logicSimulator.Tools;
 import logicSimulator.WorkSpaceObject;
-import logicSimulator.common.GraphicsObject;
-import logicSimulator.common.IOPin;
-import logicSimulator.common.Line;
+import logicSimulator.graphics.GraphicsObject;
+import logicSimulator.objects.IOPin;
+import logicSimulator.graphics.Line;
 import logicSimulator.common.Model;
 import logicSimulator.common.Propertie;
 
@@ -18,33 +20,34 @@ import logicSimulator.common.Propertie;
  * @author Martin
  */
 public class BitGet extends WorkSpaceObject {
-    
+
     private boolean[] avaiable;
-    
+
     public BitGet(Point position, boolean[] avaiable) {
         super(position);
-        
         this.avaiable = avaiable;
+
         //model
-        Model model = new Model(
-                new GraphicsObject[]{
-                    new Line(new Point.Double(0.0, 0.0), new Point.Double(-7.0, -7.0)),
-                    new Line(new Point.Double(0.0, -14.0), new Point.Double(-7.0, -7.0)),
-                    new Line(new Point.Double(0.0, -14.0), new Point.Double(7.0, -7.0)),
-                    new Line(new Point.Double(7.0, -7.0), new Point.Double(0.0, 0.0)),
-                    new Line(new Point.Double(0.0, 0.0), new Point.Double(0.0, 14.0)),
-                    new Line(new Point.Double(0.0, 14.0), new Point.Double(7.0, 7.0)),
-                    new Line(new Point.Double(0.0, 14.0), new Point.Double(-7.0, 7.0)),}
-        );
+        List<GraphicsObject> GOList = new ArrayList<>();
+        Model model = new Model(GOList);
+        GOList.add(new Line(0, 0, -7, -7));
+        GOList.add(new Line(0, -14, -7, -7));
+        GOList.add(new Line(0, -14, 7, -7));
+        GOList.add(new Line(7, -7, 0, 0));
+        GOList.add(new Line(0, 0, 0, 14));
+        GOList.add(new Line(0, 14, 7, 7));
+        GOList.add(new Line(0, 14, -7, 7));
+
         //pins
         model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, 1, "IN", new Point.Double(0.0, -14.0)));
         model.getIOPins().add(new IOPin(IOPin.MODE.OUTPUT, 1, "OUT", new Point.Double(0.0, 14.0)));
-        
+
         super.setModel(model);
-        
+        model.computeSize();
+
         changeOutputWidth();
     }
-    
+
     @Override
     public Propertie[] getProperties() {
         Propertie[] p = new Propertie[this.avaiable.length + 1];
@@ -58,7 +61,7 @@ public class BitGet extends WorkSpaceObject {
         }
         return p;
     }
-    
+
     @Override
     public void changePropertie(Propertie propt) {
         try {
@@ -82,7 +85,7 @@ public class BitGet extends WorkSpaceObject {
         } catch (NumberFormatException ex) {
         }
     }
-    
+
     private void changeOutputWidth() {
         //count length of output value
         int out_length = 0;
@@ -93,7 +96,7 @@ public class BitGet extends WorkSpaceObject {
         }
         super.getPins().get(1).changeBitWidth(out_length);
     }
-    
+
     @Override
     public boolean compute() {
         //count length of output value
@@ -115,18 +118,19 @@ public class BitGet extends WorkSpaceObject {
         //return
         return super.getPins().get(1).setValue(val);
     }
-    
+
     @Override
     public boolean error() {
         return false;
     }
-    
+
+    @Override
     public WorkSpaceObject cloneObject() {
         boolean[] av = new boolean[this.avaiable.length];
         System.arraycopy(this.avaiable, 0, av, 0, av.length);
         BitGet ret = new BitGet(Tools.copy(super.getPosition()), av);
-        ret.getModel().clone(super.getModel());
+        ret.getModel().rotate(super.getModel().getAngle());
         return ret;
     }
-    
+
 }

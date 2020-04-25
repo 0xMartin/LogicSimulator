@@ -4,9 +4,9 @@
  */
 package window;
 
-import data.IOProject;
-import data.PropertieReader;
-import data.PropertieWriter;
+import logicSimulator.data.IOProject;
+import logicSimulator.data.PropertieReader;
+import logicSimulator.data.PropertieWriter;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;

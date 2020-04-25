@@ -31,7 +31,7 @@
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
-              <Component id="jSplitPane1" pref="780" max="32767" attributes="0"/>
+              <Component id="jSplitPane1" pref="785" max="32767" attributes="0"/>
               <EmptySpace min="-2" pref="0" max="-2" attributes="0"/>
           </Group>
       </Group>
@@ -136,13 +136,14 @@
             <Component class="javax.swing.JComboBox" name="jComboBox1">
               <Properties>
                 <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
-                  <StringArray count="6">
+                  <StringArray count="7">
                     <StringItem index="0" value="Gate"/>
-                    <StringItem index="1" value="Control"/>
-                    <StringItem index="2" value="Display"/>
+                    <StringItem index="1" value="Input"/>
+                    <StringItem index="2" value="Output"/>
                     <StringItem index="3" value="Wiring"/>
                     <StringItem index="4" value="Memory"/>
-                    <StringItem index="5" value="Modules"/>
+                    <StringItem index="5" value="Aritmetic"/>
+                    <StringItem index="6" value="Modules"/>
                   </StringArray>
                 </Property>
               </Properties>
@@ -168,7 +169,7 @@
                   <Group type="102" alignment="1" attributes="0">
                       <EmptySpace min="-2" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="jScrollPane2" pref="246" max="32767" attributes="0"/>
+                          <Component id="jScrollPane2" pref="251" max="32767" attributes="0"/>
                           <Component id="jLabelType" alignment="0" max="32767" attributes="0"/>
                           <Component id="jLabelName" max="32767" attributes="0"/>
                           <Component id="jLabelSize" alignment="0" max="32767" attributes="0"/>

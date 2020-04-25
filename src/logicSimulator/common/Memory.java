@@ -13,15 +13,8 @@ public interface Memory {
     /**
      * Get memory data array
      *
-     * @return boolean[]
+     * @return byte[]
      */
-    public boolean[] getData();
-
-    /**
-     * Get width of on cell in memory
-     *
-     * @return
-     */
-    public int getBitWidth();
+    public byte[] getData();
 
 }

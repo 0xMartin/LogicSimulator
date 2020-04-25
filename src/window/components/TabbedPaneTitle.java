@@ -18,8 +18,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.projectFile.ModuleEditor;
+import logicSimulator.projectFile.DocumentationEditor;
 import logicSimulator.ProjectFile;
 import logicSimulator.Tools;
+import logicSimulator.projectFile.HexEditor;
 
 /**
  * Title of tabbed pane (close button, name, image of project file, docking
@@ -31,11 +33,31 @@ public class TabbedPaneTitle extends JPanel {
 
     private final JLabel title;
 
+    private final String defaultTitle;
+
+    /**
+     * Set UI for title as unselected "normal"
+     */
+    public final void unSelectedUI() {
+        this.title.setText(this.defaultTitle + "   ");
+        this.title.setForeground(Color.black);
+    }
+
+    /**
+     * Set UI for title as selected
+     */
+    public final void selectedUI() {
+        this.title.setText("[" + this.defaultTitle + "]  ");
+        this.title.setForeground(Color.red);
+    }
+
     public TabbedPaneTitle(PFViewer tp, Component component) {
-        this.setOpaque(false);
-        
+        super.setOpaque(false);
+
+        this.defaultTitle = tp.getTitleAt(tp.indexOfComponent(component));
+
         //label
-        this.title = new JLabel(tp.getTitleAt(tp.indexOfComponent(component)) + "  ") {
+        this.title = new JLabel(" ") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
@@ -44,11 +66,23 @@ public class TabbedPaneTitle extends JPanel {
             }
         };
 
+        this.title.setFont(new Font(
+                this.title.getFont().getFamily(),
+                Font.BOLD,
+                this.title.getFont().getSize()
+        ));
+
+        this.unSelectedUI();
+
         //icon
         if (component instanceof WorkSpace) {
             this.title.setIcon(logicSimulator.ui.SystemResources.LWF_ICON);
         } else if (component instanceof ModuleEditor) {
             this.title.setIcon(logicSimulator.ui.SystemResources.MF_ICON);
+        }else if (component instanceof HexEditor) {
+            this.title.setIcon(logicSimulator.ui.SystemResources.HEF_ICON);
+        }else if (component instanceof DocumentationEditor) {
+            this.title.setIcon(logicSimulator.ui.SystemResources.DF_ICON);
         }
 
         //set font as bold
@@ -71,7 +105,9 @@ public class TabbedPaneTitle extends JPanel {
         button.addActionListener((ActionEvent evt) -> {
             //remove component from tabbed pane and set as closed
             if (component != null) {
-                ((ProjectFile) component).getPFMode().OPENED = false;
+                ProjectFile pf = (ProjectFile) component;
+                pf.getPFMode().OPENED = false;
+                pf.getPFMode().VISIBLE = false;
                 tp.remove(component);
                 tp.getDockingPanel().refreshLayout();
             }

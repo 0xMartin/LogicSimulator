@@ -6,11 +6,11 @@ package window.components;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.ItemEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +19,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
@@ -51,14 +52,41 @@ public class PropertieEditor extends JTable {
     }
 
     public PropertieEditor() {
-        super();
-        this.getTableHeader().setReorderingAllowed(false);
+        super.getTableHeader().setReorderingAllowed(false);
+        super.setCellSelectionEnabled(false);
+        super.setRowHeight(30);
+        super.getTableHeader().setDefaultRenderer(new PropertieEditor.Renderer());
+        super.setDefaultRenderer(String.class, new PropertieEditor.Renderer());
+    }
+
+    private static class Renderer implements TableCellRenderer {
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            JLabel l;
+            if (value instanceof String) {
+                l = new JLabel(value.toString());
+            } else {
+                l = (JLabel) value;
+            }
+            if (l != null) {
+                l.setBorder(new EmptyBorder(0,10,0,0));
+                l.setFont(new Font("tahoma", Font.BOLD, 12));
+                l.setOpaque(true);
+                l.setBackground(row % 2 == 0 ? new Color(220, 220, 220) : new Color(255, 255, 255));
+                //l.setForeground(row % 2 == 0 ? new Color(255, 255, 255) : new Color(200, 200, 200));
+                return l;
+            } else {
+                return new JLabel(" ");
+            }
+        }
     }
 
     //list with editor for all components in cells of table
     private final HashMap<Integer, TableCellEditor> editors = new HashMap<>();
 
-    private List<Propertie> lastData = new ArrayList<>();
+    private final List<Propertie> lastData = new ArrayList<>();
 
     @Override
     public TableCellEditor getCellEditor(int row, int column) {
@@ -76,16 +104,8 @@ public class PropertieEditor extends JTable {
      * @param obj WorkSpaceObject
      */
     public void edit(WorkSpaceObject obj) {
-        if (obj == null) {
-            this.object = null;
-            DefaultTableModel model = (DefaultTableModel) this.getModel();
-            model.getDataVector().clear();
-            model.setRowCount(0);
-            repaint();
-        } else {
-            this.object = obj;
-            readPropts();
-        }
+        this.object = obj;
+        readPropts();
     }
 
     /**
@@ -94,7 +114,7 @@ public class PropertieEditor extends JTable {
      * @param prot Propertie
      */
     private void changePropt(Propertie prot) {
-        if (this.object == null) {
+        if (this.object == null || prot == null) {
             return;
         }
         this.object.changePropertie(prot);
@@ -104,17 +124,18 @@ public class PropertieEditor extends JTable {
      * Read and show all propts of object
      */
     private void readPropts() {
+        DefaultTableModel model = (DefaultTableModel) this.getModel();
+        model.getDataVector().removeAllElements();
+        if (super.getCellEditor() != null) {
+            super.getCellEditor().cancelCellEditing();
+        }
+        this.editors.clear();
+        this.lastData.clear();
+
         if (this.object == null) {
             repaint();
             return;
         }
-
-        DefaultTableModel model = (DefaultTableModel) this.getModel();
-
-        //clear
-        model.getDataVector().removeAllElements();
-        this.editors.clear();
-        this.lastData.clear();
 
         //read and display all properties
         Propertie[] propts = this.object.getProperties();
@@ -122,6 +143,7 @@ public class PropertieEditor extends JTable {
             repaint();
             return;
         }
+
         for (Propertie propt : propts) {
             if (propt != null) {
                 this.lastData.add(propt);
@@ -130,15 +152,16 @@ public class PropertieEditor extends JTable {
                         //color type
                         Color c = new Color(Integer.parseInt(propt.getValueString()));
                         ColorBox c1 = new ColorBox(c);
-                        c1.addActionListener((ActionEvent e) -> {
+                        c1.setColorChangedListener((ActionEvent e) -> {
                             this.valuesChanged();
                         });
-                        model.addRow(new Object[]{propt.getName(), propt.getValueString()});
+                        model.addRow(new Object[]{propt.getName(), c1.getText()});
                         this.editors.put(this.getRowCount() - 1, new DefaultCellEditor(c1));
                         break;
                     case LOGIC:
                         //true false type
                         JComboBox c2 = new JComboBox(new String[]{"True", "False"});
+                        c2.setSelectedItem(propt.getValueString());
                         c2.addActionListener((ActionEvent e) -> {
                             this.valuesChanged();
                         });
@@ -147,37 +170,39 @@ public class PropertieEditor extends JTable {
                         break;
                     case BITS:
                         //bit type (user choose how many bits have input of some component, ...)
-                        Integer[] bits = new Integer[64];
-                        for (int i = 1; i <= 64; i++) {
+                        Integer[] bits = new Integer[32];
+                        for (int i = 1; i <= 32; i++) {
                             bits[i - 1] = i;
                         }
                         JComboBox c3 = new JComboBox(bits);
+                        c3.setSelectedItem(propt.getValueInt());
                         c3.addActionListener((ActionEvent e) -> {
                             this.valuesChanged();
                         });
-                        model.addRow(new Object[]{propt.getName(), c3.getItemAt(propt.getValueInt() - 1)});
+                        model.addRow(new Object[]{propt.getName(), propt.getValueInt()});
                         this.editors.put(this.getRowCount() - 1, new DefaultCellEditor(c3));
                         break;
-                    case FONT:
-                        JTextField c4 = new JTextField(propt.getValueString());
-                        c4.addMouseListener(new MouseAdapter() {
-                            @Override
-                            public void mousePressed(MouseEvent e) {
-                                try {
-                                    String[] arr = c4.getText().replaceAll("\\s+", "").split(",");
-                                    Font f = FontChooser.showDialog(null, new Font(arr[0], Font.PLAIN, Integer.parseInt(arr[1])));
-                                    if (f != null) {
-                                        c4.setText(f.getPSName() + ", " + f.getSize());
-                                    }
-                                } catch (Exception ex) {
-                                }
-                            }
-                        });
+                    case INPUTS:
+                        //bit type (user choose how many bits have input of some component, ...)
+                        Integer[] inputs = new Integer[16];
+                        for (int i = 2; i <= 17; i++) {
+                            inputs[i - 2] = i;
+                        }
+                        JComboBox c4 = new JComboBox(inputs);
+                        c4.setSelectedItem(propt.getValueInt());
                         c4.addActionListener((ActionEvent e) -> {
                             this.valuesChanged();
                         });
-                        model.addRow(new Object[]{propt.getName(), c4.getText()});
+                        model.addRow(new Object[]{propt.getName(), propt.getValueInt()});
                         this.editors.put(this.getRowCount() - 1, new DefaultCellEditor(c4));
+                        break;
+                    case FONT:
+                        FontChooser c5 = new FontChooser(propt.getValueString(), true);
+                        c5.addItemListener((ItemEvent e) -> {
+                            this.valuesChanged();
+                        });
+                        model.addRow(new Object[]{propt.getName(), propt.getValueString()});
+                        this.editors.put(this.getRowCount() - 1, new DefaultCellEditor(c5));
                         break;
                     default:
                         //unknown -> textfield
@@ -207,12 +232,17 @@ public class PropertieEditor extends JTable {
             DefaultTableModel model = (DefaultTableModel) this.getModel();
             for (int row = 0; row < model.getRowCount(); row++) {
                 String name = model.getValueAt(row, 0).toString();
-                String val = model.getValueAt(row, 1).toString();
-                if (this.lastData.stream()
-                        .anyMatch((p) -> (name.equals(p.getName()) && !p.getValueString().equals(val)))) {
-                    //change propertie
-                    this.changePropt(new Propertie((String) model.getValueAt(row, 0), val));
-                    change = true;
+                String val = this.editors.get(row).getCellEditorValue().toString();
+                for (Propertie p : this.lastData) {
+                    if (name.equals(p.getName())) {
+                        if (!p.getValueString().equals(val)) {
+                            //change propertie in last and in object
+                            p.setValue(val);
+                            this.changePropt(new Propertie(name, val));
+                            change = true;
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -220,9 +250,9 @@ public class PropertieEditor extends JTable {
             if (change) {
                 if (this.action != null) {
                     this.action.actionPerformed(new ActionEvent(this, 0, ""));
+                    //read propts again
+                    this.readPropts();
                 }
-                //read all properite
-                readPropts();
                 //unselect all
                 this.getSelectionModel().clearSelection();
             }

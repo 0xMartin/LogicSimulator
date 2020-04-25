@@ -8,7 +8,6 @@ import logicSimulator.ui.Colors;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Event;
 import java.awt.Graphics;
@@ -24,6 +23,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JComponent;
@@ -37,19 +37,18 @@ import javax.swing.event.ChangeEvent;
 import logicSimulator.ComputeCore;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.PFHandler;
-import logicSimulator.PFMode;
 import logicSimulator.Project;
 import logicSimulator.ProjectFile;
 import logicSimulator.Settings;
 import logicSimulator.Tools;
 import logicSimulator.WorkSpaceObject;
 import logicSimulator.common.CopyObjectVector;
-import logicSimulator.common.IOPin;
-import logicSimulator.common.Line;
+import logicSimulator.objects.IOPin;
+import logicSimulator.graphics.Line;
 import logicSimulator.common.Model;
 import logicSimulator.common.ClickAction;
+import logicSimulator.data.FileIO;
 import logicSimulator.objects.wiring.Wire;
-import window.components.ProjectFileToolbar;
 
 /**
  * In workspace are all object (logic gates, notes, labels, controls, ...) in
@@ -57,7 +56,7 @@ import window.components.ProjectFileToolbar;
  *
  * @author Martin
  */
-public class WorkSpace extends JPanel implements ProjectFile {
+public class WorkSpace extends ProjectFile {
 
     //handler fro this workspace (rendering, events ...)
     private final WorkspaceHandler handler;
@@ -68,12 +67,6 @@ public class WorkSpace extends JPanel implements ProjectFile {
     //new added object (this objects are sticked on cursor until user press button)
     private List<WorkSpaceObject> newObj;
 
-    //project
-    private final Project project;
-
-    //project file mode
-    private final PFMode pfMode = new PFMode(false, false, true);
-
     //popup menu
     private JPopupMenu menu;
 
@@ -81,23 +74,25 @@ public class WorkSpace extends JPanel implements ProjectFile {
 
     /**
      * WorkSpace
+     *
      * @param name Name of file
-     * @param p Project
+     * @param project Project
      */
-    public WorkSpace(String name, Project p) {
+    public WorkSpace(String name, Project project) {
         //default
-        super();
-        this.project = p;
+        super(project);
         this.objects = new ArrayList<>();
-        this.setLayout(new BorderLayout());
-        this.setName(name);
+        super.setLayout(new BorderLayout());
+        super.setName(name);
+
+        //toolbar
         this.toolbar = new ProjectFileToolbar(this);
-        this.add(this.toolbar, BorderLayout.NORTH);
+        super.add(this.toolbar, BorderLayout.NORTH);
 
         //rendering panel
         JScrollPane jScrollPane = new JScrollPane();
         jScrollPane.setBorder(null);
-        this.add(jScrollPane, BorderLayout.CENTER);
+        super.add(jScrollPane, BorderLayout.CENTER);
         this.handler = new WorkspaceHandler(this);
         jScrollPane.setViewportView(this.handler);
         jScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
@@ -108,7 +103,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
         });
 
         //resize workspace
-        this.addComponentListener(new ComponentAdapter() {
+        super.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
                 resizeWorkSpace(handler.scale);
@@ -134,7 +129,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
         item = new JMenuItem("Delete");
         m.add(item);
         action = (ActionEvent evt) -> {
-            if (this.project.editMode) {
+            if (super.getProject().editMode) {
                 this.deleteSelectedObjects();
                 //repaint
                 this.handler.repaint();
@@ -149,8 +144,8 @@ public class WorkSpace extends JPanel implements ProjectFile {
         item = new JMenuItem("Copy");
         m.add(item);
         action = (ActionEvent evt) -> {
-            if (this.project.editMode) {
-                this.project.copyObjects = new CopyObjectVector(objects, this.handler.cursor);
+            if (super.getProject().editMode) {
+                super.getProject().copyObjects = new CopyObjectVector(objects, this.handler.cursor);
             }
         };
         item.addActionListener(action);
@@ -162,7 +157,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
         item = new JMenuItem("Paste");
         m.add(item);
         action = (ActionEvent evt) -> {
-            if (this.project.editMode) {
+            if (super.getProject().editMode) {
                 this.pasteObject(this.handler.cursor);
             }
         };
@@ -178,7 +173,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
         item = new JMenuItem("Rotate");
         m.add(item);
         action = (ActionEvent evt) -> {
-            if (this.project.editMode) {
+            if (super.getProject().editMode) {
                 this.rotateSelectedObject();
             }
         };
@@ -191,7 +186,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
         item = new JMenuItem("Select all");
         this.menu.add(item);
         action = (ActionEvent evt) -> {
-            if (this.project.editMode) {
+            if (super.getProject().editMode) {
                 this.selectAllObjects();
                 this.handler.repaint();
             }
@@ -202,6 +197,30 @@ public class WorkSpace extends JPanel implements ProjectFile {
         );
     }
 
+    @Override
+    public void backUpData(String projectDirectoryPath) throws Exception {
+        FileIO.writeObject(
+                new File(projectDirectoryPath + this.getName() + "." + LogicSimulatorCore.WORKSPACE_FILE_TYPE),
+                this.objects
+        );
+    }
+
+    @Override
+    public void restoreData(File file) throws Exception {
+        //read list with WorkSpaceObjects
+        List<WorkSpaceObject> dataList = (List<WorkSpaceObject>) FileIO.readObject(file);
+        this.objects.clear();
+        dataList.stream().forEach((obj) -> {
+            obj.restore();
+            this.objects.add(obj);
+        });
+    }
+
+    @Override
+    public PFHandler getHandler() {
+        return this.handler;
+    }
+
     /**
      * Get toolbar of workspace
      *
@@ -209,41 +228,6 @@ public class WorkSpace extends JPanel implements ProjectFile {
      */
     public ProjectFileToolbar getToolBar() {
         return this.toolbar;
-    }
-
-    @Override
-    public PFMode getPFMode() {
-        return this.pfMode;
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Override
-    public Component getComp() {
-        return this;
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Override
-    public PFHandler getHandler() {
-        return this.handler;
-    }
-
-    @Override
-    public Project getProject() {
-        return this.project;
-    }
-
-    @Override
-    public void selectInProject() {
-        if (this.project != null) {
-            this.project.setSelectedFile(this);
-        }
     }
 
     /**
@@ -494,11 +478,11 @@ public class WorkSpace extends JPanel implements ProjectFile {
      */
     public void pasteObject(Point cursor) {
         //paste copy
-        if (project.copyObjects != null) {
-            List<WorkSpaceObject> objs = project.copyObjects.getObjects();
+        if (super.getProject().copyObjects != null) {
+            List<WorkSpaceObject> objs = super.getProject().copyObjects.getObjects();
             objs.stream().forEach((obj) -> {
                 if (obj != null) {
-                    Point p = project.copyObjects.cursor;
+                    Point p = super.getProject().copyObjects.cursor;
                     if (obj instanceof Wire) {
                         ((Wire) obj).getPath().stream().forEach((line) -> {
                             line.p1.x += cursor.x - p.x;
@@ -524,7 +508,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
     private class WorkspaceHandler extends JPanel implements PFHandler,
             MouseListener, MouseMotionListener, MouseWheelListener {
 
-        private final WorkSpace wspace;
+        private final WorkSpace owner;
 
         /**
          * (drawing scale) render position = [real size] / scale event position
@@ -535,17 +519,18 @@ public class WorkSpace extends JPanel implements ProjectFile {
         private final Point offset = new Point(0, 0);
 
         /**
+         * Create handler for workspace
          *
-         * @param wspace
+         * @param owner Owner of this handler
          */
-        public WorkspaceHandler(WorkSpace wspace) {
+        public WorkspaceHandler(WorkSpace owner) {
             super();
-            this.wspace = wspace;
-            this.setBackground(Colors.BACKGROUND);
-            this.addMouseListener(this);
-            this.addMouseMotionListener(this);
-            this.addMouseWheelListener(this);
-            this.requestFocus();
+            this.owner = owner;
+            super.setBackground(Colors.BACKGROUND);
+            super.addMouseListener(this);
+            super.addMouseMotionListener(this);
+            super.addMouseWheelListener(this);
+            super.requestFocus();
             //paint zoom value on toolbar
             this.zoom(0);
         }
@@ -571,16 +556,16 @@ public class WorkSpace extends JPanel implements ProjectFile {
                 resizeWorkSpace(this.scale);
             }
             //set zoom info
-            this.wspace.getToolBar().setRightString(String.format("%.2f", this.scale * 100) + "%");
+            this.owner.getToolBar().setRightString(String.format("%.2f", this.scale * 100) + "%");
         }
 
         @Override
         public Point getCursorPosition() {
             return this.cursor;
         }
-        
+
         @Override
-        public void repaintPF(){
+        public void repaintPF() {
             this.repaint();
         }
 
@@ -603,8 +588,8 @@ public class WorkSpace extends JPanel implements ProjectFile {
             }
 
             Dimension size = new Dimension(
-                    (int) (this.wspace.getSize().width / this.scale),
-                    (int) (this.wspace.getSize().height / this.scale)
+                    (int) (super.getWidth() / this.scale),
+                    (int) (super.getHeight() / this.scale)
             );
 
             //clear all
@@ -715,7 +700,8 @@ public class WorkSpace extends JPanel implements ProjectFile {
         public void mouseEntered(MouseEvent evt) {
 
             //control mode
-            if (!this.wspace.project.editMode) {
+            if (!this.owner.getProject().editMode) {
+                this.repaint();
                 return;
             }
 
@@ -724,8 +710,8 @@ public class WorkSpace extends JPanel implements ProjectFile {
              * Relocate new object first must by object selected from list (by
              * click)
              */
-            if (this.wspace.newObj != null) {
-                this.wspace.newObj.stream().forEach((obj) -> {
+            if (this.owner.newObj != null) {
+                this.owner.newObj.stream().forEach((obj) -> {
                     if (obj != null) {
                         if (obj.getPosition() != null) {
                             if (obj.getPosition().x == LogicSimulatorCore.OBJECT_NULL_POSITION) {
@@ -736,9 +722,11 @@ public class WorkSpace extends JPanel implements ProjectFile {
                     }
                 });
             }
+            
+            this.repaint();
         }
 
-        private int showPinName = 0;
+        private IOPin lastHoverPin = null;
 
         /**
          *
@@ -751,15 +739,15 @@ public class WorkSpace extends JPanel implements ProjectFile {
             this.cursor = Tools.divide(evt.getPoint(), this.scale);
 
             //control mode
-            if (!this.wspace.project.editMode) {
+            if (!this.owner.getProject().editMode) {
                 return;
             }
 
             //edit mode
             //moving with new added object
-            if (this.wspace.newObj != null) {
+            if (this.owner.newObj != null) {
                 if (this.last != null) {
-                    this.wspace.newObj.stream().forEach((obj) -> {
+                    this.owner.newObj.stream().forEach((obj) -> {
                         if (obj instanceof Wire) {
                             ((Wire) obj).getPath().stream().forEach((line) -> {
                                 line.p1.x += this.cursor.x - last.x;
@@ -780,21 +768,34 @@ public class WorkSpace extends JPanel implements ProjectFile {
                 this.last = this.cursor;
             }
 
-            if (this.showPinName > 4) {
-                this.showPinName = 0;
-                objects.forEach((obj) -> {
-                    if (obj.getPins() != null) {
+            //remove hover for last pin
+            if (this.lastHoverPin != null) {
+                this.lastHoverPin.VisbileHover = false;
+                this.lastHoverPin.VisibleLabel = false;
+                this.lastHoverPin = null;
+            }
+            //show name of pin (CTR down) + pin hover effect
+            for (int i = 0; i < objects.size(); ++i) {
+                WorkSpaceObject obj = objects.get(i);
+                if (obj.getPins() != null && obj.getModel() != null) {
+                    if (obj.getModel().intersect(this.cursor, obj.getPosition(), 7)) {
                         obj.getPins().forEach((pin) -> {
                             Point.Double p = new Point.Double(
                                     pin.getPosition().x + obj.getPosition().x,
-                                    pin.getPosition().y + obj.getPosition().y
-                            );
-                            pin.VisibleName = Tools.dist(p, this.cursor) < LogicSimulatorCore.WORK_SPACE_STEP / 2;
+                                    pin.getPosition().y + obj.getPosition().y);
+                            //if distance between cursor and io pin is lower than half of step, than display label of this pin
+                            pin.VisbileHover = Tools.dist(p, this.cursor) < LogicSimulatorCore.WORK_SPACE_STEP / 2;
+                            pin.VisibleLabel = evt.isControlDown() && pin.VisbileHover;
+                            this.lastHoverPin = pin.VisbileHover ? pin : this.lastHoverPin;
+                            //if label is visible than move object on the top of list
+                            if (pin.VisibleLabel) {
+                                objects.remove(obj);
+                                objects.add(obj);
+                            }
                         });
+                        break;
                     }
-                });
-            } else {
-                this.showPinName++;
+                }
             }
 
             //repaint
@@ -808,7 +809,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
         @Override
         public void mousePressed(MouseEvent evt) {
             //select this project file in project
-            this.wspace.selectInProject();
+            this.owner.selectInProject();
 
             //pressed button must be left button
             if (evt.getButton() != 1) {
@@ -816,13 +817,13 @@ public class WorkSpace extends JPanel implements ProjectFile {
             }
 
             //control mode
-            if (!project.editMode) {
+            if (!this.owner.getProject().editMode) {
                 for (WorkSpaceObject obj : objects) {
                     if (obj.getModel() != null) {
                         if (obj.getModel().intersect(this.cursor, obj.getPosition())) {
                             if (obj instanceof ClickAction) {
                                 //change value of button
-                                ((ClickAction) obj).changeValue(this.cursor, this, this.wspace.project);
+                                ((ClickAction) obj).changeValue(this.cursor, this, this.owner.getProject());
                             }
                             break;
                         }
@@ -890,19 +891,19 @@ public class WorkSpace extends JPanel implements ProjectFile {
                     this.wire.getPath().add(this.wireLine2);
                     objects.add(this.wire);
                     //unselect
-                    this.wspace.project.editPropt(null);
+                    this.owner.getProject().editPropt(null);
                     return;
                 }
             }
 
             //select object
-            for (WorkSpaceObject obj : this.wspace.objects) {
+            for (WorkSpaceObject obj : this.owner.objects) {
                 //object cant be wire, wire select on mouse click
                 if (!(obj instanceof Wire)) {
                     if (obj != null) {
                         if (obj.select(this.cursor)) {
                             //start edit propt of this selected object
-                            this.wspace.project.editPropt(obj);
+                            this.owner.getProject().editPropt(obj);
                             return;
                         }
                     }
@@ -926,7 +927,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
                         this.wireLine2.streightGroup(this.wireLine1);
                         this.wire.getPath().add(this.wireLine1);
                         this.wire.getPath().add(this.wireLine2);
-                        this.wspace.objects.add(this.wire);
+                        this.owner.objects.add(this.wire);
                         return;
                     }
                 }
@@ -945,12 +946,12 @@ public class WorkSpace extends JPanel implements ProjectFile {
             //pressed button must be left button
             if (evt.getButton() != 1) {
                 //show popup menu
-                this.wspace.menu.show(this, evt.getX(), evt.getY());
+                this.owner.menu.show(this, evt.getX(), evt.getY());
                 return;
             }
 
             //control mode
-            if (!this.wspace.project.editMode) {
+            if (!this.owner.getProject().editMode) {
                 return;
             }
 
@@ -974,7 +975,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
             }
             if (this.wire != null) {
                 if (this.wire.getPath().isEmpty()) {
-                    this.wspace.objects.remove(this.wire);
+                    this.owner.objects.remove(this.wire);
                     this.wire = null;
                 }
             }
@@ -1003,7 +1004,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
 
             //place new nodes for wire line 1
             if (this.wireLine1 != null) {
-                this.wspace.objects.stream().forEach((obj) -> {
+                this.owner.objects.stream().forEach((obj) -> {
                     if (obj != wire) {
                         if (obj instanceof Wire) {
                             //point of line is on line and it insnt in end of wire path -> place node
@@ -1024,7 +1025,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
 
             //place new nodes for wire line 2
             if (this.wireLine2 != null) {
-                this.wspace.objects.stream().forEach((obj) -> {
+                this.owner.objects.stream().forEach((obj) -> {
                     if (obj != wire) {
                         if (obj instanceof Wire) {
                             if (Tools.isOnLine((Wire) obj, this.wireLine2.p1, null) != null) {
@@ -1044,7 +1045,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
             }
 
             //place on grid all selected objects
-            this.wspace.objects.stream()
+            this.owner.objects.stream()
                     .filter((obj) -> !(obj == null))
                     .filter((obj) -> !(obj.getPosition() == null))
                     .filter((obj) -> !(!obj.isSelected()))
@@ -1064,8 +1065,8 @@ public class WorkSpace extends JPanel implements ProjectFile {
                     });
 
             //all new add object place on grid when user placing them
-            if (this.wspace.newObj != null) {
-                this.wspace.newObj.stream()
+            if (this.owner.newObj != null) {
+                this.owner.newObj.stream()
                         .filter((obj) -> (obj != null))
                         .forEachOrdered((obj) -> {
                             if (obj instanceof Wire) {
@@ -1091,16 +1092,16 @@ public class WorkSpace extends JPanel implements ProjectFile {
 
             //select rect
             if (this.selectStart != null && this.selectEnd != null) {
-                this.wspace.select(this.selectStart, this.selectEnd);
+                this.owner.select(this.selectStart, this.selectEnd);
             }
 
             //Refresh Connectivity -> when: some object dragged, wire added, new object added
-            if (this.draged || this.wireLine1 != null || this.wireLine2 != null || this.wspace.newObj != null) {
+            if (this.draged || this.wireLine1 != null || this.wireLine2 != null || this.owner.newObj != null) {
                 ComputeCore.CircuitHandler.refreshConnectivity(objects);
             }
 
             //reset vars
-            this.wspace.newObj = null;
+            this.owner.newObj = null;
             this.last = null;
             this.selectStart = null;
             this.selectEnd = null;
@@ -1129,7 +1130,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
             this.cursor = Tools.divide(evt.getPoint(), this.scale);
 
             //control mode
-            if (!this.wspace.project.editMode) {
+            if (!this.owner.getProject().editMode) {
                 return;
             }
 
@@ -1232,9 +1233,6 @@ public class WorkSpace extends JPanel implements ProjectFile {
             this.repaint();
         }
 
-        //for zooming
-        private long timeMouseWheel = System.nanoTime();
-
         /**
          *
          * @param evt
@@ -1242,14 +1240,7 @@ public class WorkSpace extends JPanel implements ProjectFile {
         @Override
         public void mouseWheelMoved(MouseWheelEvent evt) {
             //zoom out or in
-            if (evt.isControlDown()) {
-                long time = System.nanoTime();
-                //200 ms per one zoom
-                if (time - this.timeMouseWheel > 2e8) {
-                    zoom(evt.getWheelRotation());
-                    this.timeMouseWheel = time;
-                }
-            }
+            zoom(evt.getWheelRotation());
         }
 
         /**

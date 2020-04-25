@@ -30,7 +30,8 @@ public class Propertie {
         UNKNOWN, //unknown type of propertie
         COLOR, //color
         LOGIC, //true/false
-        BITS, //number of bits
+        BITS, //number of bits  (1 - 32)
+        INPUTS, //number of bits (2 - 17)
         FONT;   //font of text     
     }
 

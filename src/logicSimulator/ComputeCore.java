@@ -5,15 +5,16 @@
 package logicSimulator;
 
 import logicSimulator.projectFile.WorkSpace;
-import data.PropertieReader;
+import logicSimulator.data.PropertieReader;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import logicSimulator.common.IOPin;
-import logicSimulator.common.Line;
+import logicSimulator.objects.IOPin;
+import logicSimulator.graphics.Line;
 import logicSimulator.common.Propertie;
 import logicSimulator.objects.wiring.Bridge;
 import logicSimulator.objects.wiring.Wire;
@@ -47,8 +48,8 @@ public class ComputeCore implements LSComponent {
      */
     private int CURRENT_UPDATES = 0, LAST_UPDATES = 0;
 
-    //1 sec listener
-    private ActionListener invoke1Sec;
+    //1 sec listener, workspace closed
+    private ActionListener invoke1Sec, workClosed;
 
     /**
      * Set workspace for simulation
@@ -76,10 +77,19 @@ public class ComputeCore implements LSComponent {
      * Add one second action listener (call one time per second when simulation
      * run)
      *
-     * @param action
+     * @param action ActionListener
      */
-    public void add1Sec(ActionListener action) {
+    public void set1SecListener(ActionListener action) {
         this.invoke1Sec = action;
+    }
+
+    /**
+     * Listener invoke action when workspace is closed duruning running simulation
+     *
+     * @param action ActionListener
+     */
+    public void setWorkSpaceClosedListener(ActionListener action) {
+        this.workClosed = action;
     }
 
     @Override
@@ -128,7 +138,6 @@ public class ComputeCore implements LSComponent {
     @Override
     public void run() {
         this.thread.start();
-        this.ctl.run();
     }
 
     private boolean abort = false;
@@ -183,9 +192,9 @@ public class ComputeCore implements LSComponent {
     private long last = System.nanoTime();
 
     /**
-     * Diagnostic
+     * Analytics
      */
-    private void diagnostic() {
+    private void analytics() {
         this.CURRENT_TICKS++;
         if (System.nanoTime() - this.last >= 1e9) {
             this.last = System.nanoTime();
@@ -221,34 +230,35 @@ public class ComputeCore implements LSComponent {
                 }
 
                 if (this.ctl.tickCheck() || this.step) {
-                    //diagnostic
-                    diagnostic();
-
-                    //selected file of project must be instance of workspace
-                    if (!(this.project.getSelectedFile() instanceof WorkSpace)) {
-                        continue;
-                    }
+                    //analytics
+                    analytics();
 
                     if (this.work == null) {
                         continue;
                     }
 
-                    if (this.work.getObjects() == null) {
+                    //workspace must be opened
+                    if (!this.work.getPFMode().OPENED) {
+                        //invoke workspace closed aciton
+                        this.workClosed.actionPerformed(new ActionEvent(this, 0, ""));
+                        continue;
+                    }
+
+                    if (this.work.getObjects().isEmpty()) {
                         continue;
                     }
 
                     //compute
-                    this.CURRENT_UPDATES += ComputeCore.compute(work.getObjects());
+                    this.CURRENT_UPDATES += ComputeCore.compute(this.work.getObjects());
 
                     //repaint selected workspace if something change
                     if (this.CURRENT_UPDATES != this.LAST_UPDATES || this.step) {
                         this.step = false;
-                        work.getHandler().repaintPF();
+                        this.work.getHandler().repaintPF();
                     }
                     this.LAST_UPDATES = this.CURRENT_UPDATES;
                 }
             } catch (Exception ex) {
-                System.out.println(">>Compute core error");
                 Logger.getLogger(ComputeCore.class
                         .getName()).log(Level.SEVERE, null, ex);
             }
@@ -261,8 +271,9 @@ public class ComputeCore implements LSComponent {
      *
      * @param objects WorkSpace objects
      * @return Number of object that changes thers stats
+     * @throws java.lang.Exception
      */
-    public static int compute(List<WorkSpaceObject> objects) {
+    public static int compute(List<WorkSpaceObject> objects) throws Exception {
         int current_updates = 0;
         //compute all objects
         for (int index = 0; index < objects.size(); index++) {
@@ -648,7 +659,6 @@ public class ComputeCore implements LSComponent {
                     }
                 }
             }
-
         }
 
     }

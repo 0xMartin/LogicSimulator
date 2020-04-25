@@ -35,7 +35,7 @@ public class Splash extends JWindow {
                 (screen.height - this.img.getHeight(null)) / 2
         );   
         this.setBackground(new Color(0,0,0,0));
-        this.setAlwaysOnTop(true);
+        //this.setAlwaysOnTop(true);
     }
 
     @Override

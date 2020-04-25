@@ -7,11 +7,13 @@ package logicSimulator.objects.wiring;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
 import logicSimulator.Tools;
-import logicSimulator.common.Line;
+import logicSimulator.graphics.Line;
 import logicSimulator.WorkSpaceObject;
-import logicSimulator.common.GraphicsObject;
-import logicSimulator.common.IOPin;
+import logicSimulator.graphics.GraphicsObject;
+import logicSimulator.objects.IOPin;
 import logicSimulator.common.Model;
 import logicSimulator.common.Propertie;
 import logicSimulator.ui.Fonts;
@@ -30,7 +32,7 @@ public class Bridge extends WorkSpaceObject {
 
     public Bridge(Point position, String id) {
         super(position);
-        
+
         this.id = id;
         buildModel(20);
     }
@@ -39,23 +41,24 @@ public class Bridge extends WorkSpaceObject {
         txtLength += 10;
         //orientation of model
         int angle = super.getModel() == null ? 0 : super.getModel().getAngle();
-        Model model = new Model(
-                new GraphicsObject[]{
-                    //arrow
-                    new Line(new Point.Double(0, 0), new Point.Double(-7, 7)),
-                    new Line(new Point.Double(0, 0), new Point.Double(-7, -7)),
-                    new Line(new Point.Double(-7, 7), new Point.Double(-7, 10)),
-                    new Line(new Point.Double(-7, -7), new Point.Double(-7, -10)),
-                    //body
-                    new Line(new Point.Double(-7, -10), new Point.Double(-7 - txtLength, -10)),
-                    new Line(new Point.Double(-7, 10), new Point.Double(-7 - txtLength, 10)),
-                    new Line(new Point.Double(-7 - txtLength, 10), new Point.Double(-7 - txtLength, -10))
-                }
-        );
+
+        //model
+        List<GraphicsObject> GOList = new ArrayList<>();
+        Model model = new Model(GOList);
+        GOList.add(new Line(0, 0, -7, 7));
+        GOList.add(new Line(0, 0, -7, -7));
+        GOList.add(new Line(-7, 7, -7, 10));
+        GOList.add(new Line(-7, -7, -7, -10));
+        GOList.add(new Line(-7, -10, -7 - txtLength, -10));
+        GOList.add(new Line(-7, 10, -7 - txtLength, 10));
+        GOList.add(new Line(-7 - txtLength, 10, -7 - txtLength, -10));
+
+        //pin
         model.getIOPins().add(new IOPin(IOPin.MODE.LINKER, 1, "", new Point.Double(0, 0)));
+
         //rotate model
         model.rotate(angle);
-        
+
         super.setModel(model);
     }
 
@@ -69,7 +72,7 @@ public class Bridge extends WorkSpaceObject {
 
     @Override
     public void render(Graphics2D g2, Point offset, Dimension screen) {
-        g2.setFont(Fonts.STATUS);
+        g2.setFont(Fonts.BIG);
         //rebuild model
         if (this.idChanged) {
             this.idChanged = false;
@@ -130,10 +133,11 @@ public class Bridge extends WorkSpaceObject {
         }
     }
 
+    @Override
     public WorkSpaceObject cloneObject() {
-        Bridge bridge = new Bridge(Tools.copy(super.getPosition()), this.id);
-        bridge.getModel().clone(super.getModel());
-        return bridge;
+        Bridge ret = new Bridge(Tools.copy(super.getPosition()), this.id);
+        ret.getModel().rotate(super.getModel().getAngle());
+        return ret;
     }
 
 }

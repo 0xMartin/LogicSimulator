@@ -11,7 +11,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Point;
-import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,27 +31,49 @@ import logicSimulator.ProjectFile;
 import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.WorkSpaceObject;
 import logicSimulator.Tools;
-import logicSimulator.common.LogicModule;
+import logicSimulator.objects.LogicModule;
 import logicSimulator.common.Model;
+import logicSimulator.objects.aritmetic.BitAdd;
+import logicSimulator.objects.aritmetic.BitDiv;
+import logicSimulator.objects.aritmetic.BitMul;
+import logicSimulator.objects.aritmetic.BitSub;
+import logicSimulator.objects.aritmetic.MagnitudeComparator;
 import logicSimulator.objects.wiring.BitGet;
-import logicSimulator.objects.control.Button;
-import logicSimulator.objects.control.Clock;
-import logicSimulator.objects.control.RandomGenerator;
-import logicSimulator.objects.displays.Bulp;
-import logicSimulator.objects.displays.RasterScreen;
-import logicSimulator.objects.displays.VectorScreen;
-import logicSimulator.objects.gates.And;
-import logicSimulator.objects.gates.Buffer;
-import logicSimulator.objects.gates.Nand;
-import logicSimulator.objects.gates.Nor;
-import logicSimulator.objects.gates.Not;
-import logicSimulator.objects.gates.Nxor;
-import logicSimulator.objects.gates.Or;
-import logicSimulator.objects.gates.Xor;
+import logicSimulator.objects.input.Button;
+import logicSimulator.objects.input.Clock;
+import logicSimulator.objects.input.RandomGenerator;
+import logicSimulator.objects.output.Bulp;
+import logicSimulator.objects.output.RasterScreen;
+import logicSimulator.objects.output.VectorScreen;
+import logicSimulator.objects.gate.And;
+import logicSimulator.objects.gate.Buffer;
+import logicSimulator.objects.gate.ControledBuffer;
+import logicSimulator.objects.gate.ControledNot;
+import logicSimulator.objects.gate.DMUX;
+import logicSimulator.objects.gate.MUX;
+import logicSimulator.objects.gate.Nand;
+import logicSimulator.objects.gate.Nor;
+import logicSimulator.objects.gate.Not;
+import logicSimulator.objects.gate.Nxor;
+import logicSimulator.objects.gate.Or;
+import logicSimulator.objects.gate.Xor;
+import logicSimulator.objects.input.KeyBoard;
 import logicSimulator.objects.memory.Counter;
+import logicSimulator.objects.memory.DFlipFlop;
+import logicSimulator.objects.memory.FIFO;
+import logicSimulator.objects.memory.JKFlipFlop;
+import logicSimulator.objects.memory.LIFO;
 import logicSimulator.objects.memory.ROMRAM;
+import logicSimulator.objects.memory.RSFlipFlop;
+import logicSimulator.objects.memory.RWMRAM;
+import logicSimulator.objects.memory.RWMSAM;
+import logicSimulator.objects.memory.Register;
+import logicSimulator.objects.memory.TFlipFlop;
+import logicSimulator.objects.output.SevenSeg;
+import logicSimulator.objects.output.TextScreen;
 import logicSimulator.objects.wiring.BitSet;
 import logicSimulator.objects.wiring.Bridge;
+import logicSimulator.objects.wiring.Constant;
 import logicSimulator.objects.wiring.Input;
 import logicSimulator.objects.wiring.Output;
 import window.components.PropertieEditor;
@@ -63,11 +85,61 @@ import window.components.PropertieEditor;
 public class ComponentChooser extends javax.swing.JFrame {
 
     //default components    
-    public static final String[] GATE = {"BUFFER", "NOT", "OR", "NOR", "AND", "NAND", "XOR", "NXOR"};
-    public static final String[] DISPLAY = {"BULP", "7 SEG", "RASTER SCREEN", "VECTOR SCREEN"};
-    public static final String[] CONTROL = {"BUTTON", "CLOCK", "POTENTIOMETER", "RANDOM GENERATOR"};
-    public static final String[] WIRING = {"BIT GET", "BIT SET", "INPUT", "OUTPUT", "BRIDGE"};
-    public static final String[] MEMORY = {"ROM RAM", "COUNTER"};
+    public static final String[] GATE = {
+        "Buffer",
+        "Controled buffer",
+        "Not",
+        "Controled not",
+        "Or",
+        "Nor",
+        "And",
+        "Nand",
+        "Xor",
+        "Nxor",
+        "MUX",
+        "DMUX"
+    };
+    public static final String[] OUTPUT = {
+        "Bulp",
+        "7 seg",
+        "Raster screen",
+        "Vector screen",
+        "Text screen"
+    };
+    public static final String[] INPUT = {
+        "Button",
+        "Keyboard",
+        "Clock",
+        "Random generator"
+    };
+    public static final String[] WIRING = {
+        "Constant",
+        "Bit get",
+        "Bit set",
+        "Input",
+        "Output",
+        "Bridge"
+    };
+    public static final String[] MEMORY = {
+        "ROM RAM",
+        "RWM SAM",
+        "RWM RAM",
+        "Counter",
+        "RS flip flop",
+        "JK flip flop",
+        "D flip flop",
+        "T flip flop",
+        "Register",
+        "LIFO",
+        "FIFO"
+    };
+    public static final String[] ARITMETIC = {
+        "Magnitude comparator",
+        "Add",
+        "Sub",
+        "Mul",
+        "Div"
+    };
     public static String[] MODULES = null;
     public static final List<LogicModule> modules = new ArrayList<>();
 
@@ -77,17 +149,20 @@ public class ComponentChooser extends javax.swing.JFrame {
             case "Gate":
                 list = ComponentChooser.GATE;
                 break;
-            case "Display":
-                list = ComponentChooser.DISPLAY;
+            case "Output":
+                list = ComponentChooser.OUTPUT;
                 break;
-            case "Control":
-                list = ComponentChooser.CONTROL;
+            case "Input":
+                list = ComponentChooser.INPUT;
                 break;
             case "Wiring":
                 list = ComponentChooser.WIRING;
                 break;
             case "Memory":
                 list = ComponentChooser.MEMORY;
+                break;
+            case "Aritmetic":
+                list = ComponentChooser.ARITMETIC;
                 break;
             case "Modules":
                 //get all modules from project
@@ -144,9 +219,9 @@ public class ComponentChooser extends javax.swing.JFrame {
         this.model = new DefaultListModel<>();
         this.mWindow = mWindow;
         initComponents();
-        if (Toolkit.getDefaultToolkit().isAlwaysOnTopSupported()) {
-            this.setAlwaysOnTop(true);
-        }
+        ((PropertieEditor) this.jTableProperties).onPropertieChange((ActionEvent e) -> {
+            this.jPanelView.repaint();
+        });
     }
 
     /**
@@ -276,7 +351,7 @@ public class ComponentChooser extends javax.swing.JFrame {
         });
         jScrollPane1.setViewportView(jList1);
 
-        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Gate", "Control", "Display", "Wiring", "Memory", "Modules" }));
+        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Gate", "Input", "Output", "Wiring", "Memory", "Aritmetic", "Modules" }));
         jComboBox1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jComboBox1ActionPerformed(evt);
@@ -391,7 +466,7 @@ public class ComponentChooser extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelRightLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanelRightLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 246, Short.MAX_VALUE)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
                     .addComponent(jLabelType, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jLabelName, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jLabelSize, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -436,7 +511,7 @@ public class ComponentChooser extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 780, Short.MAX_VALUE)
+                .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 785, Short.MAX_VALUE)
                 .addGap(0, 0, 0))
         );
         layout.setVerticalGroup(
@@ -456,22 +531,17 @@ public class ComponentChooser extends javax.swing.JFrame {
             dispose();
             return;
         }
-        try {
-            List<WorkSpaceObject> list = new ArrayList<>();
-            WorkSpaceObject obj = Tools.clone(this.selectedObject);
-            if (obj != null) {
-                obj.getPosition().x = LogicSimulatorCore.OBJECT_NULL_POSITION;
-                list.add(obj);
-                //add selected component to workspace
-                ProjectFile pf = this.project.getSelectedFile();
-                if (pf instanceof WorkSpace) {
-                    ((WorkSpace) pf).addNewObjects(list);
-                }
-                //add to last added component combobox
-                this.mWindow.addComponentToLastAdded(obj);
-                dispose();
+        List<WorkSpaceObject> list = new ArrayList<>();
+        WorkSpaceObject obj = this.selectedObject.cloneObject();
+        if (obj != null) {
+            obj.getPosition().x = LogicSimulatorCore.OBJECT_NULL_POSITION;
+            list.add(obj);
+            //add selected component to workspace
+            ProjectFile pf = this.project.getSelectedFile();
+            if (pf instanceof WorkSpace) {
+                ((WorkSpace) pf).addNewObjects(list);
             }
-        } catch (CloneNotSupportedException ex) {
+            dispose();
         }
     }//GEN-LAST:event_jButtonPlaceActionPerformed
 
@@ -486,15 +556,15 @@ public class ComponentChooser extends javax.swing.JFrame {
 
     private void jTextFieldFindKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldFindKeyReleased
         if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-            this.jTextFieldFind.setText(this.jTextFieldFind.getText().toUpperCase());
-            Point m0 = getBestMatch(ComponentChooser.MODULES, this.jTextFieldFind.getText());
             Point m1 = getBestMatch(ComponentChooser.GATE, this.jTextFieldFind.getText());
-            Point m2 = getBestMatch(ComponentChooser.CONTROL, this.jTextFieldFind.getText());
-            Point m3 = getBestMatch(ComponentChooser.DISPLAY, this.jTextFieldFind.getText());
+            Point m2 = getBestMatch(ComponentChooser.INPUT, this.jTextFieldFind.getText());
+            Point m3 = getBestMatch(ComponentChooser.OUTPUT, this.jTextFieldFind.getText());
             Point m4 = getBestMatch(ComponentChooser.WIRING, this.jTextFieldFind.getText());
             Point m5 = getBestMatch(ComponentChooser.MEMORY, this.jTextFieldFind.getText());
-            int[] dat = new int[]{m0.y, m1.y, m2.y, m3.y, m4.y, m5.y};
-            int[] indexList = new int[]{m0.x, m1.x, m2.x, m3.x, m4.x, m5.x};
+            Point m6 = getBestMatch(ComponentChooser.ARITMETIC, this.jTextFieldFind.getText());
+            Point m7 = getBestMatch(ComponentChooser.MODULES, this.jTextFieldFind.getText());
+            int[] dat = new int[]{m1.y, m2.y, m3.y, m4.y, m5.y, m6.y, m7.y};
+            int[] indexList = new int[]{m1.x, m2.x, m3.x, m4.x, m5.x, m6.x, m7.x};
             //find best
             int max = dat[0];
             int index = 0;
@@ -531,11 +601,16 @@ public class ComponentChooser extends javax.swing.JFrame {
      * @return [index, number of matching chars in right order]
      */
     public Point getBestMatch(String[] list, String find) {
+        if (list == null) {
+            return new Point(0, -1);
+        }
+        find = find.toLowerCase();
         Point ret = new Point(0, 0);
         for (int i = 0; i < list.length; i++) {
+            String listItem = list[i].toLowerCase();
             int match = 0;
             for (int j = 0; match < find.length() && j < list[i].length(); j++) {
-                if (find.charAt(match) == list[i].charAt(j)) {
+                if (find.charAt(match) == listItem.charAt(j)) {
                     match++;
                 }
             }
@@ -554,94 +629,148 @@ public class ComponentChooser extends javax.swing.JFrame {
         }
         //select
         this.selectedObject = selectComponent(item);
-        //display component info
-        this.jPanelView.repaint();
-        this.jLabelType.setText("Type: " + this.jComboBox1.getSelectedItem().toString());
-        this.jLabelName.setText("Name: " + item);
-        this.jLabelSize.setText("Size: "
-                + this.selectedObject.getModel().getWidth() / LogicSimulatorCore.WORK_SPACE_STEP
-                + ", " + this.selectedObject.getModel().getHeight() / LogicSimulatorCore.WORK_SPACE_STEP);
-        //edit propt
-        ((PropertieEditor) this.jTableProperties).edit(this.selectedObject);
-        //info html
-        try {
-            InputStream is = getClass().getResourceAsStream("/src/doc/" + item.toLowerCase() + ".html");
-            if (is != null) {
-                BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(is)
-                );
-                String total = "", line;
-                while ((line = reader.readLine()) != null) {
-                    total += line;
-                }
-                //replace image ref
-                try {
-                    total = total.replaceAll(
-                            "IMG_REF",
-                            this.getClass().getResource("/src/doc/" + item.toLowerCase() + ".gif").toURI().toString()
+        if (this.selectedObject == null) {
+            this.jPanelView.repaint();
+            this.jLabelType.setText("Type:");
+            this.jLabelName.setText("Name:");
+            this.jLabelSize.setText("Size:");
+        } else {
+            //display component info
+            this.jPanelView.repaint();
+            this.jLabelType.setText("Type: " + this.jComboBox1.getSelectedItem().toString());
+            this.jLabelName.setText("Name: " + item);
+            this.jLabelSize.setText("Size: "
+                    + this.selectedObject.getModel().getWidth() / LogicSimulatorCore.WORK_SPACE_STEP
+                    + ", " + this.selectedObject.getModel().getHeight() / LogicSimulatorCore.WORK_SPACE_STEP);
+
+            //edit propt
+            ((PropertieEditor) this.jTableProperties).edit(this.selectedObject);
+
+            //info html
+            try {
+                InputStream is = getClass().getResourceAsStream("/src/doc/" + item.toLowerCase() + ".html");
+                if (is != null) {
+                    BufferedReader reader = new BufferedReader(
+                            new InputStreamReader(is)
                     );
-                } catch (URISyntaxException ex) {
+                    String total = "", line;
+                    while ((line = reader.readLine()) != null) {
+                        total += line;
+                    }
+                    //replace image ref
+                    try {
+                        total = total.replaceAll(
+                                "IMG_REF",
+                                this.getClass().getResource("/src/doc/" + item.toLowerCase() + ".gif").toURI().toString()
+                        );
+                    } catch (URISyntaxException ex) {
+                    }
+                    //display html
+                    this.jEditorPaneInfo.setText(total);
+                } else {
+                    this.jEditorPaneInfo.setText("");
                 }
-                //display html
-                this.jEditorPaneInfo.setText(total);
-            } else {
-                this.jEditorPaneInfo.setText("");
+            } catch (IOException ex) {
             }
-        } catch (IOException ex) {
         }
     }
 
     public WorkSpaceObject selectComponent(String id) {
         switch (id) {
             //gate
-            case "BUFFER":
+            case "Buffer":
                 return new Buffer(new Point(0, 0), 1);
-            case "NOT":
+            case "Not":
                 return new Not(new Point(0, 0), 1);
-            case "OR":
+            case "Or":
                 return new Or(new Point(0, 0), 1, 2);
-            case "NOR":
+            case "Nor":
                 return new Nor(new Point(0, 0), 1, 2);
-            case "AND":
+            case "And":
                 return new And(new Point(0, 0), 1, 2);
-            case "NAND":
+            case "Nand":
                 return new Nand(new Point(0, 0), 1, 2);
-            case "XOR":
+            case "Xor":
                 return new Xor(new Point(0, 0), 1, 2);
-            case "NXOR":
+            case "Nxor":
                 return new Nxor(new Point(0, 0), 1, 2);
-            //control
-            case "BUTTON":
+            case "MUX":
+                return new MUX(new Point(0, 0), 1, 2);
+            case "DMUX":
+                return new DMUX(new Point(0, 0), 1, 2);
+            case "Controled buffer":
+                return new ControledBuffer(new Point(0, 0), 1);
+            case "Controled not":
+                return new ControledNot(new Point(0, 0), 1);
+            //input
+            case "Button":
                 return new Button(new Point(0, 0), 1);
-            case "CLOCK":
+            case "Clock":
                 return new Clock(new Point(0, 0), 1);
-            //display
-            case "BULP":
-                return new Bulp(new Point(0, 0), 1);
-            case "RASTER SCREEN":
-                return new RasterScreen(new Point(0, 0), 10, 10, 10);
-            case "VECTOR SCREEN":
-                return new VectorScreen(new Point(0, 0), 240, 240);
-            //wiring
-            case "BIT GET":
-                return new BitGet(new Point(0, 0), new boolean[1]);
-            case "BIT SET":
-                return new BitSet(new Point(0, 0), new int[1]);
-            case "INPUT":
-                return new Input(new Point(0, 0), 1);
-            case "OUTPUT":
-                return new Output(new Point(0, 0), 1);
-            case "BRIDGE":
-                return new Bridge(new Point(0, 0), "A");
-            case "RANDOM GENERATOR":
+            case "Keyboard":
+                return new KeyBoard(new Point(0, 0));
+            case "Random generator":
                 return new RandomGenerator(new Point(0, 0), 1);
+            //output
+            case "Bulp":
+                return new Bulp(new Point(0, 0), 1);
+            case "Raster screen":
+                return new RasterScreen(new Point(0, 0), 10, 10, 10);
+            case "Vector screen":
+                return new VectorScreen(new Point(0, 0), 240, 240);
+            case "Text screen":
+                return new TextScreen(new Point(0, 0));
+            case "7 seg":
+                return new SevenSeg(new Point(0, 0));
+            //wiring
+            case "Bit get":
+                return new BitGet(new Point(0, 0), new boolean[1]);
+            case "Bit set":
+                return new BitSet(new Point(0, 0), new int[1]);
+            case "Input":
+                return new Input(new Point(0, 0), 1);
+            case "Output":
+                return new Output(new Point(0, 0), 1);
+            case "Bridge":
+                return new Bridge(new Point(0, 0), "A");
+            case "Constant":
+                return new Constant(new Point(0, 0));
             //memory
             case "ROM RAM":
-                return new ROMRAM(new Point(0, 0), 8, 8);
-            case "COUNTER":
+                return new ROMRAM(new Point(0, 0), 8, "Mem" + Tools.randomNumber(5));
+            case "RWM SAM":
+                return new RWMSAM(new Point(0, 0), 8, "Mem" + Tools.randomNumber(5));
+            case "RWM RAM":
+                return new RWMRAM(new Point(0, 0), 8, "Mem" + Tools.randomNumber(5));
+            case "Counter":
                 return new Counter(new Point(0, 0), 8);
+            case "RS flip flop":
+                return new RSFlipFlop(new Point(0, 0));
+            case "JK flip flop":
+                return new JKFlipFlop(new Point(0, 0));
+            case "D flip flop":
+                return new DFlipFlop(new Point(0, 0));
+            case "T flip flop":
+                return new TFlipFlop(new Point(0, 0));
+            case "Register":
+                return new Register(new Point(0, 0), 8);
+            case "LIFO":
+                return new LIFO(new Point(0, 0), 8);
+            case "FIFO":
+                return new FIFO(new Point(0, 0), 8);
+            //aritmetic
+            case "Magnitude comparator":
+                return new MagnitudeComparator(new Point(0, 0), 1);
+            case "Add":
+                return new BitAdd(new Point(0, 0), 1);
+            case "Sub":
+                return new BitSub(new Point(0, 0), 1);
+            case "Mul":
+                return new BitMul(new Point(0, 0), 1);
+            case "Div":
+                return new BitDiv(new Point(0, 0), 1);
             //modules
-            case "MODULE":
+            default:
                 if (ComponentChooser.MODULES != null) {
                     for (int i = 0; i < ComponentChooser.MODULES.length; i++) {
                         if (ComponentChooser.MODULES[i].equals(id)) {

@@ -5,11 +5,13 @@
 package logicSimulator.objects.wiring;
 
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
 import logicSimulator.Tools;
 import logicSimulator.WorkSpaceObject;
-import logicSimulator.common.GraphicsObject;
-import logicSimulator.common.IOPin;
-import logicSimulator.common.Line;
+import logicSimulator.graphics.GraphicsObject;
+import logicSimulator.objects.IOPin;
+import logicSimulator.graphics.Line;
 import logicSimulator.common.Model;
 import logicSimulator.common.Propertie;
 
@@ -23,23 +25,25 @@ public class BitSet extends WorkSpaceObject {
 
     public BitSet(Point position, int[] indexes) {
         super(position);
-
         this.indexes = indexes;
-        Model model = new Model(
-                new GraphicsObject[]{
-                    new Line(new Point.Double(0.0, 0.0), new Point.Double(-7.0, 7.0)),
-                    new Line(new Point.Double(-7.0, 7.0), new Point.Double(0.0, 14.0)),
-                    new Line(new Point.Double(0.0, 14.0), new Point.Double(7.0, 7.0)),
-                    new Line(new Point.Double(7.0, 7.0), new Point.Double(0.0, 0.0)),
-                    new Line(new Point.Double(0.0, 0.0), new Point.Double(0.0, -14.0)),
-                    new Line(new Point.Double(0.0, 0.0), new Point.Double(7.0, -7.0)),
-                    new Line(new Point.Double(0.0, 0.0), new Point.Double(-7.0, -7.0)),}
-        );
 
+        //model
+        List<GraphicsObject> GOList = new ArrayList<>();
+        Model model = new Model(GOList);
+        GOList.add(new Line(0, 0, -7, 7));
+        GOList.add(new Line(-7, 7, 0, 14));
+        GOList.add(new Line(0, 14, 7, 7));
+        GOList.add(new Line(7, 7, 0, 0));
+        GOList.add(new Line(0, 0, 0, -14));
+        GOList.add(new Line(0, 0, 7, -7));
+        GOList.add(new Line(0, 0, -7, -7));
+
+        //pins
         model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, 1, "IN", new Point.Double(0.0, -14.0)));
         model.getIOPins().add(new IOPin(IOPin.MODE.OUTPUT, Tools.max(this.indexes) + 1, "OUT", new Point.Double(0.0, 14.0)));
 
         super.setModel(model);
+        model.computeSize();
 
         setWriteOnlyBits();
     }
@@ -110,14 +114,12 @@ public class BitSet extends WorkSpaceObject {
         return false;
     }
 
+    @Override
     public WorkSpaceObject cloneObject() {
         int[] av = new int[this.indexes.length];
         System.arraycopy(this.indexes, 0, av, 0, av.length);
-        BitSet ret = new BitSet(
-                Tools.copy(super.getPosition()),
-                av
-        );
-        ret.getModel().clone(super.getModel());
+        BitSet ret = new BitSet(Tools.copy(super.getPosition()), av);
+        ret.getModel().rotate(super.getModel().getAngle());
         return ret;
     }
 

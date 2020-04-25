@@ -5,6 +5,7 @@
 package logicSimulator;
 
 import java.awt.Component;
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -127,6 +128,9 @@ public class PFTwoSlotViewer extends JPanel {
         }
     }
 
+    //last TabbedPaneTitle that change color
+    private TabbedPaneTitle tptLast = null;
+
     /**
      * Add or display new project file to tabbed panel (!!not add to project
      * data list with all project files !!)
@@ -135,6 +139,7 @@ public class PFTwoSlotViewer extends JPanel {
      */
     public void displayProjectFile(ProjectFile pf) {
         pf.getPFMode().OPENED = true;
+        pf.getPFMode().VISIBLE = true;
 
         //find project file in tabbedpane if it isnt inside then add
         boolean addProjectFile = true;
@@ -165,10 +170,17 @@ public class PFTwoSlotViewer extends JPanel {
             //add project file
             tp.add(pf.getComp().getName(), pf.getComp());
             //add TabbedPaneTitle
-            tp.setTabComponentAt(
-                    tp.getTabCount() - 1,
-                    new TabbedPaneTitle(tp, pf.getComp())
-            );
+            TabbedPaneTitle tpt = new TabbedPaneTitle(tp, pf.getComp());
+            tp.setTabComponentAt(tp.getTabCount() - 1, tpt);
+            //set select listener
+            pf.setSelectListener((ActionEvent e) -> {
+                //change color of tabbed tile if is selected
+                if (this.tptLast != null) {
+                    this.tptLast.unSelectedUI();
+                }
+                tpt.selectedUI();
+                this.tptLast = tpt;
+            });
         }
 
         //select project file in tabbed pane

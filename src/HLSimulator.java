@@ -4,7 +4,7 @@
  */
 
 import logicSimulator.ui.SystemResources;
-import data.PropertieReader;
+import logicSimulator.data.PropertieReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -162,7 +162,6 @@ public class HLSimulator extends SystemResources implements LogicSimulatorCore {
                 logicSimulator.run();
 
             } catch (Exception ex) {
-                HLSimulator.splash.setVisible(false);
                 JOptionPane.showMessageDialog(
                         null,
                         ex.getStackTrace(),
@@ -170,6 +169,7 @@ public class HLSimulator extends SystemResources implements LogicSimulatorCore {
                         JOptionPane.ERROR_MESSAGE,
                         null
                 );
+                HLSimulator.splash.setVisible(false);
                 Logger.getLogger(HLSimulator.class.getName()).log(Level.SEVERE, null, ex);
                 System.exit(0);
             }

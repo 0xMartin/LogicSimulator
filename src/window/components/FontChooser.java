@@ -4,146 +4,116 @@
  */
 package window.components;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
+import java.awt.Component;
 import java.awt.Font;
-import java.awt.Frame;
 import java.awt.GraphicsEnvironment;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.util.Arrays;
-import javax.swing.JButton;
-import javax.swing.JDialog;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import javax.accessibility.Accessible;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-import javax.swing.event.ListSelectionEvent;
 
 /**
  *
  * @author Martin
  */
-public class FontChooser extends JDialog {
+public class FontChooser extends JComboBox implements KeyListener {
 
-    private Font font = null;
+    public static Font[] FONTS = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
 
-    private final Font[] fonts;
+    private boolean stringMode;
 
-    private int fSize = 16;
-
-    private boolean choose = false;
-
-    public FontChooser(Frame frame) {
-        super(frame, true);
-        this.setTitle("Font chooser");
-        this.setLayout(new BorderLayout());
-        this.fonts = FontChooser.getAllFonts();
-        this.setSize(500, 300);
-        this.setAlwaysOnTop(true);
+    public FontChooser(String initFont, boolean stringMode) {
+        this(stringMode);
+        super.setSelectedItem(initFont);
     }
 
-    private void initComponents() {
-        //font priview
-        JTextField fontPriview = new JTextField("Font priview");
-        fontPriview.setBorder(null);
-        fontPriview.setOpaque(false);
-        fontPriview.setHorizontalAlignment(JTextField.CENTER);
+    @Override
+    public Object getSelectedItem() {
+        return this.stringMode ? this.getSelectedFontName() : super.getSelectedItem();
+    }
 
-        //list with all fonts
-        String[] fNames = new String[this.fonts.length];
-        for (int i = 0; i < this.fonts.length; i++) {
-            fNames[i] = this.fonts[i].getName();
-        }
-        JList list = new JList(fNames);
-        list.addListSelectionListener((ListSelectionEvent e) -> {
-            //find font by name in list and if match than set font as "font" seleted
-            String fName = list.getSelectedValue().toString();
-            for (Font f : this.fonts) {
-                if (f.getName().toLowerCase().equals(fName.toLowerCase())) {
-                    this.font = f;
-                    this.font = this.font.deriveFont((float) this.fSize);
-                    fontPriview.setFont(this.font);
-                    break;
-                }
+    public FontChooser(boolean stringMode) {
+        this.stringMode = stringMode;
+        super.addKeyListener(this);
+
+        //set model
+        if (this.stringMode) {
+            //string mode
+            String[] fNames = new String[FontChooser.FONTS.length];
+            for (int i = 0; i < FontChooser.FONTS.length; i++) {
+                fNames[i] = FontChooser.FONTS[i].getFontName();
             }
-        });
-        JScrollPane scrollPane = new JScrollPane();
-        scrollPane.setViewportView(list);
-        this.add(scrollPane, BorderLayout.LINE_START);
-
-        //set default font
-        if (this.font == null) {
-            list.setSelectedIndex(0);
+            super.setModel(new DefaultComboBoxModel<>(fNames));
         } else {
-            int index = 0;
-            for (Font f : this.fonts) {
-                if (f.getName().toLowerCase().equals(this.font.getName().toLowerCase())) {
-                    list.setSelectedIndex(index);
-                    break;
+            //font mode
+            super.setModel(new DefaultComboBoxModel<>(FontChooser.FONTS));
+        }
+
+        //longest font for PrototypeDisplayValue
+        Font longest = FontChooser.FONTS[0];
+        for (Font font : FontChooser.FONTS) {
+            if (font.getFontName().length() > longest.getFontName().length()) {
+                longest = font;
+            }
+        }
+        super.setPrototypeDisplayValue(longest);
+
+        //rendered
+        super.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(
+                    JList list, Object value, int index,
+                    boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected,
+                        cellHasFocus);
+                JLabel label = new JLabel();
+                if (stringMode) {
+                    //string mode
+                    String fontName = value.toString();
+                    label.setFont(new Font(fontName, Font.PLAIN, 12));
+                    label.setText(fontName);
+                } else {
+                    //font mode
+                    Font font = (Font) value;
+                    label.setFont(new Font(font.getName(), Font.PLAIN, 12));
+                    label.setText(font.getFontName());
                 }
-                index++;
-            }
-        }
-
-        //button
-        JButton b = new JButton("OK");
-        b.addActionListener((ActionEvent e) -> {
-            this.setVisible(false);
-            this.choose = true;
-        });
-        this.add(b, BorderLayout.PAGE_END);
-
-        //left panel
-        JPanel p2 = new JPanel();
-        p2.setLayout(new BorderLayout());
-        //size of font
-        JTextField size = new JTextField(this.fSize + "");
-        size.addActionListener((ActionEvent e) -> {
-            try {
-                this.fSize = Integer.parseInt(size.getText());
-                this.font = this.font.deriveFont((float) this.fSize);
-                fontPriview.setFont(this.font);
-            } catch (Exception ex) {
+                return label;
             }
         });
-        p2.add(fontPriview, BorderLayout.CENTER);
-        p2.add(size, BorderLayout.PAGE_START);
 
-        this.add(p2, BorderLayout.CENTER);
+        Accessible a = super.getUI().getAccessibleChild(this, 0);
+        if (a instanceof javax.swing.plaf.basic.ComboPopup) {
+            JList popupList = ((javax.swing.plaf.basic.ComboPopup) a).getList();
+            popupList.setPrototypeCellValue(super.getPrototypeDisplayValue());
+        }
     }
 
-    public Font selectedFont() {
-        return this.font;
+    public String getSelectedFontName() {
+        return this.stringMode ? super.getSelectedItem().toString() : ((Font) super.getSelectedItem()).getFontName();
     }
 
-    public static Font showDialog(Frame frame, Font font) {
-        FontChooser fc = new FontChooser(frame);
-        if (font != null) {
-            fc.font = font;
-            fc.fSize = font.getSize();
-        }
-        fc.initComponents();
-
-        if (frame == null) {
-            Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-            fc.setLocation(
-                    (screen.width - fc.getWidth()) / 2,
-                    (screen.height - fc.getHeight()) / 2
-            );
-        }
-
-        fc.setVisible(true);
-        return fc.choose ? fc.selectedFont() : null;
+    @Override
+    public void keyTyped(KeyEvent e) {
     }
 
-    public static Font[] getAllFonts() {
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        if (ge == null) {
-            return null;
-        } else {
-            return ge.getAllFonts();
+    @Override
+    public void keyPressed(KeyEvent e) {
+        char c = e.getKeyChar();
+        for (Font f : FontChooser.FONTS) {
+            if (f.getFontName().charAt(0) == c) {
+                super.setSelectedItem(f);
+                break;
+            }
         }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
     }
 
 }
