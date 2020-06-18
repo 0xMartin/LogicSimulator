@@ -252,23 +252,25 @@ public class ProjectFileToolbar extends JToolBar {
     private void initModuleEditorToolbar() {
         ButtonHQ b;
 
+        ModuleEditor me = (ModuleEditor) this.projectFile;
+
         //apply
         b = new ButtonHQ();
         b.setBorderWidth(1);
         b.setToolTipText("Apply the changes");
         b.setIcon(SystemResources.TOOLBAR_APPLY);
         b.addActionListener((ActionEvent e) -> {
-            ((ModuleEditor)this.projectFile).applyChanges();
+            ((ModuleEditor) this.projectFile).applyChanges();
         });
         this.add(b);
-        
+
         //line
         b = new ButtonHQ();
         b.setBorderWidth(1);
         b.setToolTipText("Add Line");
         b.setIcon(SystemResources.TOOLBAR_LINE);
         b.addActionListener((ActionEvent e) -> {
-
+            me.addLine();
         });
         this.add(b);
 
@@ -278,7 +280,7 @@ public class ProjectFileToolbar extends JToolBar {
         b.setToolTipText("Add circle");
         b.setIcon(SystemResources.TOOLBAR_CIRCLE);
         b.addActionListener((ActionEvent e) -> {
-
+            me.addCircle();
         });
         this.add(b);
 
@@ -288,7 +290,7 @@ public class ProjectFileToolbar extends JToolBar {
         b.setToolTipText("Add curve");
         b.setIcon(SystemResources.TOOLBAR_CURVE);
         b.addActionListener((ActionEvent e) -> {
-
+            me.addCurve();
         });
         this.add(b);
 
@@ -298,7 +300,7 @@ public class ProjectFileToolbar extends JToolBar {
         b.setToolTipText("Add rectangle");
         b.setIcon(SystemResources.TOOLBAR_RECTANGLE);
         b.addActionListener((ActionEvent e) -> {
-
+            me.addRect();
         });
         this.add(b);
 
@@ -308,7 +310,7 @@ public class ProjectFileToolbar extends JToolBar {
         b.setToolTipText("Add text");
         b.setIcon(SystemResources.TOOLBAR_TXT);
         b.addActionListener((ActionEvent e) -> {
-
+            me.addText();
         });
         this.add(b);
 
@@ -318,16 +320,14 @@ public class ProjectFileToolbar extends JToolBar {
         b.setToolTipText("Select all");
         b.setIcon(SystemResources.TOOLBAR_SELECT_ALL);
         b.addActionListener((ActionEvent e) -> {
-            ModuleEditor m = (ModuleEditor) this.projectFile;
-            m.selecteAllGraphicsObjects();
-            m.repaint();
+            me.selectAllGO();
         });
         this.add(b);
 
         //delete
         b = new ButtonHQ();
         b.setBorderWidth(1);
-        b.setToolTipText("Delete");
+        b.setToolTipText("Delete all");
         b.setIcon(SystemResources.TOOLBAR_DELETE);
         b.addActionListener((ActionEvent e) -> {
             ModuleEditor m = (ModuleEditor) this.projectFile;

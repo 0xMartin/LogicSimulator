@@ -35,14 +35,18 @@ import logicSimulator.ui.Colors;
  */
 public class Text extends WorkSpaceObject {
 
+    //lines of text
     private final List<String> text;
 
+    //size of text object
     private final Dimension size;
 
+    //font of text
     private Font font;
 
     private boolean textChange = true;
 
+    //color of text
     private Color color = Color.BLACK;
 
     public Text(String text, Point position, Font font) {

@@ -84,6 +84,8 @@ public class BitGet extends WorkSpaceObject {
                         b[i] = this.avaiable[i];
                     }
                     this.avaiable = b;
+                    
+                    super.getPins().get(0).changeBitWidth(propt.getValueInt());
                     break;
                 default:
                     String postfix = propt.getName().substring(4);
@@ -93,6 +95,7 @@ public class BitGet extends WorkSpaceObject {
                     }
                     break;
             }
+            
             changeOutputWidth();
         } catch (NumberFormatException ex) {
         }
@@ -122,6 +125,7 @@ public class BitGet extends WorkSpaceObject {
         boolean[] val = new boolean[out_length];
         //compute final value
         boolean[] in = super.getPins().get(0).getValue();
+                
         for (int i = 0, j = 0; i < in.length && j < val.length; i++) {
             if (this.avaiable[i]) {
                 val[j++] = in[i];

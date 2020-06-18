@@ -70,6 +70,8 @@ import logicSimulator.objects.gate.Nxor;
 import logicSimulator.objects.gate.Or;
 import logicSimulator.objects.gate.Xor;
 import logicSimulator.objects.input.KeyBoard;
+import logicSimulator.objects.input.SerialInputTrigger;
+import logicSimulator.objects.input.SerialOutputTrigger;
 import logicSimulator.objects.memory.Counter;
 import logicSimulator.objects.memory.DFlipFlop;
 import logicSimulator.objects.memory.FIFO;
@@ -116,13 +118,15 @@ public class ComponentChooser extends javax.swing.JFrame {
         "7 seg",
         "Raster screen",
         "Vector screen",
-        "Text screen"
+        "Text screen",
+        "Serial output trigger"
     };
     public static final String[] INPUT = {
         "Button",
         "Keyboard",
         "Clock",
-        "Random generator"
+        "Random generator",
+        "Serial input trigger"
     };
     public static final String[] WIRING = {
         "Constant",
@@ -153,7 +157,37 @@ public class ComponentChooser extends javax.swing.JFrame {
         "Div"
     };
     public static String[] MODULES = null;
+
     public static final List<LogicModule> modules = new ArrayList<>();
+
+    /**
+     * Select object
+     */
+    private WorkSpaceObject selectedObject = null;
+
+    public WorkSpaceObject getSelectedComponent() {
+        return this.selectedObject;
+    }
+
+    private Project project;
+
+    private final MainWindow mWindow;
+
+    private final DefaultListModel<String> model;
+
+    /**
+     * Creates new form ComponentChooser
+     *
+     * @param mWindow MainWindow
+     */
+    public ComponentChooser(MainWindow mWindow) {
+        this.model = new DefaultListModel<>();
+        this.mWindow = mWindow;
+        initComponents();
+        ((PropertieEditor) this.jTableProperties).onPropertieChange((ActionEvent e) -> {
+            this.jPanelView.repaint();
+        });
+    }
 
     private void reloadList() {
         String[] list = null;
@@ -208,35 +242,6 @@ public class ComponentChooser extends javax.swing.JFrame {
     }
 
     /**
-     * Select object
-     */
-    private WorkSpaceObject selectedObject = null;
-
-    public WorkSpaceObject getSelectedComponent() {
-        return this.selectedObject;
-    }
-
-    private Project project;
-
-    private final MainWindow mWindow;
-
-    private final DefaultListModel<String> model;
-
-    /**
-     * Creates new form ComponentChooser
-     *
-     * @param mWindow MainWindow
-     */
-    public ComponentChooser(MainWindow mWindow) {
-        this.model = new DefaultListModel<>();
-        this.mWindow = mWindow;
-        initComponents();
-        ((PropertieEditor) this.jTableProperties).onPropertieChange((ActionEvent e) -> {
-            this.jPanelView.repaint();
-        });
-    }
-
-    /**
      * Set porject
      *
      * @param project
@@ -253,10 +258,7 @@ public class ComponentChooser extends javax.swing.JFrame {
     public void chooseComponent() {
         //show
         this.setVisible(true);
-        this.setLocation(
-                this.mWindow.getX() + (this.mWindow.getWidth() - this.getWidth()) / 2,
-                this.mWindow.getY() + (this.mWindow.getHeight() - this.getHeight()) / 2
-        );
+        this.setLocationRelativeTo(this.mWindow);
         this.jSplitPane1.setDividerLocation(0.3f);
         //reload list
         reloadList();
@@ -723,6 +725,8 @@ public class ComponentChooser extends javax.swing.JFrame {
                 return new KeyBoard(new Point(0, 0));
             case "Random generator":
                 return new RandomGenerator(new Point(0, 0), 1);
+            case "Serial input trigger":
+                return new SerialInputTrigger(new Point(0, 0), "SI" + Tools.randomNumber(5));
             //output
             case "Bulp":
                 return new Bulp(new Point(0, 0), 1);
@@ -734,6 +738,8 @@ public class ComponentChooser extends javax.swing.JFrame {
                 return new TextScreen(new Point(0, 0));
             case "7 seg":
                 return new SevenSeg(new Point(0, 0));
+            case "Serial output trigger":
+                return new SerialOutputTrigger(new Point(0, 0), "SO" + Tools.randomNumber(5));
             //wiring
             case "Bit get":
                 return new BitGet(new Point(0, 0), new boolean[1]);

@@ -29,6 +29,8 @@ import window.MainWindow;
  */
 public class SystemClosing {
 
+    private final LogicSimulatorCore core;
+    
     private MainWindow window;
 
     private ComputeCore cc;
@@ -39,7 +41,8 @@ public class SystemClosing {
      * @param core System core
      */
     public SystemClosing(LogicSimulatorCore core) {
-        core.getLSComponents().stream().forEach((comp) -> {
+        this.core = core;
+        this.core.getLSComponents().stream().forEach((comp) -> {
             if (comp instanceof MainWindow) {
                 this.window = (MainWindow) comp;
             } else if (comp instanceof ComputeCore) {
@@ -71,6 +74,13 @@ public class SystemClosing {
             writer.writeFile(propts);
         } catch (Exception ex) {
         }
+    }
+
+    public void dispose() {
+        //exit program
+        this.core.getLSComponents().stream().forEach((ls) -> {
+            ls.stop();
+        });
     }
 
 }

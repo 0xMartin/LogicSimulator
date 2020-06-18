@@ -38,6 +38,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
+import logicSimulator.CircuitHandler;
 import logicSimulator.ComputeCore;
 import logicSimulator.LSComponent;
 import logicSimulator.LogicSimulatorCore;
@@ -73,6 +74,7 @@ public class MainWindow extends JFrame implements LSComponent {
 
     //utilities
     private final ComponentChooser componentChooser;
+    private final SerialConfiguration serialConfig;
 
     /**
      * Creates new form MainWindow
@@ -87,13 +89,14 @@ public class MainWindow extends JFrame implements LSComponent {
 
         //create instances of utils
         this.componentChooser = new ComponentChooser(this);
+        this.serialConfig = new SerialConfiguration(this);
 
         //propertie editor event
         ((PropertieEditor) this.jTableProperties).onPropertieChange((ActionEvent evt) -> {
             if (this.project.getSelectedFile() instanceof WorkSpace) {
                 WorkSpace w = (WorkSpace) this.project.getSelectedFile();
                 //on propertie change reconect all object in selected workspace
-                ComputeCore.CircuitHandler.refreshConnectivity(w.getObjects());
+                CircuitHandler.refreshConnectivity(w.getObjects());
                 //rapaint
                 w.getHandler().repaintPF();
             }
@@ -171,6 +174,7 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenuItemMove = new MenuItemHQ();
         jMenuItemAddLibrary = new MenuItemHQ();
         jMenuItemSettings = new MenuItemHQ();
+        jMenuItemSettings1 = new MenuItemHQ();
         jMenu2 = new javax.swing.JMenu();
         jMenuItemRun = new MenuItemHQ();
         jMenuItemStop = new MenuItemHQ();
@@ -652,6 +656,15 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenuItemSettings.setText("Settings");
         jMenu1.add(jMenuItemSettings);
 
+        jMenuItemSettings1.setIcon(SystemResources.TOOLBAR_SETTINGS);
+        jMenuItemSettings1.setText("Serial port configuration");
+        jMenuItemSettings1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemSettings1ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItemSettings1);
+
         jMenuBarMain.add(jMenu1);
 
         jMenu2.setText("Simulation");
@@ -885,16 +898,20 @@ public class MainWindow extends JFrame implements LSComponent {
     }//GEN-LAST:event_jButtonHelpActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        //save project
+        if (JOptionPane.showConfirmDialog(this, "Do you want to save this projects?",
+                "Save project", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
+            saveProject(this.project.getFile());
+        }
+
         //close system
         SystemClosing sc = new SystemClosing(this.core);
         sc.saveProperties();
-        //exit program
-        this.core.getLSComponents().stream().forEach((ls) -> {
-            ls.stop();
-        });
+        sc.dispose();
     }//GEN-LAST:event_formWindowClosing
 
     private void jButtonStepActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStepActionPerformed
+        //circuit simulating step by step
         ProjectFile pf = this.project.getSelectedFile();
         this.comuteCore.setWorkSpace((WorkSpace) pf);
         this.comuteCore.step();
@@ -1002,6 +1019,10 @@ public class MainWindow extends JFrame implements LSComponent {
         }
     }//GEN-LAST:event_jCheckBoxMenuItemShowUpdatesActionPerformed
 
+    private void jMenuItemSettings1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSettings1ActionPerformed
+        this.serialConfig.showComponent();
+    }//GEN-LAST:event_jMenuItemSettings1ActionPerformed
+
     /**
      * Init this window, must exis compute core and project in Core
      *
@@ -1080,7 +1101,7 @@ public class MainWindow extends JFrame implements LSComponent {
                 }
             }
         });
-        
+
         //compute core workspace closed during running simulation
         this.comuteCore.setWorkSpaceClosedListener((ActionEvent e) -> {
             this.stopSimulation();
@@ -1088,6 +1109,7 @@ public class MainWindow extends JFrame implements LSComponent {
 
         //init utils
         this.componentChooser.setProject(this.project);
+        this.serialConfig.init(core);
 
         //properties #############################################
         try {
@@ -1411,6 +1433,7 @@ public class MainWindow extends JFrame implements LSComponent {
     private javax.swing.JMenuItem jMenuItemSaveProject;
     private javax.swing.JMenuItem jMenuItemSaveProjectAs;
     private javax.swing.JMenuItem jMenuItemSettings;
+    private javax.swing.JMenuItem jMenuItemSettings1;
     private javax.swing.JMenuItem jMenuItemSettingsGlobal;
     private javax.swing.JMenuItem jMenuItemStep;
     private javax.swing.JMenuItem jMenuItemStop;

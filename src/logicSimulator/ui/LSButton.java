@@ -19,7 +19,6 @@ package logicSimulator.ui;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.Rectangle2D;
@@ -35,11 +34,12 @@ public class LSButton extends JButton implements MouseListener {
 
     public LSButton() {
         super();
+        super.setOpaque(false);
         this.addMouseListener(this);
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
+    protected void paintComponent(Graphics g) {                
         Graphics2D g2 = (Graphics2D) g;
 
         //render hints

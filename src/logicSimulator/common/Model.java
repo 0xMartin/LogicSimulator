@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import logicSimulator.LogicSimulatorCore;
+import logicSimulator.graphics.GString;
 
 /**
  *
@@ -206,20 +207,28 @@ public class Model implements Serializable {
             this.angle -= 4;
         }
         double A = (double) angle * Math.PI / 2d;
-        //line
+        
         if (this.graphicsObjects != null) {
             this.graphicsObjects.forEach((go) -> {
+                //all points
                 for (Point.Double pt : go.getPoints()) {
                     Tools.rotatePoint(pt, A);
                 }
+                
+                //string rot
+                if(go instanceof GString) {
+                    ((GString)go).setRotation(this.angle);
+                }
             });
         }
+        
         //pins
         this.pins.stream().forEach((pin) -> {
             Tools.rotatePoint(pin.getPosition(), A);
             pin.getPosition().x = Tools.step((int) pin.getPosition().x, LogicSimulatorCore.WORK_SPACE_STEP);
             pin.getPosition().y = Tools.step((int) pin.getPosition().y, LogicSimulatorCore.WORK_SPACE_STEP);
-        });
+        }); 
+        
         //compute model size
         computeSize();
     }

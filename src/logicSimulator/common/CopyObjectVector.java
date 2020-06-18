@@ -16,7 +16,6 @@
  */
 package logicSimulator.common;
 
-import logicSimulator.Tools;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,20 +29,33 @@ public class CopyObjectVector {
 
     public final List<WorkSpaceObject> objects;
 
-    public final Point cursor;
+    /**
+     * Center of copy pattern "center of mass"
+     */
+    public final Point centerOfCopy;
 
-    public CopyObjectVector(List<WorkSpaceObject> objects, Point cursor) {
-        this.cursor = Tools.copy(cursor);
+    public CopyObjectVector(List<WorkSpaceObject> objects) {
+        //center of copy
+        this.centerOfCopy = new Point(0, 0);
+        
         //copy all selected object
         this.objects = new ArrayList<>();
         objects.stream().forEach((obj) -> {
             if (obj.isSelected()) {
                 WorkSpaceObject copy = obj.cloneObject();
                 if (copy != null) {
+                    //add to vector
                     this.objects.add(copy);
+                    
+                    //computing of center
+                    this.centerOfCopy.x += copy.getPosition().x;
+                    this.centerOfCopy.y += copy.getPosition().y;
                 }
             }
         });
+        
+        this.centerOfCopy.x /= this.objects.size();
+        this.centerOfCopy.y /= this.objects.size();
     }
 
     public List<WorkSpaceObject> getObjects() {

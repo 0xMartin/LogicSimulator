@@ -88,10 +88,18 @@ public class IOPin implements Serializable {
         this.position = position;
     }
 
+     /**
+     * Set label of pin
+     * @return String
+     */
     public String getLabel() {
         return this.label;
     }
 
+    /**
+     * Get label of pin
+     * @param label String
+     */
     public void setLabel(String label) {
         this.label = label;
     }
@@ -105,6 +113,10 @@ public class IOPin implements Serializable {
         this.connectedWire = wire;
     }
 
+    /**
+     * Get position of pin (reference)
+     * @return Point.Double
+     */
     public Point.Double getPosition() {
         return this.position;
     }
@@ -234,6 +246,12 @@ public class IOPin implements Serializable {
         return changed;
     }
 
+    /**
+     * Render pin
+     * @param g2 Graphics context
+     * @param xoff X offset
+     * @param yoff Y offset
+     */
     public void render(Graphics2D g2, int xoff, int yoff) {
 
         //draw pin
@@ -285,6 +303,10 @@ public class IOPin implements Serializable {
         }
     }
 
+    /**
+     * Clone this pin
+     * @return IOPin
+     */
     public IOPin cloneObject() {
         IOPin ret = new IOPin(
                 this.mode,
@@ -301,6 +323,10 @@ public class IOPin implements Serializable {
         return ret;
     }
 
+    /**
+     * Change width of pin buffer
+     * @param bits New bit width of bin buffer
+     */
     public void changeBitWidth(int bits) {
         //resize last value
         this.lastVal = new boolean[bits];
@@ -316,6 +342,10 @@ public class IOPin implements Serializable {
         }
     }
 
+    /**
+     * Get connected wire
+     * @return Wire
+     */
     public Wire getWire() {
         return this.connectedWire;
     }

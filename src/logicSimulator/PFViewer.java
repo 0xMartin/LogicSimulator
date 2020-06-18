@@ -48,13 +48,15 @@ public class PFViewer extends JTabbedPane implements
         super.addChangeListener((ChangeEvent e) -> {
             //set visible true for selected component
             ProjectFile selectedPF = (ProjectFile) this.getSelectedComponent();
-            selectedPF.getPFMode().VISIBLE = true;
-            //set visble false for all remaining components
-            for (Component c : super.getComponents()) {
-                if (c instanceof ProjectFile) {
-                    ProjectFile pf = (ProjectFile) c;
-                    if (pf != selectedPF) {
-                        pf.getPFMode().VISIBLE = false;
+            if (selectedPF != null) {
+                selectedPF.getPFMode().VISIBLE = true;
+                //set visble false for all remaining components
+                for (Component c : super.getComponents()) {
+                    if (c instanceof ProjectFile) {
+                        ProjectFile pf = (ProjectFile) c;
+                        if (pf != selectedPF) {
+                            pf.getPFMode().VISIBLE = false;
+                        }
                     }
                 }
             }

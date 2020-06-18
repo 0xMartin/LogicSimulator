@@ -84,6 +84,8 @@ import logicSimulator.objects.wiring.Bridge;
 import logicSimulator.objects.wiring.Input;
 import logicSimulator.objects.wiring.Output;
 import logicSimulator.objects.wiring.Wire;
+import logicSimulator.projectFile.DocumentationEditor;
+import logicSimulator.projectFile.HexEditor;
 
 /**
  *
@@ -905,6 +907,10 @@ public class Tools {
             return LogicSimulatorCore.WORKSPACE_FILE_TYPE;
         } else if (pf instanceof ModuleEditor) {
             return LogicSimulatorCore.MODULE_FILE_TYPE;
+        } else if (pf instanceof HexEditor) {
+            return LogicSimulatorCore.HEX_FILE_TYPE;
+        } else if (pf instanceof DocumentationEditor) {
+            return LogicSimulatorCore.DOCUMENTATION_FILE_TYPE;
         }
         return "";
     }
@@ -918,6 +924,17 @@ public class Tools {
      */
     public static Point divide(Point p, float divider) {
         return new Point((int) (p.x / divider), (int) (p.y / divider));
+    }
+
+    /**
+     * Multiply x and y of point
+     *
+     * @param p Point (int)
+     * @param multiplier Multiplier (float)
+     * @return
+     */
+    public static Point multiply(Point p, float multiplier) {
+        return new Point((int) (p.x * multiplier), (int) (p.y * multiplier));
     }
 
     /**
@@ -1078,6 +1095,7 @@ public class Tools {
         return pts;
     }
 
+    //usefull for creating of new models
     public static void generateJavaModel(Model model) {
         String out = "this.model = new Model(\nnew GraphicsObject[]{";
         for (GraphicsObject go : model.getGraphicsObjects()) {
@@ -1143,8 +1161,9 @@ public class Tools {
 
     /**
      * Clone all objects of array
+     *
      * @param objects Array with objects
-     * @return 
+     * @return
      */
     public static List<WorkSpaceObject> cloneWObjects(List<WorkSpaceObject> objects) {
         List<WorkSpaceObject> ret = new ArrayList<>();

@@ -29,6 +29,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -38,6 +39,7 @@ import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
@@ -45,7 +47,9 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import logicSimulator.CircuitHandler;
 import logicSimulator.ComputeCore;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.PFHandler;
@@ -60,6 +64,7 @@ import logicSimulator.objects.IOPin;
 import logicSimulator.graphics.Circle;
 import logicSimulator.graphics.Line;
 import logicSimulator.graphics.Curve;
+import logicSimulator.graphics.GString;
 import logicSimulator.graphics.GraphicsObject;
 
 /**
@@ -77,6 +82,9 @@ public class ModuleEditor extends ProjectFile {
     private String logicModelName;
 
     private final ProjectFileToolbar toolbar;
+
+    //menu for model editor
+    private JPopupMenu menu;
 
     //handler
     private final EditorHandler editorHandler;
@@ -96,6 +104,234 @@ public class ModuleEditor extends ProjectFile {
         //editor handler
         this.editorHandler = new EditorHandler(this);
         super.add(this.editorHandler, BorderLayout.CENTER);
+
+        //init menu
+        initMenu();
+    }
+
+    private void initMenu() {
+        //init menu
+        this.menu = new JPopupMenu();
+        this.editorHandler.add(this.menu);
+        JMenu m;
+        JMenuItem item;
+        ActionListener action;
+
+        //logic model menu
+        m = new JMenu("Logic model");
+        this.menu.add(m);
+
+        //set model 
+        item = new JMenuItem("Set model");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+            this.editorHandler.chooseLogicModel();
+        };
+        item.addActionListener(action);
+        this.editorHandler.registerKeyboardAction(
+                action, KeyStroke.getKeyStroke(KeyEvent.VK_X, Event.CTRL_MASK), JComponent.WHEN_FOCUSED
+        );
+
+        //remove model 
+        item = new JMenuItem("Remove model");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+
+        };
+        item.addActionListener(action);
+
+        //show model
+        item = new JMenuItem("Show model");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+
+        };
+        item.addActionListener(action);
+
+        //graphics model menu
+        m = new JMenu("Graphic model");
+        this.menu.add(m);
+
+        //Add line
+        item = new JMenuItem("Add line");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+            addLine();
+        };
+        item.addActionListener(action);
+
+        //Add circle
+        item = new JMenuItem("Add circle");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+            addCircle();
+        };
+        item.addActionListener(action);
+
+        //Add curve
+        item = new JMenuItem("Add curve");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+            addCurve();
+        };
+        item.addActionListener(action);
+
+        //Add rect
+        item = new JMenuItem("Add rectangle");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+            addRect();
+        };
+        item.addActionListener(action);
+
+        //Add text
+        item = new JMenuItem("Add string");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+            addText();
+        };
+        item.addActionListener(action);
+
+        //Edit
+        m = new JMenu("Edit");
+        this.menu.add(m);
+
+        //Rotate
+        item = new JMenuItem("Rotate");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+
+        };
+        item.addActionListener(action);
+
+        //Clear graphics model
+        item = new JMenuItem("Clear graphics model");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+            module.getModel().getGraphicsObjects().clear();
+            this.repaint();
+        };
+        item.addActionListener(action);
+
+        //select all
+        item = new JMenuItem("Select all");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+            selectAllGO();
+        };
+        item.addActionListener(action);
+
+        //delete
+        item = new JMenuItem("Delete");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+            //delete
+            this.editorHandler.select.stream().forEach((pt) -> {
+                this.editorHandler.removeGraphicsObjectFromModel(pt);
+            });
+            //repaint
+            this.repaint();
+        };
+        item.addActionListener(action);
+        this.editorHandler.registerKeyboardAction(
+                action, KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), JComponent.WHEN_FOCUSED
+        );
+
+        //copy
+        item = new JMenuItem("Copy");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+            this.editorHandler.copySelectedGraphicsObjects();
+        };
+        item.addActionListener(action);
+        this.editorHandler.registerKeyboardAction(
+                action, KeyStroke.getKeyStroke(KeyEvent.VK_C, Event.CTRL_MASK), JComponent.WHEN_FOCUSED
+        );
+
+        //paste
+        item = new JMenuItem("Paste");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+            //clear selection
+            this.editorHandler.select.clear();
+
+            //center of mass
+            int ptCount = 0;
+            Point.Double center = new Point.Double(0d, 0d);
+
+            //move copy of data from copy vector to GO buffer
+            for (GraphicsObject go : this.editorHandler.copy_vector) {
+                //add go object
+                this.editorHandler.GOBuffer.add(go.cloneObject());
+                //sum positions
+                for (Point.Double pt : go.cloneObject().getPoints()) {
+                    center.x += pt.x;
+                    center.y += pt.y;
+                    ++ptCount;
+                }
+            }
+
+            center.x /= ptCount;
+            center.y /= ptCount;
+
+            //center all objects to cursor
+            this.editorHandler.GOBuffer.stream().forEach((go) -> {
+                for (Point.Double pt : go.getPoints()) {
+                    pt.x += (this.editorHandler.cursor.x - this.editorHandler.getWidth() / 2 - center.x)
+                            / this.editorHandler.scale;
+                    pt.y += (this.editorHandler.cursor.y - this.editorHandler.getHeight() / 2 - center.y)
+                            / this.editorHandler.scale;
+                }
+            });
+        };
+        item.addActionListener(action);
+        this.editorHandler.registerKeyboardAction(
+                action, KeyStroke.getKeyStroke(KeyEvent.VK_V, Event.CTRL_MASK), JComponent.WHEN_FOCUSED
+        );
+
+        //change height of string font
+        item = new JMenuItem("Change string font height");
+        m.add(item);
+        action = (ActionEvent evt) -> {
+
+            //get all selected strings and compute avg height
+            float avgHeight = 0;
+            List<GString> strs = new ArrayList<>();
+            for (Point.Double pt : this.editorHandler.select) {
+                GraphicsObject go = this.editorHandler.getOwner(pt);
+                if (go instanceof GString) {
+                    strs.add((GString) go);
+                    avgHeight += ((GString) go).getHeight();
+                }
+            }
+
+            if (strs.isEmpty()) {
+                return;
+            }
+
+            avgHeight /= strs.size();
+
+            //set up size
+            JTextField fS = new JTextField(Math.round(avgHeight) + "");
+            int n = JOptionPane.showConfirmDialog(
+                    this, new Object[]{"Height of string font:", fS},
+                    "Change string font height",
+                    JOptionPane.OK_CANCEL_OPTION);
+
+            //change size
+            if (n == JOptionPane.YES_OPTION) {
+                try {
+                    int height = Integer.parseInt(fS.getText());
+
+                    //change size of each string
+                    strs.stream().forEach((str) -> {
+                        str.setHeight(height);
+                    });
+                } catch (NumberFormatException ex) {
+                }
+            }
+        };
+        item.addActionListener(action);
 
     }
 
@@ -187,6 +423,7 @@ public class ModuleEditor extends ProjectFile {
                                     .filter((obj) -> (obj instanceof LogicModule))
                                     .forEachOrdered((obj) -> {
                                         LogicModule child = (LogicModule) obj;
+                                        //child of module finded
                                         if (child.getModuleName().equals(this.module.getModuleName())) {
                                             //clone
                                             child.cloneModule(this.module);
@@ -195,7 +432,7 @@ public class ModuleEditor extends ProjectFile {
                                     });
                             //if some module changed than must refresh connectivity
                             if (changed) {
-                                ComputeCore.CircuitHandler.refreshConnectivity(w.getObjects());
+                                CircuitHandler.refreshConnectivity(w.getObjects());
                             }
                         });
                 //change time
@@ -206,14 +443,95 @@ public class ModuleEditor extends ProjectFile {
     }
 
     /**
+     * Add line to current editing model
+     */
+    public void addLine() {
+        Point.Double p = new Point.Double(
+                this.editorHandler.pressed.x - this.editorHandler.getWidth() / 2,
+                this.editorHandler.pressed.y - this.editorHandler.getHeight() / 2
+        );
+        Tools.step(p, LogicSimulatorCore.WORK_SPACE_STEP);
+        this.editorHandler.line = new Line(p, Tools.copy(p));
+        this.module.getModel().getGraphicsObjects().add(this.editorHandler.line);
+        this.editorHandler.repaint();
+    }
+
+    /**
+     * Add circle to current editing model
+     */
+    public void addCircle() {
+        Point.Double p = new Point.Double(
+                this.editorHandler.cursor.x - this.editorHandler.getWidth() / 2,
+                this.editorHandler.cursor.y - this.editorHandler.getHeight() / 2
+        );
+        this.editorHandler.circle = new Circle(p, LogicSimulatorCore.WORK_SPACE_STEP);
+        module.getModel().getGraphicsObjects().add(this.editorHandler.circle);
+        this.editorHandler.repaint();
+    }
+
+    /**
+     * Add rect to current editing model
+     */
+    public void addRect() {
+        Point.Double p = new Point.Double(
+                this.editorHandler.cursor.x - this.editorHandler.getWidth() / 2,
+                this.editorHandler.cursor.y - this.editorHandler.getHeight() / 2
+        );
+        int a = LogicSimulatorCore.WORK_SPACE_STEP * 3;
+        GraphicsObject[] rect = new GraphicsObject[]{
+            new Line(new Point.Double(p.x, p.y), new Point.Double(p.x, p.y + a)),
+            new Line(new Point.Double(p.x, p.y), new Point.Double(p.x + a, p.y)),
+            new Line(new Point.Double(p.x + a, p.y), new Point.Double(p.x + a, p.y + a)),
+            new Line(new Point.Double(p.x, p.y + a), new Point.Double(p.x + a, p.y + a))
+        };
+        this.editorHandler.GOBuffer.addAll(Arrays.asList(rect));
+    }
+
+    /**
+     * Add curve to current editing model
+     */
+    public void addCurve() {
+        Point.Double p = new Point.Double(
+                this.editorHandler.pressed.x - this.editorHandler.getWidth() / 2,
+                this.editorHandler.pressed.y - this.editorHandler.getHeight() / 2
+        );
+        Tools.step(p, LogicSimulatorCore.WORK_SPACE_STEP);
+        this.editorHandler.curve = new Curve(p, Tools.copy(p), Tools.copy(p));
+        module.getModel().getGraphicsObjects().add(this.editorHandler.curve);
+        this.repaint();
+    }
+
+    /**
+     * Add text to current editing model
+     */
+    public void addText() {
+        Point.Double p = new Point.Double(
+                this.editorHandler.cursor.x - this.editorHandler.getWidth() / 2,
+                this.editorHandler.cursor.y - this.editorHandler.getHeight() / 2
+        );
+        GString str = new GString(p, 20, "Ahoj");
+        this.editorHandler.GOBuffer.add(str);
+    }
+
+    /**
+     * Select all graphics object of current editing model
+     */
+    public void selectAllGO() {
+        if (module != null) {
+            List<Point.Double> pts = Tools.getPoints(module.getModel());
+            this.editorHandler.select.clear();
+            pts.stream().forEach((pt) -> {
+                this.editorHandler.select.add(pt);
+            });
+        }
+    }
+
+    /**
      * Handler for logic module editor (rendering, model editing, linking logic
      * model, ...)
      */
     private class EditorHandler extends JPanel implements PFHandler,
-            MouseListener, MouseMotionListener, MouseWheelListener {
-
-        //menu for model editor
-        private JPopupMenu menu;
+            MouseListener, MouseMotionListener, MouseWheelListener, KeyListener {
 
         private final ModuleEditor owner;
 
@@ -229,6 +547,7 @@ public class ModuleEditor extends ProjectFile {
             super.addMouseListener(this);
             super.addMouseMotionListener(this);
             super.addMouseWheelListener(this);
+            super.addKeyListener(this);
             super.addFocusListener(new FocusAdapter() {
                 @Override
                 public void focusGained(FocusEvent e) {
@@ -237,208 +556,9 @@ public class ModuleEditor extends ProjectFile {
                     }
                 }
             });
-            initMenu();
+
             //paint zoom value on toolbar
             this.zoom(0);
-        }
-
-        private void initMenu() {
-
-            //init menu
-            this.menu = new JPopupMenu();
-            this.add(this.menu);
-            JMenu m;
-            JMenuItem item;
-            ActionListener action;
-
-            //logic model menu
-            m = new JMenu("Logic model");
-            this.menu.add(m);
-
-            //set model 
-            item = new JMenuItem("Set model");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-                chooseLogicModel();
-            };
-            item.addActionListener(action);
-            super.registerKeyboardAction(
-                    action, KeyStroke.getKeyStroke(KeyEvent.VK_X, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
-            );
-
-            //set model 
-            item = new JMenuItem("Remove model");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-
-            };
-            item.addActionListener(action);
-
-            //show model
-            item = new JMenuItem("Show model");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-
-            };
-            item.addActionListener(action);
-
-            //graphics model menu
-            m = new JMenu("Graphic model");
-            this.menu.add(m);
-
-            //Add line
-            item = new JMenuItem("Add line");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-                Point.Double p = new Point.Double(
-                        this.pressed.x - this.getWidth() / 2,
-                        this.pressed.y - this.getHeight() / 2
-                );
-                Tools.step(p, LogicSimulatorCore.WORK_SPACE_STEP);
-                this.line = new Line(p, Tools.copy(p));
-                module.getModel().getGraphicsObjects().add(this.line);
-                this.repaint();
-            };
-            item.addActionListener(action);
-
-            //Add circle
-            item = new JMenuItem("Add circle");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-                Point.Double p = new Point.Double(
-                        this.pressed.x - this.getWidth() / 2,
-                        this.pressed.y - this.getHeight() / 2
-                );
-                this.circle = new Circle(p, LogicSimulatorCore.WORK_SPACE_STEP);
-                module.getModel().getGraphicsObjects().add(this.circle);
-                this.repaint();
-            };
-            item.addActionListener(action);
-
-            //Add curve
-            item = new JMenuItem("Add curve");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-                Point.Double p = new Point.Double(
-                        this.pressed.x - this.getWidth() / 2,
-                        this.pressed.y - this.getHeight() / 2
-                );
-                Tools.step(p, LogicSimulatorCore.WORK_SPACE_STEP);
-                this.curve = new Curve(p, Tools.copy(p), Tools.copy(p));
-                module.getModel().getGraphicsObjects().add(this.curve);
-                this.repaint();
-            };
-            item.addActionListener(action);
-
-            //Add rect
-            item = new JMenuItem("Add rectangle");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-                Point.Double p = new Point.Double(
-                        this.pressed.x - this.getWidth() / 2,
-                        this.pressed.y - this.getHeight() / 2
-                );
-                int a = LogicSimulatorCore.WORK_SPACE_STEP * 3;
-                GraphicsObject[] rect = new GraphicsObject[]{
-                    new Line(new Point.Double(p.x, p.y), new Point.Double(p.x, p.y + a)),
-                    new Line(new Point.Double(p.x, p.y), new Point.Double(p.x + a, p.y)),
-                    new Line(new Point.Double(p.x + a, p.y), new Point.Double(p.x + a, p.y + a)),
-                    new Line(new Point.Double(p.x, p.y + a), new Point.Double(p.x + a, p.y + a))
-                };
-                this.GOBuffer.addAll(Arrays.asList(rect));
-            };
-            item.addActionListener(action);
-
-            //Add text
-            item = new JMenuItem("Add text");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-
-            };
-            item.addActionListener(action);
-
-            //Edit
-            m = new JMenu("Edit");
-            this.menu.add(m);
-            //Rotate
-            item = new JMenuItem("Rotate");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-
-            };
-            item.addActionListener(action);
-            //Clear graphics model
-            item = new JMenuItem("Clear graphics model");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-                module.getModel().getGraphicsObjects().clear();
-                this.repaint();
-            };
-            item.addActionListener(action);
-
-            //select all
-            item = new JMenuItem("Select all");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-                if (module != null) {
-                    List<Point.Double> pts = Tools.getPoints(module.getModel());
-                    this.select.clear();
-                    pts.stream().forEach((pt) -> {
-                        this.select.add(pt);
-                    });
-                }
-            };
-            item.addActionListener(action);
-
-            //delete
-            item = new JMenuItem("Delete");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-                //delete
-                this.select.stream().forEach((pt) -> {
-                    removeGraphicsObjectFromModel(pt);
-                });
-                //repaint
-                this.repaint();
-            };
-            item.addActionListener(action);
-            super.registerKeyboardAction(
-                    action, KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW
-            );
-
-            //copy
-            item = new JMenuItem("Copy");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-                copySelectedGraphicsObjects();
-            };
-            item.addActionListener(action);
-            super.registerKeyboardAction(
-                    action, KeyStroke.getKeyStroke(KeyEvent.VK_C, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
-            );
-
-            //copy
-            item = new JMenuItem("Paste");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-                //clear selection
-                this.select.clear();
-                //move copy of data from copy vector to GO buffer
-                this.copy_vector.stream().forEach((go) -> {
-                    GOBuffer.add(go.cloneObject());
-                });
-            };
-            item.addActionListener(action);
-            super.registerKeyboardAction(
-                    action, KeyStroke.getKeyStroke(KeyEvent.VK_V, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
-            );
-
-            item = new JMenuItem("Generate java model");
-            m.add(item);
-            action = (ActionEvent evt) -> {
-                Tools.generateJavaModel(module.getModel());
-            };
-            item.addActionListener(action);
         }
 
         @Override
@@ -558,7 +678,7 @@ public class ModuleEditor extends ProjectFile {
             //draw go buffer
             g2.setColor(Colors.ME_DRAG);
             this.GOBuffer.stream().forEach((go) -> {
-                go.draw(g2, this.getWidth() / 2, this.getHeight() / 2);
+                go.draw(g2, cW, cH);
             });
             g2.setStroke(new BasicStroke(1));
 
@@ -637,17 +757,17 @@ public class ModuleEditor extends ProjectFile {
                 int w = (int) ((this.last.x - this.pressed.x) / this.scale);
                 int h = (int) ((this.last.y - this.pressed.y) / this.scale);
                 g2.fillRect(
-                        (int) ((this.pressed.x + (w < 0 ? w : 0)) / this.scale),
-                        (int) ((this.pressed.y + (h < 0 ? h : 0)) / this.scale),
-                        (int) (Math.abs(this.last.x - this.pressed.x) / this.scale),
-                        (int) (Math.abs(this.last.y - this.pressed.y) / this.scale)
+                        (int) ((this.pressed.x / this.scale + (w < 0 ? w : 0))),
+                        (int) ((this.pressed.y / this.scale + (h < 0 ? h : 0))),
+                        (int) (Math.abs(w)),
+                        (int) (Math.abs(h))
                 );
                 g2.setComposite(AlphaComposite.SrcOver.derive(1.0f));
                 g2.drawRect(
-                        (int) ((this.pressed.x + (w < 0 ? w : 0)) / this.scale),
-                        (int) ((this.pressed.y + (h < 0 ? h : 0)) / this.scale),
-                        (int) (Math.abs(this.last.x - this.pressed.x) / this.scale),
-                        (int) (Math.abs(this.last.y - this.pressed.y) / this.scale)
+                        (int) ((this.pressed.x / this.scale + (w < 0 ? w : 0))),
+                        (int) ((this.pressed.y / this.scale + (h < 0 ? h : 0))),
+                        (int) (Math.abs(w)),
+                        (int) (Math.abs(h))
                 );
             }
 
@@ -716,12 +836,12 @@ public class ModuleEditor extends ProjectFile {
                 g2.fillRect(10, this.getHeight() - 40, 100, 40);
                 g2.setColor(Colors.ME_GRID);
                 g2.drawString(
-                        "Dx: " + (float) (this.cursor.x - this.pressed.x) / LogicSimulatorCore.WORK_SPACE_STEP,
+                        "Dx: " + String.format("%.03f", (float) (this.cursor.x - this.pressed.x) / LogicSimulatorCore.WORK_SPACE_STEP),
                         20,
                         this.getHeight() - 10
                 );
                 g2.drawString(
-                        "Dy: " + (float) (this.cursor.y - this.pressed.y) / LogicSimulatorCore.WORK_SPACE_STEP,
+                        "Dy: " + String.format("%.03f", (float) (this.cursor.y - this.pressed.y) / LogicSimulatorCore.WORK_SPACE_STEP),
                         20,
                         this.getHeight() - 20
                 );
@@ -827,11 +947,12 @@ public class ModuleEditor extends ProjectFile {
                 }
             }
 
-            //start moving with points
+            //start moving with points (set boolean movingWithPoints on true)
             if (this.line == null && this.circle == null && this.curve == null) {
-                Point c = evt.getPoint();
+                Point c = Tools.copy(this.pressed);
                 c.x -= this.getWidth() / 2;
                 c.y -= this.getHeight() / 2;
+                c = Tools.divide(c, this.scale);
                 //moving with colection of selected point can start only if user press in some of them
                 for (Point.Double pt : this.select) {
                     if (Tools.dist(pt, c) < 9) {
@@ -850,7 +971,7 @@ public class ModuleEditor extends ProjectFile {
 
             if (evt.getButton() != 1) {
                 //show popum menu
-                this.menu.show(this, evt.getX(), evt.getY());
+                this.owner.menu.show(this, evt.getX(), evt.getY());
                 return;
             }
 
@@ -890,19 +1011,20 @@ public class ModuleEditor extends ProjectFile {
         @Override
         public void mouseDragged(MouseEvent evt) {
             this.cursor = evt.getPoint();
+
             this.repaint();
 
             //moving with selected points
             if (this.movingWithPoints) {
                 this.select.stream().forEach((pt) -> {
                     if (last != null) {
-                        pt.x += evt.getX() - last.x;
-                        pt.y += evt.getY() - last.y;
+                        pt.x += (evt.getX() - last.x) / this.scale;
+                        pt.y += (evt.getY() - last.y) / this.scale;
                     }
                 });
             }
 
-            this.last = evt.getPoint();
+            this.last = Tools.copy(this.cursor);
         }
 
         @Override
@@ -951,20 +1073,20 @@ public class ModuleEditor extends ProjectFile {
             this.GOBuffer.stream().forEach((go) -> {
                 if (last != null) {
                     for (Point.Double pt : go.getPoints()) {
-                        pt.x += evt.getX() - last.x;
-                        pt.y += evt.getY() - last.y;
+                        pt.x += (evt.getX() - last.x) / this.scale;
+                        pt.y += (evt.getY() - last.y) / this.scale;
                     }
                 }
             });
 
             //last positon of cursor
-            this.last = evt.getPoint();
+            this.last = Tools.copy(this.cursor);
 
             this.repaint();
         }
 
         /**
-         * This select all point in select rectangle
+         * This select all point of object model in select rectangle
          */
         private void selectPointsInRect(boolean clearLastSelection) {
             if (clearLastSelection) {
@@ -991,13 +1113,16 @@ public class ModuleEditor extends ProjectFile {
                     Math.max(this.pressed.y, this.last.y) - this.getHeight() / 2
             );
 
+            min = Tools.divide(min, this.scale);
+            max = Tools.divide(max, this.scale);
+
             List<Point.Double> pts = Tools.getPoints(module.getModel());
 
-            pts.stream().forEach((pt) -> {
+            for (Point.Double pt : pts) {
                 if (Tools.isInBounds(min, max, Tools.ptToInt(pt))) {
                     this.select.add(pt);
                 }
-            });
+            }
         }
 
         /**
@@ -1009,7 +1134,7 @@ public class ModuleEditor extends ProjectFile {
             //try remove graphics object
             GraphicsObject go = getOwner(p);
             if (go != null) {
-                module.getModel().getGraphicsObjects().add(go);
+                module.getModel().getGraphicsObjects().remove(go);
             }
         }
 
@@ -1063,6 +1188,30 @@ public class ModuleEditor extends ProjectFile {
                 }
             }
             return null;
+        }
+
+        @Override
+        public void keyTyped(KeyEvent e) {
+            //none
+        }
+
+        @Override
+        public void keyPressed(KeyEvent e) {
+
+            //add new pressed char to each selected string                
+            this.select.stream().forEach((pt) -> {
+                GraphicsObject go = this.getOwner(pt);
+                if (go instanceof GString) {
+                    ((GString) go).addKey(e);
+                }
+            });
+
+            this.repaint();
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {
+            //none
         }
 
     }

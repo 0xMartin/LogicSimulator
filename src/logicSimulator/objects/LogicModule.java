@@ -19,6 +19,7 @@ package logicSimulator.objects;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
+import logicSimulator.CircuitHandler;
 import logicSimulator.ComputeCore;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.Tools;
@@ -82,7 +83,7 @@ public class LogicModule extends WorkSpaceObject {
         this.logicModel = Tools.cloneWObjects(module.getLogicModel());
         
         //reconect logic model, because are duplicating object not conections -> must reconnect again
-        ComputeCore.CircuitHandler.refreshConnectivity(this.logicModel);
+        CircuitHandler.refreshConnectivity(this.logicModel);
         
         //set cloned logic model
         setLogicModel(this.logicModel);      
@@ -164,7 +165,7 @@ public class LogicModule extends WorkSpaceObject {
         lm.logicModel = Tools.cloneWObjects(this.logicModel);
         
         //reconect logic model, because are duplicating object not conections -> must reconnect again
-        ComputeCore.CircuitHandler.refreshConnectivity(lm.getLogicModel());
+        CircuitHandler.refreshConnectivity(lm.getLogicModel());
 
         //connect inputs and outputs with pins of this model
         lm.getLogicModel().stream().forEach((obj) -> {

@@ -14,10 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-import logicSimulator.ui.SystemResources;
 import logicSimulator.data.PropertieReader;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
@@ -29,22 +26,19 @@ import logicSimulator.LogicSimulatorCore;
 import window.MainWindow;
 import logicSimulator.LSComponent;
 import logicSimulator.Project;
+import logicSimulator.SerialPortDriver;
 import window.ProjectWizard;
 
 /**
  *
  * @author Martin
  */
-public class HLSimulator extends SystemResources implements LogicSimulatorCore {
-
-    //all main components
-    private final List<LSComponent> components;
+public class HLSimulator extends LogicSimulatorCore {
 
     public static Splash splash;
 
     public HLSimulator() throws Exception {
         super();
-        this.components = new ArrayList<>();
     }
 
     /**
@@ -63,16 +57,16 @@ public class HLSimulator extends SystemResources implements LogicSimulatorCore {
                 this,
                 PropertieReader.getWithID(proptFiles, PropertieReader.ID.PROJECT)
         );
-        this.components.add(component);
+        super.getLSComponents().add(component);
         //hide splash screen
-        this.splash.setVisible(false);
-        this.splash.dispose();
+        HLSimulator.splash.setVisible(false);
+        HLSimulator.splash.dispose();
         //open or create project
         ((ProjectWizard) component).setVisible(true);
 
         //if project is null
         boolean projectNotFound = true;
-        for (LSComponent c : this.components) {
+        for (LSComponent c : this.getLSComponents()) {
             if (c instanceof Project) {
                 projectNotFound = false;
                 break;
@@ -83,13 +77,21 @@ public class HLSimulator extends SystemResources implements LogicSimulatorCore {
             return;
         }
 
+        //init serial port driver
+        component = new SerialPortDriver(128);
+        component.init(
+                this,
+                PropertieReader.getWithID(proptFiles, PropertieReader.ID.SERIAL_PORT)
+        );
+        this.getLSComponents().add(component);
+
         //compute core
         component = new ComputeCore();
         component.init(
                 this,
                 PropertieReader.getWithID(proptFiles, PropertieReader.ID.COMPUTING)
         );
-        this.components.add(component);
+        this.getLSComponents().add(component);
 
         //init window
         component = new MainWindow();
@@ -97,7 +99,7 @@ public class HLSimulator extends SystemResources implements LogicSimulatorCore {
                 this,
                 PropertieReader.getWithID(proptFiles, PropertieReader.ID.WINDOW)
         );
-        this.components.add(component);
+        this.getLSComponents().add(component);
 
         //load settings from file
     }
@@ -107,19 +109,9 @@ public class HLSimulator extends SystemResources implements LogicSimulatorCore {
      */
     public void run() {
         //run all
-        this.components.forEach((lsObj) -> {
+        this.getLSComponents().forEach((lsObj) -> {
             lsObj.run();
         });
-    }
-
-    @Override
-    public List<LSComponent> getLSComponents() {
-        return this.components;
-    }
-
-    @Override
-    public void sendMessage(MessageType type, String message) {
-
     }
 
     /**
@@ -128,7 +120,7 @@ public class HLSimulator extends SystemResources implements LogicSimulatorCore {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-                
+
         //set LookAndFeel 
         try {
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
@@ -144,7 +136,7 @@ public class HLSimulator extends SystemResources implements LogicSimulatorCore {
             try {
 
                 //splash
-                HLSimulator.splash = new Splash("/src/img/splash.png", 900, 450);
+                HLSimulator.splash = new Splash("/src/img/splash.png", 640, 360);
                 HLSimulator.splash.setVisible(true);
 
                 //HL simulator

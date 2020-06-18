@@ -29,7 +29,7 @@ import logicSimulator.common.Propertie;
 public class PropertieReader {
 
     public static enum ID {
-        WINDOW, COMPUTING, PROJECT, PLUGINS, SETTINGS;
+        WINDOW, COMPUTING, PROJECT, PLUGINS, SETTINGS, SERIAL_PORT;
     }
 
     private PropertieReader.ID id;

@@ -18,7 +18,9 @@ package logicSimulator;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import logicSimulator.ui.SystemResources;
 
 /**
  * LogicSimulatorCore core of program In core are all LSComponents = render
@@ -26,7 +28,7 @@ import java.util.List;
  *
  * @author Martin
  */
-public interface LogicSimulatorCore {
+public abstract class LogicSimulatorCore extends SystemResources {
 
     //properties
     public static final int WORK_SPACE_STEP = 14;   //default 14 if you change this you must remodeling all components
@@ -44,6 +46,13 @@ public interface LogicSimulatorCore {
     public static final String PROPT_WINDOW = "window.propt";
     public static final String PROPT_COMPUTING = "computing.propt";
 
+    //all main components
+    private final List<LSComponent> components;
+
+    public LogicSimulatorCore() throws Exception {
+        this.components = new ArrayList<>();
+    }
+
     /**
      * Get system time
      *
@@ -56,16 +65,9 @@ public interface LogicSimulatorCore {
         return date.format(dateFormat);
     }
 
-    public static enum MessageType {
-        INFO,
-        WARNING,
-        ERROR
-    }
-
     //get all main logic simulator components
-    public List<LSComponent> getLSComponents();
-
-    //send message from lscomponent to core
-    public void sendMessage(MessageType type, String message);
+    public List<LSComponent> getLSComponents() {
+        return this.components;
+    }
 
 }

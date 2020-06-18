@@ -46,7 +46,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
-import logicSimulator.ComputeCore;
+import logicSimulator.CircuitHandler;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.PFHandler;
 import logicSimulator.Project;
@@ -123,7 +123,9 @@ public class WorkSpace extends ProjectFile {
         });
 
         //init popup menu
-        initMenu();
+        if(handler != null) {
+            initMenu();
+        }
     }
 
     private void initMenu() {
@@ -148,8 +150,8 @@ public class WorkSpace extends ProjectFile {
             }
         };
         item.addActionListener(action);
-        this.registerKeyboardAction(
-                action, KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW
+        this.handler.registerKeyboardAction(
+                action, KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), JComponent.WHEN_FOCUSED
         );
 
         //copy object
@@ -157,12 +159,12 @@ public class WorkSpace extends ProjectFile {
         m.add(item);
         action = (ActionEvent evt) -> {
             if (super.getProject().editMode) {
-                super.getProject().copyObjects = new CopyObjectVector(objects, this.handler.cursor);
+                super.getProject().copyObjects = new CopyObjectVector(objects);
             }
         };
         item.addActionListener(action);
-        this.registerKeyboardAction(
-                action, KeyStroke.getKeyStroke(KeyEvent.VK_C, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
+        this.handler.registerKeyboardAction(
+                action, KeyStroke.getKeyStroke(KeyEvent.VK_C, Event.CTRL_MASK), JComponent.WHEN_FOCUSED
         );
 
         //paste object
@@ -174,8 +176,8 @@ public class WorkSpace extends ProjectFile {
             }
         };
         item.addActionListener(action);
-        this.registerKeyboardAction(
-                action, KeyStroke.getKeyStroke(KeyEvent.VK_V, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
+        this.handler.registerKeyboardAction(
+                action, KeyStroke.getKeyStroke(KeyEvent.VK_V, Event.CTRL_MASK), JComponent.WHEN_FOCUSED
         );
 
         //<modification>
@@ -190,8 +192,8 @@ public class WorkSpace extends ProjectFile {
             }
         };
         item.addActionListener(action);
-        this.registerKeyboardAction(
-                action, KeyStroke.getKeyStroke(KeyEvent.VK_R, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
+        this.handler.registerKeyboardAction(
+                action, KeyStroke.getKeyStroke(KeyEvent.VK_R, Event.CTRL_MASK), JComponent.WHEN_FOCUSED
         );
 
         //select all in workspace
@@ -204,8 +206,8 @@ public class WorkSpace extends ProjectFile {
             }
         };
         item.addActionListener(action);
-        this.registerKeyboardAction(
-                action, KeyStroke.getKeyStroke(KeyEvent.VK_A, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
+        this.handler.registerKeyboardAction(
+                action, KeyStroke.getKeyStroke(KeyEvent.VK_A, Event.CTRL_MASK), JComponent.WHEN_FOCUSED
         );
     }
 
@@ -446,7 +448,7 @@ public class WorkSpace extends ProjectFile {
             }
         }
         //connect all object
-        ComputeCore.CircuitHandler.refreshConnectivity(this.objects);
+        CircuitHandler.refreshConnectivity(this.objects);
         //repaint
         this.handler.repaint();
     }
@@ -478,7 +480,7 @@ public class WorkSpace extends ProjectFile {
             Tools.rotate(selected, 1);
         }
         //connect all pins with wires and wires with wires
-        ComputeCore.CircuitHandler.refreshConnectivity(this.objects);
+        CircuitHandler.refreshConnectivity(this.objects);
         //repaint
         this.handler.repaint();
     }
@@ -486,7 +488,7 @@ public class WorkSpace extends ProjectFile {
     /**
      * Paste object to the workspace
      *
-     * @param cursor
+     * @param cursor Point
      */
     public void pasteObject(Point cursor) {
         //paste copy
@@ -494,12 +496,12 @@ public class WorkSpace extends ProjectFile {
             List<WorkSpaceObject> objs = super.getProject().copyObjects.getObjects();
             objs.stream().forEach((obj) -> {
                 if (obj != null) {
-                    Point p = super.getProject().copyObjects.cursor;
+                    Point p = super.getProject().copyObjects.centerOfCopy;
                     if (obj instanceof Wire) {
                         ((Wire) obj).getPath().stream().forEach((line) -> {
                             line.p1.x += cursor.x - p.x;
                             line.p1.y += cursor.y - p.y;
-                            line.p2.x += cursor.x - p.x;;
+                            line.p2.x += cursor.x - p.x;
                             line.p2.y += cursor.y - p.y;
                         });
                     } else {
@@ -820,6 +822,9 @@ public class WorkSpace extends ProjectFile {
          */
         @Override
         public void mousePressed(MouseEvent evt) {
+            //request this workspace
+            this.requestFocus();
+  
             //select this project file in project
             this.owner.selectInProject();
 
@@ -853,9 +858,6 @@ public class WorkSpace extends ProjectFile {
                     i = -1;
                 }
             }
-
-            //request this workspace
-            this.requestFocus();
 
             //unselect all object without last selected if control is up
             if (!evt.isControlDown()) {
@@ -1109,7 +1111,7 @@ public class WorkSpace extends ProjectFile {
 
             //Refresh Connectivity -> when: some object dragged, wire added, new object added
             if (this.draged || this.wireLine1 != null || this.wireLine2 != null || this.owner.newObj != null) {
-                ComputeCore.CircuitHandler.refreshConnectivity(objects);
+                CircuitHandler.refreshConnectivity(objects);
             }
 
             //reset vars
