@@ -48,12 +48,15 @@ public class ExceptionLogger {
             StringWriter sw = new StringWriter();
             ex.printStackTrace(new PrintWriter(sw));
             String exceptionAsString = sw.toString();
-            
-            this.writer.write(LogicSimulatorCore.getDate("HH:mm:ss - dd.MM.yyyy"));
+
+            try {
+                this.writer.write(LogicSimulatorCore.getDate("HH:mm:ss - dd.MM.yyyy"));
+            } catch (Exception ex1) {
+            }
             this.writer.newLine();
             this.writer.write(exceptionAsString);
             this.writer.newLine();
-        } catch (IOException ex1) {
+        } catch (Exception ex1) {
         }
     }
 
