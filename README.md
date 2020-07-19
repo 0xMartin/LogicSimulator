@@ -3,7 +3,7 @@ v 0.9.0
 
 This software is used to simulate sequential and combinational circuits. It allows the creation of complex circuits with the possibility of creating a module to simplify work. You can also writing program in assembly language for your circuits. Program can export project as library for further use in other user projects. 
 
-<img src="https://github.com/0xMartin/LogicSimulator/blob/master/img/img1.PNG" width=80%>
+<img src="https://github.com/0xMartin/LogicSimulator/blob/master/img/img1.PNG" width=20%>
 
 ## Keyboard shortcuts
 * Workspace
