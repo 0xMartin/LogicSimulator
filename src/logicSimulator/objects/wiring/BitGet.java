@@ -51,7 +51,7 @@ public class BitGet extends WorkSpaceObject {
         GOList.add(new Line(0, 14, -7, 7));
 
         //pins
-        model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, 1, "IN", new Point.Double(0.0, -14.0)));
+        model.getIOPins().add(new IOPin(IOPin.MODE.INPUT, avaiable.length, "IN", new Point.Double(0.0, -14.0)));
         model.getIOPins().add(new IOPin(IOPin.MODE.OUTPUT, 1, "OUT", new Point.Double(0.0, 14.0)));
 
         super.setModel(model);
