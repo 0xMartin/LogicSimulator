@@ -29,17 +29,18 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import logicSimulator.ui.SystemResources;
 import javax.swing.JList;
+import logicSimulator.HTMLImageLoader;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.projectFile.ModuleEditor;
 import logicSimulator.Project;
 import logicSimulator.ProjectFile;
+import logicSimulator.Settings;
 import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.WorkSpaceObject;
 import logicSimulator.Tools;
@@ -50,6 +51,7 @@ import logicSimulator.objects.aritmetic.BitDiv;
 import logicSimulator.objects.aritmetic.BitMul;
 import logicSimulator.objects.aritmetic.BitSub;
 import logicSimulator.objects.aritmetic.MagnitudeComparator;
+import logicSimulator.objects.complex.MCU;
 import logicSimulator.objects.wiring.BitGet;
 import logicSimulator.objects.input.Button;
 import logicSimulator.objects.input.Clock;
@@ -85,11 +87,14 @@ import logicSimulator.objects.memory.Register;
 import logicSimulator.objects.memory.TFlipFlop;
 import logicSimulator.objects.output.SevenSeg;
 import logicSimulator.objects.output.TextScreen;
+import logicSimulator.objects.timing.FallingEdgeDetector;
+import logicSimulator.objects.timing.RaisingEdgeDetector;
 import logicSimulator.objects.wiring.BitSet;
 import logicSimulator.objects.wiring.Bridge;
 import logicSimulator.objects.wiring.Constant;
 import logicSimulator.objects.wiring.Input;
 import logicSimulator.objects.wiring.Output;
+import logicSimulator.ui.Colors;
 import window.components.PropertieEditor;
 
 /**
@@ -136,6 +141,10 @@ public class ComponentChooser extends javax.swing.JFrame {
         "Output",
         "Bridge"
     };
+    public static final String[] TIMING = {
+        "Falling edge detector",
+        "Raising edge detector"
+    };
     public static final String[] MEMORY = {
         "ROM RAM",
         "RWM SAM",
@@ -155,6 +164,9 @@ public class ComponentChooser extends javax.swing.JFrame {
         "Sub",
         "Mul",
         "Div"
+    };
+    public static final String[] COMPLEX = {
+        "MCU"
     };
     public static String[] MODULES = null;
 
@@ -189,7 +201,7 @@ public class ComponentChooser extends javax.swing.JFrame {
         });
     }
 
-    private void reloadList() {
+    private void reloadList(WorkSpace currentWorkspace) {
         String[] list = null;
         switch (this.jComboBox1.getSelectedItem().toString()) {
             case "Gate":
@@ -204,20 +216,29 @@ public class ComponentChooser extends javax.swing.JFrame {
             case "Wiring":
                 list = ComponentChooser.WIRING;
                 break;
+            case "Timing":
+                list = ComponentChooser.TIMING;
+                break;
             case "Memory":
                 list = ComponentChooser.MEMORY;
                 break;
             case "Aritmetic":
                 list = ComponentChooser.ARITMETIC;
                 break;
+            case "Complex":
+                list = ComponentChooser.COMPLEX;
+                break;
             case "Modules":
                 //get all modules from project
                 ComponentChooser.modules.clear();
                 this.project.getProjectFiles().stream().forEach((pf) -> {
                     if (pf instanceof ModuleEditor) {
-                        LogicModule m = ((ModuleEditor) pf).getModule();
-                        if (m != null) {
-                            ComponentChooser.modules.add(m);
+                        //constraint: it is not possible to place the module in its own circuit
+                        if (!((ModuleEditor) pf).getLogicModelName().equals(currentWorkspace.getName())) {
+                            LogicModule m = ((ModuleEditor) pf).getModule();
+                            if (m != null) {
+                                ComponentChooser.modules.add(m);
+                            }
                         }
                     }
                 });
@@ -227,7 +248,11 @@ public class ComponentChooser extends javax.swing.JFrame {
                 for (int i = 0; i < this.project.getProjectFiles().size(); i++) {
                     ProjectFile pf = this.project.getProjectFiles().get(i);
                     if (pf instanceof ModuleEditor) {
-                        ComponentChooser.MODULES[index++] = ((ModuleEditor) pf).getName();
+                        //constraint: it is not possible to place the module in its own circuit
+                        if (!((ModuleEditor) pf).getLogicModelName().equals(currentWorkspace.getName())) {
+                            ComponentChooser.MODULES[index++] = ((ModuleEditor) pf).getName()
+                                    + (pf.isLibFile ? (" [" + pf.libName + "]") : "");
+                        }
                     }
                 }
                 list = ComponentChooser.MODULES;
@@ -252,16 +277,22 @@ public class ComponentChooser extends javax.swing.JFrame {
         }
     }
 
+    private WorkSpace currentWorkspace;
+
     /**
      * Choose and place new component to selcted workspace (from project)
+     *
+     * @param currentWorkspace Current workspace
      */
-    public void chooseComponent() {
+    public void chooseComponent(WorkSpace currentWorkspace) {
+        this.currentWorkspace = currentWorkspace;
+
         //show
         this.setVisible(true);
         this.setLocationRelativeTo(this.mWindow);
         this.jSplitPane1.setDividerLocation(0.3f);
         //reload list
-        reloadList();
+        reloadList(currentWorkspace);
         //show first component
         this.jList1.setSelectedIndex(0);
         showSelectedComponent();
@@ -302,7 +333,9 @@ public class ComponentChooser extends javax.swing.JFrame {
                 g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
                     RenderingHints.VALUE_STROKE_PURE);
 
-                g2.clearRect(0, 0, jPanelView.getWidth(), jPanelView.getHeight());
+                g2.setColor(Colors.BACKGROUND);
+                g2.fillRect(0, 0, jPanelView.getWidth(), jPanelView.getHeight());
+
                 if(selectedObject != null){
                     Model m = selectedObject.getModel();
 
@@ -365,7 +398,7 @@ public class ComponentChooser extends javax.swing.JFrame {
         });
         jScrollPane1.setViewportView(jList1);
 
-        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Gate", "Input", "Output", "Wiring", "Memory", "Aritmetic", "Modules" }));
+        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Gate", "Input", "Output", "Wiring", "Timing", "Memory", "Aritmetic", "Complex", "Modules" }));
         jComboBox1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jComboBox1ActionPerformed(evt);
@@ -433,6 +466,7 @@ public class ComponentChooser extends javax.swing.JFrame {
         jLabelSize.setText("Size:");
 
         jEditorPaneInfo.setEditable(false);
+        jEditorPaneInfo.setBackground(new java.awt.Color(255, 255, 255));
         jEditorPaneInfo.setContentType("text/html"); // NOI18N
         jScrollPane2.setViewportView(jEditorPaneInfo);
 
@@ -537,7 +571,7 @@ public class ComponentChooser extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
-        reloadList();
+        reloadList(this.currentWorkspace);
     }//GEN-LAST:event_jComboBox1ActionPerformed
 
     private void jButtonPlaceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonPlaceActionPerformed
@@ -574,11 +608,13 @@ public class ComponentChooser extends javax.swing.JFrame {
             Point m2 = getBestMatch(ComponentChooser.INPUT, this.jTextFieldFind.getText());
             Point m3 = getBestMatch(ComponentChooser.OUTPUT, this.jTextFieldFind.getText());
             Point m4 = getBestMatch(ComponentChooser.WIRING, this.jTextFieldFind.getText());
-            Point m5 = getBestMatch(ComponentChooser.MEMORY, this.jTextFieldFind.getText());
-            Point m6 = getBestMatch(ComponentChooser.ARITMETIC, this.jTextFieldFind.getText());
-            Point m7 = getBestMatch(ComponentChooser.MODULES, this.jTextFieldFind.getText());
-            int[] dat = new int[]{m1.y, m2.y, m3.y, m4.y, m5.y, m6.y, m7.y};
-            int[] indexList = new int[]{m1.x, m2.x, m3.x, m4.x, m5.x, m6.x, m7.x};
+            Point m5 = getBestMatch(ComponentChooser.TIMING, this.jTextFieldFind.getText());
+            Point m6 = getBestMatch(ComponentChooser.MEMORY, this.jTextFieldFind.getText());
+            Point m7 = getBestMatch(ComponentChooser.ARITMETIC, this.jTextFieldFind.getText());
+            Point m8 = getBestMatch(ComponentChooser.MODULES, this.jTextFieldFind.getText());
+            Point m9 = getBestMatch(ComponentChooser.COMPLEX, this.jTextFieldFind.getText());
+            int[] dat = new int[]{m1.y, m2.y, m3.y, m4.y, m5.y, m6.y, m7.y, m8.y, m9.y};
+            int[] indexList = new int[]{m1.x, m2.x, m3.x, m4.x, m5.x, m6.x, m7.x, m8.x, m9.x};
             //find best
             int max = dat[0];
             int index = 0;
@@ -591,7 +627,7 @@ public class ComponentChooser extends javax.swing.JFrame {
             //open in list and select
             this.jComboBox1.setSelectedIndex(index);
             //reload list
-            reloadList();
+            reloadList(this.currentWorkspace);
             //select component
             this.jList1.setSelectedIndex(indexList[index]);
             showSelectedComponent();
@@ -660,9 +696,11 @@ public class ComponentChooser extends javax.swing.JFrame {
             //edit propt
             ((PropertieEditor) this.jTableProperties).edit(this.selectedObject);
 
-            //info html
+            String t = this.jComboBox1.getSelectedItem().toString().toLowerCase();
+            //load html doc
             try {
-                InputStream is = getClass().getResourceAsStream("/src/doc/" + item.toLowerCase() + ".html");
+                InputStream is = getClass().getResourceAsStream("/doc/" + Settings.LANG.getID()
+                        + "/components/" + t + "/" + item.toLowerCase() + ".html");
                 if (is != null) {
                     BufferedReader reader = new BufferedReader(
                             new InputStreamReader(is)
@@ -671,18 +709,47 @@ public class ComponentChooser extends javax.swing.JFrame {
                     while ((line = reader.readLine()) != null) {
                         total += line;
                     }
+
                     //replace image ref
-                    try {
-                        total = total.replaceAll(
-                                "IMG_REF",
-                                this.getClass().getResource("/src/doc/" + item.toLowerCase() + ".gif").toURI().toString()
-                        );
-                    } catch (URISyntaxException ex) {
-                    }
+                    total = HTMLImageLoader.getInstance().load(total, "/doc/"
+                            + Settings.LANG.getID() + "/components/" + t + "/");
+
                     //display html
                     this.jEditorPaneInfo.setText(total);
                 } else {
-                    this.jEditorPaneInfo.setText("");
+                    boolean notFound = true;
+
+                    //remove lib name postfix
+                    String[] words = item.split(" ");
+                    item = "";
+                    for (String word : words) {
+                        if (word.startsWith("[")) {
+                            break;
+                        } else {
+                            item += word;
+                        }
+                    }
+
+                    //try find documentation in modules
+                    if (ComponentChooser.MODULES != null) {
+                        ModuleEditor me;
+                        for (ProjectFile pf : this.project.getProjectFiles()) {
+                            if (pf instanceof ModuleEditor) {
+                                me = (ModuleEditor) pf;
+                                if (me.getName().equals(item)) {
+                                    //display html
+                                    this.jEditorPaneInfo.setText(me.getDocumentation());
+                                    notFound = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    //set empty text
+                    if (notFound) {
+                        this.jEditorPaneInfo.setText("");
+                    }
                 }
             } catch (IOException ex) {
             }
@@ -753,6 +820,11 @@ public class ComponentChooser extends javax.swing.JFrame {
                 return new Bridge(new Point(0, 0), "A");
             case "Constant":
                 return new Constant(new Point(0, 0));
+            //timing
+            case "Falling edge detector":
+                return new FallingEdgeDetector(new Point(0, 0), 1);
+            case "Raising edge detector":
+                return new RaisingEdgeDetector(new Point(0, 0), 1);
             //memory
             case "ROM RAM":
                 return new ROMRAM(new Point(0, 0), 8, "Mem" + Tools.randomNumber(5));
@@ -787,6 +859,9 @@ public class ComponentChooser extends javax.swing.JFrame {
                 return new BitMul(new Point(0, 0), 1);
             case "Div":
                 return new BitDiv(new Point(0, 0), 1);
+            //complex
+            case "MCU":
+                return new MCU(new Point(0, 0), "MCU" + Tools.randomNumber(5));
             //modules
             default:
                 if (ComponentChooser.MODULES != null) {

@@ -17,12 +17,16 @@
 package logicSimulator.data;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import logicSimulator.ExceptionLogger;
 import logicSimulator.projectFile.HexEditor;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.projectFile.ModuleEditor;
@@ -32,8 +36,8 @@ import logicSimulator.ProjectFile;
 import logicSimulator.Tools;
 import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.common.Propertie;
-import logicSimulator.objects.LogicModule;
 import logicSimulator.projectFile.DocumentationEditor;
+import logicSimulator.projectFile.Library;
 
 /**
  * Save or open project
@@ -67,22 +71,19 @@ public class IOProject {
         //project file linker
         for (int i = 0; i < this.project.getProjectFiles().size(); i++) {
             ProjectFile pf = this.project.getProjectFiles().get(i);
+
             if (pf == null) {
                 continue;
             }
-            //file type of this item
-            String type = "";
-            if (pf instanceof WorkSpace) {
-                type = LogicSimulatorCore.WORKSPACE_FILE_TYPE;
-            } else if (pf instanceof ModuleEditor) {
-                type = LogicSimulatorCore.MODULE_FILE_TYPE;
-            } else if (pf instanceof HexEditor) {
-                type = LogicSimulatorCore.HEX_FILE_TYPE;
-            } else if (pf instanceof DocumentationEditor) {
-                type = LogicSimulatorCore.DOCUMENTATION_FILE_TYPE;
+
+            //only none library files
+            if (pf.isLibFile) {
+                continue;
             }
+
             //add to linker
             if (pf.getComp() != null) {
+                String type = Tools.getFileType(pf);
                 propts.add(
                         new Propertie(
                                 type + i,
@@ -125,10 +126,13 @@ public class IOProject {
         //create backup files for all project files (with IOPF)
         this.project.getProjectFiles().stream()
                 .forEach((pf) -> {
-                    try {
-                        pf.backUpData(file.getAbsoluteFile().getParent() + "/");
-                    } catch (Exception ex) {
-                        Logger.getLogger(IOProject.class.getName()).log(Level.SEVERE, null, ex);
+                    //only non lib files
+                    if (!pf.isLibFile) {
+                        try {
+                            pf.backUpData(file.getAbsoluteFile().getParent() + "/");
+                        } catch (Exception ex) {
+                            ExceptionLogger.getInstance().logException(ex);
+                        }
                     }
                 });
 
@@ -150,7 +154,7 @@ public class IOProject {
 
         //add to last project list
         PropertieWriter writer = new PropertieWriter(LogicSimulatorCore.PROPT_PROJECTS);
-        List<Propertie> propts = new ArrayList<>();
+        LinkedList<Propertie> propts = new LinkedList<>();
         try {
             PropertieReader reader = new PropertieReader(LogicSimulatorCore.PROPT_PROJECTS);
             propts = reader.readFile();
@@ -165,7 +169,7 @@ public class IOProject {
         } catch (Exception ex) {
         }
         //name: project name value: project location;time
-        propts.add(new Propertie(this.project.getName(), this.project.getFile().toString() + ";"
+        propts.addFirst(new Propertie(this.project.getName(), this.project.getFile().toString() + ";"
                 + LogicSimulatorCore.getDate("HH:mm:ss - dd.MM.yyyy")));
         writer.writeFile(propts);
     }
@@ -216,6 +220,12 @@ public class IOProject {
                     pf.restoreData(f);
                     this.project.getProjectFiles().add(pf);
 
+                } else if (propt.getName().startsWith(LogicSimulatorCore.LIB_FILE_TYPE)) {
+                    //lib ################################################
+                    ProjectFile pf = new Library(Tools.fileName(f.getName()), this.project);
+                    pf.restoreData(f);
+                    this.project.getProjectFiles().add(pf);
+
                 } else if (propt.getName().equals("visible")) {
                     //store visible index
                     String[] arr = propt.getValueString().split(",");
@@ -233,7 +243,7 @@ public class IOProject {
                     opened_right = propt.getValueString();
                 }
             } catch (Exception ex) {
-                Logger.getLogger(IOProject.class.getName()).log(Level.SEVERE, null, ex);
+                ExceptionLogger.getInstance().logException(ex);
             }
         }
 
@@ -272,7 +282,7 @@ public class IOProject {
             }
         }
 
-        //add logic models (workspaces) for all modules
+        //link logic models (workspaces) with modules
         for (ProjectFile pf : this.project.getProjectFiles()) {
             if (pf instanceof ModuleEditor) {
                 //get name of logic model
@@ -326,9 +336,22 @@ public class IOProject {
     }
 
     /**
+     * Delete all project from disk
+     */
+    public void deleteAll() {
+        //delete all files of project
+        this.project.getProjectFiles().stream().forEach((pf) -> {
+            deleteFile(pf.getName() + "." + Tools.getFileType(pf));
+        });
+
+        //delete project main file
+        deleteFile(this.project.getName() + "." + LogicSimulatorCore.PROJECT_FILE_TYPE);
+    }
+
+    /**
      * Delete file of project from disk and from project link list
      *
-     * @param file File name and file type
+     * @param file File name and file type (name.hex)
      */
     public void deleteFile(String file) {
         try {
@@ -348,6 +371,91 @@ public class IOProject {
             PropertieWriter write = new PropertieWriter(this.project.getFile().toString());
             write.writeFile(propts);
         } catch (Exception ex) {
+        }
+    }
+
+    /**
+     * Export this project as library
+     *
+     * @param path Path of jar
+     * @param description Description of library
+     * @throws FileNotFoundException
+     * @throws IOException
+     */
+    public void exportAsLibrary(File path, String description) throws FileNotFoundException, IOException {
+        //add jar to the end (if is needed)
+        if (!path.toString().endsWith("." + LogicSimulatorCore.LIBRARY)) {
+            path = new File(path.toString() + "." + LogicSimulatorCore.LIBRARY);
+        }
+
+        //export project as jar file
+        byte[] buffer = new byte[1024];
+        try {
+            FileOutputStream fos = new FileOutputStream(path);
+            try (ZipOutputStream zos = new ZipOutputStream(fos)) {
+
+                //write info file
+                zos.putNextEntry(new ZipEntry("info.txt"));
+                byte[] infoBuf = description.getBytes();
+                zos.write(infoBuf, 0, infoBuf.length);
+
+                //write all project files
+                this.project.getProjectFiles().stream().forEach((pf) -> {
+                    //only workspace and modules
+                    if (pf instanceof WorkSpace || pf instanceof ModuleEditor) {
+
+                        //check if this is modul
+                        boolean isModule = pf instanceof ModuleEditor;
+
+                        if (!isModule) {
+                            for (ProjectFile pf2 : this.project.getProjectFiles()) {
+                                if (pf2 instanceof ModuleEditor) {
+                                    if (((ModuleEditor) pf2).getLogicModelName().equals(pf.getName())) {
+                                        isModule = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (isModule) {
+                            String pfName = pf.getName() + "." + Tools.getFileType(pf);
+                            try {
+                                //set entry
+                                zos.putNextEntry(new ZipEntry(pfName));
+
+                                //read data from project file and write to the jar file (lib file)
+                                FileInputStream in;
+                                try {
+                                    //path of current file in disk
+                                    in = new FileInputStream(new File(this.project.getFile().
+                                            getAbsoluteFile().getParent() + "/" + pfName));
+
+                                    //read file and write to the lib file
+                                    int len;
+                                    while ((len = in.read(buffer)) > 0) {
+                                        zos.write(buffer, 0, len);
+                                    }
+                                    in.close();
+
+                                } catch (FileNotFoundException ex) {
+                                    ExceptionLogger.getInstance().logException(ex);
+                                } catch (IOException ex) {
+                                    ExceptionLogger.getInstance().logException(ex);
+                                }
+
+                            } catch (IOException ex) {
+                                ExceptionLogger.getInstance().logException(ex);
+                            }
+                        }
+                    }
+                });
+
+                //close entry
+                zos.closeEntry();
+            }
+        } catch (IOException ex) {
+            ExceptionLogger.getInstance().logException(ex);
         }
     }
 

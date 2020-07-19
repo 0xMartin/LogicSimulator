@@ -54,8 +54,8 @@ import javax.swing.text.StyledEditorKit.ForegroundAction;
 import logicSimulator.ProjectFile;
 import logicSimulator.Tools;
 import logicSimulator.WorkSpaceObject;
+import logicSimulator.common.Memory;
 import logicSimulator.objects.Text;
-import logicSimulator.objects.memory.ROMRAM;
 import logicSimulator.objects.wiring.Wire;
 import logicSimulator.common.WrappingFlowLayout;
 import logicSimulator.projectFile.documentStyleAction.BackgroundColorAction;
@@ -482,10 +482,10 @@ public class ProjectFileToolbar extends JToolBar {
                         .forEachOrdered((pf) -> {
                             //in each workspace find all rom ram
                             ((WorkSpace) pf).getObjects().stream()
-                                    .filter((obj) -> (obj instanceof ROMRAM))
+                                    .filter((obj) -> (obj instanceof Memory))
                                     .forEachOrdered((obj) -> {
                                         //add ID of memory to list
-                                        String id = ((ROMRAM) obj).getID();
+                                        String id = ((Memory) obj).getID();
                                         ids.add(pf.getComp().getName() + ":" + id);
                                     });
                         });

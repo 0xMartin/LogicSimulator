@@ -46,6 +46,21 @@ public class Convert {
     }
 
     /**
+     * Convert int to two bytes
+     *
+     * @param val int value
+     * @return byte[0] - lower, byte[1] - heigher
+     */
+    public static byte[] intToTwoBytes(int val) {
+        byte[] bytes = new byte[2];
+
+        bytes[0] = (byte) (val & 0xff);
+        bytes[1] = (byte) (val >> 8 & 0xff);
+
+        return bytes;
+    }
+
+    /**
      * Convert bit array to byte
      *
      * @param bits Array with bits

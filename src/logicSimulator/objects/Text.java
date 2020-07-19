@@ -160,6 +160,13 @@ public class Text extends WorkSpaceObject {
                 if (setSomeText) {
                     this.text.set(0, last);
                 }
+                //remove empty lines
+                for(int i = 0; i < this.text.size(); ++i) {
+                    if(this.text.get(i).length() == 0) {
+                        this.text.remove(i);
+                        i = -1;
+                    }
+                }
             } else if (propt.getName().equals("Color")) {
                 //color of text
                 this.color = new Color(Integer.parseInt(propt.getValueString()));

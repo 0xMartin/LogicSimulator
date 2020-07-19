@@ -136,14 +136,16 @@
             <Component class="javax.swing.JComboBox" name="jComboBox1">
               <Properties>
                 <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
-                  <StringArray count="7">
+                  <StringArray count="9">
                     <StringItem index="0" value="Gate"/>
                     <StringItem index="1" value="Input"/>
                     <StringItem index="2" value="Output"/>
                     <StringItem index="3" value="Wiring"/>
-                    <StringItem index="4" value="Memory"/>
-                    <StringItem index="5" value="Aritmetic"/>
-                    <StringItem index="6" value="Modules"/>
+                    <StringItem index="4" value="Timing"/>
+                    <StringItem index="5" value="Memory"/>
+                    <StringItem index="6" value="Aritmetic"/>
+                    <StringItem index="7" value="Complex"/>
+                    <StringItem index="8" value="Modules"/>
                   </StringArray>
                 </Property>
               </Properties>
@@ -236,7 +238,7 @@
                 </Property>
               </Properties>
               <AuxValues>
-                <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new javax.swing.JPanel(){&#xa;    @Override&#xa;    protected void paintComponent(Graphics g){&#xa;        super.paintComponent(g);&#xa;        /**&#xa;        * Draw image of component&#xa;        */&#xa;        Graphics2D g2 = (Graphics2D) g;&#xa;&#xa;        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,&#xa;            RenderingHints.VALUE_ANTIALIAS_ON);&#xa;        g2.setRenderingHint(RenderingHints.KEY_RENDERING,&#xa;            RenderingHints.VALUE_RENDER_QUALITY);&#xa;        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,&#xa;            RenderingHints.VALUE_STROKE_PURE);&#xa;&#xa;        g2.clearRect(0, 0, jPanelView.getWidth(), jPanelView.getHeight());&#xa;        if(selectedObject != null){&#xa;            Model m = selectedObject.getModel();&#xa;&#xa;            //model error&#xa;            if(m.getWidth() &lt; 0 || m.getHeight() &lt; 0){&#xa;                g2.setColor(Color.RED);&#xa;                g2.setStroke(new BasicStroke(3));&#xa;                g2.drawLine(0, 0, jPanelView.getWidth(), jPanelView.getHeight());&#xa;                g2.drawLine(jPanelView.getWidth(), 0, 0, jPanelView.getHeight());&#xa;            }&#xa;&#xa;            int max  = Math.max(&#xa;                m.getWidth(),&#xa;                m.getHeight()&#xa;            ) + 30;&#xa;            float f = jPanelView.getWidth() / (float) max;&#xa;            g2.scale(f, f);&#xa;            selectedObject.getPosition().x = (int)((jPanelView.getWidth() - m.getBoundsMax().x - m.getBoundsMin().x)/ (2f * f));&#xa;            selectedObject.getPosition().y = (int)((jPanelView.getHeight() - m.getBoundsMax().y - m.getBoundsMin().y) / (2f * f));&#xa;            selectedObject.getPosition().x -= (int)((m.getBoundsMax().x + m.getBoundsMin().x) / (2f * f));&#xa;            selectedObject.getPosition().y -= (int)((m.getBoundsMax().y + m.getBoundsMin().y) / (2f * f));&#xa;            selectedObject.render(&#xa;                g2,&#xa;                new Point(0, 0),&#xa;                jPanelView.getSize()&#xa;            );&#xa;        }&#xa;    }&#xa;}"/>
+                <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new javax.swing.JPanel(){&#xa;    @Override&#xa;    protected void paintComponent(Graphics g){&#xa;        super.paintComponent(g);&#xa;        /**&#xa;        * Draw image of component&#xa;        */&#xa;        Graphics2D g2 = (Graphics2D) g;&#xa;&#xa;        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,&#xa;            RenderingHints.VALUE_ANTIALIAS_ON);&#xa;        g2.setRenderingHint(RenderingHints.KEY_RENDERING,&#xa;            RenderingHints.VALUE_RENDER_QUALITY);&#xa;        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,&#xa;            RenderingHints.VALUE_STROKE_PURE);&#xa;&#xa;        g2.setColor(Colors.BACKGROUND);&#xa;        g2.fillRect(0, 0, jPanelView.getWidth(), jPanelView.getHeight());&#xa;        &#xa;        if(selectedObject != null){&#xa;            Model m = selectedObject.getModel();&#xa;&#xa;            //model error&#xa;            if(m.getWidth() &lt; 0 || m.getHeight() &lt; 0){&#xa;                g2.setColor(Color.RED);&#xa;                g2.setStroke(new BasicStroke(3));&#xa;                g2.drawLine(0, 0, jPanelView.getWidth(), jPanelView.getHeight());&#xa;                g2.drawLine(jPanelView.getWidth(), 0, 0, jPanelView.getHeight());&#xa;            }&#xa;&#xa;            int max  = Math.max(&#xa;                m.getWidth(),&#xa;                m.getHeight()&#xa;            ) + 30;&#xa;            float f = jPanelView.getWidth() / (float) max;&#xa;            g2.scale(f, f);&#xa;            selectedObject.getPosition().x = (int)((jPanelView.getWidth() - m.getBoundsMax().x - m.getBoundsMin().x)/ (2f * f));&#xa;            selectedObject.getPosition().y = (int)((jPanelView.getHeight() - m.getBoundsMax().y - m.getBoundsMin().y) / (2f * f));&#xa;            selectedObject.getPosition().x -= (int)((m.getBoundsMax().x + m.getBoundsMin().x) / (2f * f));&#xa;            selectedObject.getPosition().y -= (int)((m.getBoundsMax().y + m.getBoundsMin().y) / (2f * f));&#xa;            selectedObject.render(&#xa;                g2,&#xa;                new Point(0, 0),&#xa;                jPanelView.getSize()&#xa;            );&#xa;        }&#xa;    }&#xa;}"/>
               </AuxValues>
 
               <Layout>
@@ -277,6 +279,9 @@
                 <Component class="javax.swing.JEditorPane" name="jEditorPaneInfo">
                   <Properties>
                     <Property name="editable" type="boolean" value="false"/>
+                    <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                      <Color blue="ff" green="ff" red="ff" type="rgb"/>
+                    </Property>
                     <Property name="contentType" type="java.lang.String" value="text/html" noResource="true"/>
                   </Properties>
                 </Component>

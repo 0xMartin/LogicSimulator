@@ -32,6 +32,7 @@ import logicSimulator.graphics.Line;
 import logicSimulator.common.Model;
 import logicSimulator.common.Propertie;
 import logicSimulator.ui.Colors;
+import logicSimulator.ui.Fonts;
 
 /**
  *
@@ -43,6 +44,8 @@ public class Clock extends WorkSpaceObject implements ClickAction {
 
     private int delay = 0;
 
+    private String label = "";
+
     public Clock(Point position, int bits) {
         super(position);
         //model
@@ -52,7 +55,7 @@ public class Clock extends WorkSpaceObject implements ClickAction {
         GOList.add(new Line(-14, -14, 14, -14));
         GOList.add(new Line(14, -14, 14, 14));
         GOList.add(new Line(-14, 14, 14, 14));
-        
+
         //output pin
         model.getIOPins().add(new IOPin(IOPin.MODE.OUTPUT, bits, "", new Point.Double(0, 14)));
 
@@ -65,12 +68,25 @@ public class Clock extends WorkSpaceObject implements ClickAction {
         Point pos = super.getPosition();
         boolean stat = super.getModel().renderModel(g2, pos, offset, screen, super.isSelected());
         if (stat) {
+            //body
             g2.setColor(this.run ? Colors.WIRE_1 : Colors.WIRE_0);
             g2.fillRect(-12 + pos.x, -12 + pos.y, 24, 24);
             g2.setColor(Colors.OBJECT);
             g2.drawLine(-8 + pos.x, -8 + pos.y, pos.x, -8 + pos.y);
             g2.drawLine(pos.x, -8 + pos.y, pos.x, 8 + pos.y);
             g2.drawLine(pos.x, 8 + pos.y, 8 + pos.x, 8 + pos.y);
+
+            //draw label
+            Model m = super.getModel();
+            g2.setFont(Fonts.MEDIUM);
+            g2.setColor(Colors.TEXT);
+            g2.drawString(
+                    this.label,
+                    (int) (pos.x + m.getBoundsMin().x
+                    - g2.getFontMetrics().stringWidth(this.label) - 9),
+                    (int) (pos.y + m.getBoundsMin().y
+                    + (super.getModel().getAngle() == 1 ? 0 : m.getHeight() / 2))
+            );
         }
     }
 
@@ -78,7 +94,8 @@ public class Clock extends WorkSpaceObject implements ClickAction {
     public Propertie[] getProperties() {
         return new Propertie[]{
             new Propertie("Bits", super.getPins().get(0).getValue().length, Propertie.Type.BITS),
-            new Propertie("Delay", this.delay)
+            new Propertie("Delay", this.delay),
+            new Propertie("Label", this.label)
         };
     }
 
@@ -91,6 +108,9 @@ public class Clock extends WorkSpaceObject implements ClickAction {
                     break;
                 case "Delay":
                     this.delay = Math.max(propt.getValueInt(), 0);
+                    break;
+                case "Label":
+                    this.label = propt.getValueString();
                     break;
             }
         } catch (NumberFormatException ex) {
@@ -122,7 +142,9 @@ public class Clock extends WorkSpaceObject implements ClickAction {
 
     @Override
     public WorkSpaceObject cloneObject() {
-        return new Clock(Tools.copy(super.getPosition()), super.getPins().get(0).getValue().length);
+        Clock clock = new Clock(Tools.copy(super.getPosition()), super.getPins().get(0).getValue().length);
+        clock.label = this.label;
+        return clock;
     }
 
     @Override

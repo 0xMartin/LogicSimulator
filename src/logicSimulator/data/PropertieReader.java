@@ -18,8 +18,7 @@ package logicSimulator.data;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;
 import logicSimulator.common.Propertie;
 
 /**
@@ -56,8 +55,8 @@ public class PropertieReader {
      * @return
      * @throws java.lang.Exception
      */
-    public List<Propertie> readFile() throws Exception {
-        List<Propertie> ret = new ArrayList<>();
+    public LinkedList<Propertie> readFile() throws Exception {
+        LinkedList<Propertie> ret = new LinkedList<>();
         //read all propts and each add to the list
         BufferedReader reader = new BufferedReader(new FileReader(this.file));
         String line;

@@ -14,19 +14,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+import com.formdev.flatlaf.FlatLightLaf;
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.io.IOException;
 import logicSimulator.data.PropertieReader;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import logicSimulator.ComputeCore;
+import logicSimulator.ExceptionLogger;
 import logicSimulator.LogicSimulatorCore;
 import window.MainWindow;
 import logicSimulator.LSComponent;
 import logicSimulator.Project;
 import logicSimulator.SerialPortDriver;
+import logicSimulator.ui.SystemResources;
 import window.ProjectWizard;
 
 /**
@@ -59,6 +63,7 @@ public class HLSimulator extends LogicSimulatorCore {
         );
         super.getLSComponents().add(component);
         //hide splash screen
+        Thread.sleep(600);
         HLSimulator.splash.setVisible(false);
         HLSimulator.splash.dispose();
         //open or create project
@@ -68,6 +73,10 @@ public class HLSimulator extends LogicSimulatorCore {
         boolean projectNotFound = true;
         for (LSComponent c : this.getLSComponents()) {
             if (c instanceof Project) {
+
+                //load image resources          
+                SystemResources.reloadImageResources((Project) c);
+
                 projectNotFound = false;
                 break;
             }
@@ -120,23 +129,36 @@ public class HLSimulator extends LogicSimulatorCore {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-
+        
+        
         //set LookAndFeel 
+        //windows
+//        try {
+//            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+//                if (info.getName().equals("Windows")) {
+//                    UIManager.setLookAndFeel(info.getClassName());
+//                    break;
+//                }
+//            }
+//        } catch (UnsupportedLookAndFeelException | ClassNotFoundException
+//                | InstantiationException | IllegalAccessException ex) {
+//            ExceptionLogger.getInstance().logException(ex);
+//        }
+
+        FlatLightLaf.install();
         try {
-            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if (info.getName().equals("Windows")) {
-                    UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (UnsupportedLookAndFeelException | ClassNotFoundException
-                | InstantiationException | IllegalAccessException e) {
+            UIManager.setLookAndFeel(new FlatLightLaf());
+        } catch (Exception ex) {
+            ExceptionLogger.getInstance().logException(ex);
         }
+
         SwingUtilities.invokeLater(() -> {
             try {
 
                 //splash
-                HLSimulator.splash = new Splash("/src/img/splash.png", 640, 360);
+                Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+                int width = (int) (screen.width * 0.4f);
+                HLSimulator.splash = new Splash("/src/img/splash.png", width, (width / 3) * 2);
                 HLSimulator.splash.setVisible(true);
 
                 //HL simulator
@@ -173,10 +195,16 @@ public class HLSimulator extends LogicSimulatorCore {
                         null
                 );
                 HLSimulator.splash.setVisible(false);
-                Logger.getLogger(HLSimulator.class.getName()).log(Level.SEVERE, null, ex);
+                ExceptionLogger.getInstance().logException(ex);
+                try {
+                    ExceptionLogger.getInstance().closeFile();
+                } catch (IOException ex1) {
+                }
+                
                 System.exit(0);
             }
         });
+        
     }
 
 }

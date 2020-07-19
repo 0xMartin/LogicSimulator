@@ -34,6 +34,7 @@ import logicSimulator.projectFile.DocumentationEditor;
 import logicSimulator.ProjectFile;
 import logicSimulator.Tools;
 import logicSimulator.projectFile.HexEditor;
+import logicSimulator.projectFile.Library;
 
 /**
  * Title of tabbed pane (close button, name, image of project file, docking
@@ -95,6 +96,8 @@ public class TabbedPaneTitle extends JPanel {
             this.title.setIcon(logicSimulator.ui.SystemResources.HEF_ICON);
         }else if (component instanceof DocumentationEditor) {
             this.title.setIcon(logicSimulator.ui.SystemResources.DF_ICON);
+        }else if (component instanceof Library) {
+            this.title.setIcon(logicSimulator.ui.SystemResources.LIB_ICON);
         }
 
         //set font as bold

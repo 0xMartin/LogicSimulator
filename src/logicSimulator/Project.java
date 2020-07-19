@@ -47,7 +47,7 @@ public class Project implements LSComponent {
 
     //name of project
     private String name;
-
+    
     //true -> edit mode activated (for circuit editing, ...), false -> control mode
     public boolean editMode = true;
 
@@ -93,6 +93,25 @@ public class Project implements LSComponent {
             }
         }
     }
+    
+    /**
+     * Display project file in main window
+     * @param pf Project File 
+     */
+    public void displayFile(ProjectFile pf) {
+        if (this.core == null) {
+            return;
+        }
+        if (this.core.getLSComponents() == null) {
+            return;
+        }
+        for (LSComponent comp : this.core.getLSComponents()) {
+            if (comp instanceof MainWindow) {
+                ((MainWindow) comp).getPFDockingPanel().displayProjectFile(pf);
+                break;
+            }
+        }
+    }
 
     @Override
     public void init(LogicSimulatorCore core, PropertieReader propt) throws Exception {
@@ -123,6 +142,14 @@ public class Project implements LSComponent {
 
     public String getName() {
         return this.name;
+    }
+    
+    public void setName(String name) {
+        if(name != null) {
+            if(name.length() != 0) {
+                this.name = name;
+            }
+        }
     }
 
     public File getFile() {

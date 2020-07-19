@@ -18,11 +18,11 @@ package window.components;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -83,7 +83,7 @@ public class PropertieEditor extends JTable {
                 l = (JLabel) value;
             }
             if (l != null) {
-                l.setBorder(new EmptyBorder(0,10,0,0));
+                l.setBorder(new EmptyBorder(0, 10, 0, 0));
                 l.setFont(new Font("tahoma", Font.BOLD, 12));
                 l.setOpaque(true);
                 l.setBackground(row % 2 == 0 ? new Color(220, 220, 220) : new Color(255, 255, 255));
@@ -174,7 +174,7 @@ public class PropertieEditor extends JTable {
                         //true false type
                         JComboBox c2 = new JComboBox(new String[]{"True", "False"});
                         c2.setSelectedItem(propt.getValueString());
-                        c2.addActionListener((ActionEvent e) -> {
+                        c2.addItemListener((ItemEvent e) -> {
                             this.valuesChanged();
                         });
                         model.addRow(new Object[]{propt.getName(), propt.getValueString()});
@@ -188,8 +188,8 @@ public class PropertieEditor extends JTable {
                         }
                         JComboBox c3 = new JComboBox(bits);
                         c3.setSelectedItem(propt.getValueInt());
-                        c3.addActionListener((ActionEvent e) -> {
-                            this.valuesChanged();
+                        c3.addItemListener((ItemEvent e) -> {
+                            this.valuesChanged();                        
                         });
                         model.addRow(new Object[]{propt.getName(), propt.getValueInt()});
                         this.editors.put(this.getRowCount() - 1, new DefaultCellEditor(c3));
@@ -202,7 +202,7 @@ public class PropertieEditor extends JTable {
                         }
                         JComboBox c4 = new JComboBox(inputs);
                         c4.setSelectedItem(propt.getValueInt());
-                        c4.addActionListener((ActionEvent e) -> {
+                        c4.addItemListener((ItemEvent e) -> {
                             this.valuesChanged();
                         });
                         model.addRow(new Object[]{propt.getName(), propt.getValueInt()});

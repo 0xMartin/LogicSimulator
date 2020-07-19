@@ -1,4 +1,4 @@
-/* 
+    /* 
  * Copyright (C) 2020 Martin Krcma
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,6 +31,7 @@ public class Colors {
     //edit
     public static Color SELECT_RECT = Color.RED;
     public static Color SELECT_RECT2 = Color.BLUE;
+    
     //objects
     public static Color OBJECT = Color.BLACK;
     public static Color IOPIN = Color.BLUE;
@@ -41,12 +42,14 @@ public class Colors {
     public static Color TEXT = Color.BLACK;
 
     //module editor
-    public static Color ME_GRID = Color.GRAY;
-    public static Color ME_BACKGROUND = Color.WHITE;
-    public static Color ME_MODEL = Color.BLACK;
     public static Color ME_DRAG = Color.GRAY;
     public static Color ME_CURSORCROSS = Color.BLUE;
     public static Color ME_CENTER = Color.RED;
+    
+    //grapher
+    public static Color GR_BACKGROUND = Color.WHITE;
+    public static Color GR_AXES = Color.BLACK;
+    public static Color GR_GRAPHLINE = Color.BLUE;
 
     //UI
     public static Color COMPONENT_FOREGROUND = Color.WHITE;

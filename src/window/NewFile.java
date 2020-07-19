@@ -16,11 +16,13 @@
  */
 package window;
 
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import logicSimulator.Tools;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import logicSimulator.projectFile.HexEditor;
 import logicSimulator.projectFile.ModuleEditor;
 import logicSimulator.Project;
@@ -28,7 +30,6 @@ import logicSimulator.ProjectFile;
 import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.objects.LogicModule;
 import logicSimulator.projectFile.DocumentationEditor;
-import logicSimulator.ui.LSButton;
 
 /**
  *
@@ -39,6 +40,8 @@ public class NewFile extends javax.swing.JFrame {
     private Project project = null;
 
     private MainWindow window = null;
+
+    private String selected = "Workspace";
 
     /**
      * Creates new form NewFile
@@ -53,7 +56,6 @@ public class NewFile extends javax.swing.JFrame {
         this.project = project;
         //center location
         super.setLocationRelativeTo(window);
-        this.jListFiles.setSelectedIndex(0);
         this.update();
     }
 
@@ -62,21 +64,21 @@ public class NewFile extends javax.swing.JFrame {
         String fileType = "";
         ImageIcon img = null;
         try {
-            switch (this.jListFiles.getSelectedValue()) {
+            switch (this.selected) {
                 case "Workspace":
-                    img = new ImageIcon(this.getClass().getResource("/src/img/workspace_animation.gif"));
+                    img = new ImageIcon(this.getClass().getResource("/src/img/workspace-preview.gif"));
                     fileType = "." + logicSimulator.LogicSimulatorCore.WORKSPACE_FILE_TYPE;
                     break;
-                case "Logic module":
-                    img = null;
+                case "Module":
+                    img = new ImageIcon(this.getClass().getResource("/src/img/module-preview.gif"));
                     fileType = "." + logicSimulator.LogicSimulatorCore.MODULE_FILE_TYPE;
                     break;
-                case "HEX editor":
-                    img = null;
+                case "HEX file":
+                    img = new ImageIcon(this.getClass().getResource("/src/img/hexFile-preview.gif"));
                     fileType = "." + logicSimulator.LogicSimulatorCore.HEX_FILE_TYPE;
                     break;
                 case "Documentation":
-                    img = null;
+                    img = new ImageIcon(this.getClass().getResource("/src/img/documentation-preview.gif"));
                     fileType = "." + logicSimulator.LogicSimulatorCore.DOCUMENTATION_FILE_TYPE;
                     break;
             }
@@ -110,8 +112,6 @@ public class NewFile extends javax.swing.JFrame {
                 super.paintComponent((Graphics2D) g);
             }
         };
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jListFiles = new javax.swing.JList<>();
         jPanel1 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
@@ -119,45 +119,35 @@ public class NewFile extends javax.swing.JFrame {
         jTextFieldName = new javax.swing.JTextField();
         jLabelLocation = new javax.swing.JLabel();
         jLabelProject = new javax.swing.JLabel();
-        jButtonAdd = new LSButton();
+        jButtonAdd = new javax.swing.JButton();
+        jButton1 = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
+        jButton3 = new javax.swing.JButton();
+        jButton4 = new javax.swing.JButton();
+        jSeparator1 = new javax.swing.JSeparator();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("New file");
         setResizable(false);
         setType(java.awt.Window.Type.UTILITY);
 
+        jLabelGif.setBackground(new java.awt.Color(255, 255, 255));
+        jLabelGif.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabelGif.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jLabelGif.setOpaque(true);
 
-        jScrollPane1.setBackground(new java.awt.Color(255, 255, 255));
-        jScrollPane1.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Files", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Dialog", 1, 14))); // NOI18N
-
-        jListFiles.setFont(new java.awt.Font("Dialog", 1, 14)); // NOI18N
-        jListFiles.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Workspace", "Logic module", "Script module", "HEX editor", "Documentation" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
-        jListFiles.setSelectionBackground(new java.awt.Color(80, 80, 80));
-        jListFiles.setSelectionForeground(new java.awt.Color(230, 230, 230));
-        jListFiles.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseReleased(java.awt.event.MouseEvent evt) {
-                jListFilesMouseReleased(evt);
-            }
-        });
-        jScrollPane1.setViewportView(jListFiles);
-
-        jPanel1.setBackground(new java.awt.Color(120, 120, 120));
+        jPanel1.setBackground(new java.awt.Color(255, 255, 255));
 
         jLabel2.setFont(new java.awt.Font("Dialog", 1, 14)); // NOI18N
-        jLabel2.setForeground(new java.awt.Color(230, 230, 230));
+        jLabel2.setForeground(new java.awt.Color(0, 0, 0));
         jLabel2.setText("Name:");
 
         jLabel1.setFont(new java.awt.Font("Dialog", 1, 14)); // NOI18N
-        jLabel1.setForeground(new java.awt.Color(235, 235, 235));
+        jLabel1.setForeground(new java.awt.Color(0, 0, 0));
         jLabel1.setText("Location:");
 
         jLabel3.setFont(new java.awt.Font("Dialog", 1, 14)); // NOI18N
-        jLabel3.setForeground(new java.awt.Color(235, 235, 235));
+        jLabel3.setForeground(new java.awt.Color(0, 0, 0));
         jLabel3.setText("Project:");
 
         jTextFieldName.setFont(new java.awt.Font("Dialog", 0, 14)); // NOI18N
@@ -168,20 +158,50 @@ public class NewFile extends javax.swing.JFrame {
         });
 
         jLabelLocation.setFont(new java.awt.Font("Dialog", 0, 14)); // NOI18N
-        jLabelLocation.setForeground(new java.awt.Color(235, 235, 235));
+        jLabelLocation.setForeground(new java.awt.Color(0, 0, 0));
         jLabelLocation.setText(" ");
 
         jLabelProject.setFont(new java.awt.Font("Dialog", 0, 14)); // NOI18N
-        jLabelProject.setForeground(new java.awt.Color(235, 235, 235));
+        jLabelProject.setForeground(new java.awt.Color(0, 0, 0));
         jLabelProject.setText(" ");
 
-        jButtonAdd.setBackground(new java.awt.Color(61, 61, 61));
+        jButtonAdd.setBackground(new java.awt.Color(255, 255, 255));
         jButtonAdd.setFont(new java.awt.Font("Dialog", 1, 14)); // NOI18N
-        jButtonAdd.setForeground(new java.awt.Color(235, 235, 235));
+        jButtonAdd.setForeground(new java.awt.Color(0, 0, 0));
         jButtonAdd.setText("Add");
         jButtonAdd.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonAddActionPerformed(evt);
+            }
+        });
+
+        jButton1.setBackground(new java.awt.Color(75, 110, 175));
+        jButton1.setForeground(new java.awt.Color(255, 255, 255));
+        jButton1.setText("Workspace");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonsActionPerformed(evt);
+            }
+        });
+
+        jButton2.setText("Module");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonsActionPerformed(evt);
+            }
+        });
+
+        jButton3.setText("HEX file");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonsActionPerformed(evt);
+            }
+        });
+
+        jButton4.setText("Documentation");
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonsActionPerformed(evt);
             }
         });
 
@@ -191,18 +211,29 @@ public class NewFile extends javax.swing.JFrame {
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 106, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabelLocation, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addComponent(jTextFieldName, javax.swing.GroupLayout.PREFERRED_SIZE, 291, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jSeparator1)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 106, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButtonAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 134, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jLabelProject, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabelProject, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jTextFieldName)
+                                .addGap(106, 106, 106)
+                                .addComponent(jButtonAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 134, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jLabelLocation, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jButton4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -210,48 +241,45 @@ public class NewFile extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton1)
+                    .addComponent(jButton2)
+                    .addComponent(jButton3)
+                    .addComponent(jButton4))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(2, 2, 2)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(jTextFieldName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButtonAdd))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGap(7, 7, 7)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel1)
-                    .addComponent(jLabelLocation))
+                    .addComponent(jLabelLocation, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel3)
                     .addComponent(jLabelProject))
-                .addContainerGap(12, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, Short.MAX_VALUE)
-                .addComponent(jLabelGif, javax.swing.GroupLayout.PREFERRED_SIZE, 456, javax.swing.GroupLayout.PREFERRED_SIZE))
             .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jLabelGif, javax.swing.GroupLayout.PREFERRED_SIZE, 621, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 304, Short.MAX_VALUE)
-                    .addComponent(jLabelGif, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(0, 0, 0))
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(jLabelGif, javax.swing.GroupLayout.PREFERRED_SIZE, 373, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
-    private void jListFilesMouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jListFilesMouseReleased
-        this.update();
-    }//GEN-LAST:event_jListFilesMouseReleased
 
     private void jTextFieldNameKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldNameKeyReleased
         if (evt.getKeyChar() == '.' || evt.getKeyChar() == ' ' || evt.getKeyChar() == '=') {
@@ -269,23 +297,23 @@ public class NewFile extends javax.swing.JFrame {
         //add file
         ProjectFile pf = null;
         Class<?> fileType = null;
-        switch (this.jListFiles.getSelectedValue()) {
+        switch (this.selected) {
             case "Workspace":
-            pf = new WorkSpace(this.lastName, this.project);
-            fileType = WorkSpace.class;
-            break;
-            case "Logic module":
-            pf = new ModuleEditor(this.lastName, this.project, new LogicModule(new Point(0, 0), this.lastName));
-            fileType = ModuleEditor.class;
-            break;
-            case "HEX editor":
-            pf = new HexEditor(this.lastName, this.project);
-            fileType = HexEditor.class;
-            break;
+                pf = new WorkSpace(this.lastName, this.project);
+                fileType = WorkSpace.class;
+                break;
+            case "Module":
+                pf = new ModuleEditor(this.lastName, this.project, new LogicModule(new Point(0, 0), this.lastName));
+                fileType = ModuleEditor.class;
+                break;
+            case "HEX file":
+                pf = new HexEditor(this.lastName, this.project);
+                fileType = HexEditor.class;
+                break;
             case "Documentation":
-            pf = new DocumentationEditor(this.lastName, this.project);
-            fileType = DocumentationEditor.class;
-            break;
+                pf = new DocumentationEditor(this.lastName, this.project);
+                fileType = DocumentationEditor.class;
+                break;
         }
 
         if (pf != null) {
@@ -315,9 +343,46 @@ public class NewFile extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jButtonAddActionPerformed
 
+    private void jButtonsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonsActionPerformed
+        if (evt.getSource() == this.jButton1) {
+            buttonActivation(this.jButton1, true);
+            buttonActivation(this.jButton2, false);
+            buttonActivation(this.jButton3, false);
+            buttonActivation(this.jButton4, false);
+        } else if (evt.getSource() == this.jButton2) {
+            buttonActivation(this.jButton1, false);
+            buttonActivation(this.jButton2, true);
+            buttonActivation(this.jButton3, false);
+            buttonActivation(this.jButton4, false);
+        } else if (evt.getSource() == this.jButton3) {
+            buttonActivation(this.jButton1, false);
+            buttonActivation(this.jButton2, false);
+            buttonActivation(this.jButton3, true);
+            buttonActivation(this.jButton4, false);
+        } else {
+            buttonActivation(this.jButton1, false);
+            buttonActivation(this.jButton2, false);
+            buttonActivation(this.jButton3, false);
+            buttonActivation(this.jButton4, true);
+        }
+
+        this.selected = ((JButton) evt.getSource()).getText();
+
+        update();
+    }//GEN-LAST:event_jButtonsActionPerformed
+
+    private void buttonActivation(JButton button, boolean state) {
+        button.setBackground(state ? new Color(75, 110, 175) : Color.WHITE);
+        button.setForeground(state ? Color.WHITE : Color.BLACK);
+    }
+
     private String lastName = "";
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
+    private javax.swing.JButton jButton4;
     private javax.swing.JButton jButtonAdd;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -325,9 +390,8 @@ public class NewFile extends javax.swing.JFrame {
     private javax.swing.JLabel jLabelGif;
     private javax.swing.JLabel jLabelLocation;
     private javax.swing.JLabel jLabelProject;
-    private javax.swing.JList<String> jListFiles;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTextField jTextFieldName;
     // End of variables declaration//GEN-END:variables
 }

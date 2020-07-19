@@ -28,22 +28,11 @@ import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
-import javax.swing.text.DefaultStyledDocument;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import logicSimulator.graphics.Circle;
@@ -53,6 +42,7 @@ import logicSimulator.objects.IOPin;
 import logicSimulator.graphics.Line;
 import logicSimulator.objects.LogicModule;
 import logicSimulator.common.Model;
+import logicSimulator.objects.complex.MCU;
 import logicSimulator.objects.wiring.BitGet;
 import logicSimulator.objects.input.Button;
 import logicSimulator.objects.input.Clock;
@@ -71,6 +61,8 @@ import logicSimulator.objects.gate.Nxor;
 import logicSimulator.objects.gate.Or;
 import logicSimulator.objects.gate.Xor;
 import logicSimulator.objects.input.KeyBoard;
+import logicSimulator.objects.input.SerialInputTrigger;
+import logicSimulator.objects.input.SerialOutputTrigger;
 import logicSimulator.objects.memory.Counter;
 import logicSimulator.objects.memory.DFlipFlop;
 import logicSimulator.objects.memory.JKFlipFlop;
@@ -79,6 +71,7 @@ import logicSimulator.objects.memory.RSFlipFlop;
 import logicSimulator.objects.memory.TFlipFlop;
 import logicSimulator.objects.output.SevenSeg;
 import logicSimulator.objects.output.TextScreen;
+import logicSimulator.objects.timing.FallingEdgeDetector;
 import logicSimulator.objects.wiring.BitSet;
 import logicSimulator.objects.wiring.Bridge;
 import logicSimulator.objects.wiring.Input;
@@ -86,6 +79,7 @@ import logicSimulator.objects.wiring.Output;
 import logicSimulator.objects.wiring.Wire;
 import logicSimulator.projectFile.DocumentationEditor;
 import logicSimulator.projectFile.HexEditor;
+import logicSimulator.projectFile.Library;
 
 /**
  *
@@ -332,6 +326,18 @@ public class Tools {
         } else if (obj instanceof TextScreen) {
             //TEXT SCREEN
             return "TEXT SCREEN";
+        } else if (obj instanceof SerialInputTrigger) {
+            //SERIAL INPUT TRIGGER
+            return "SERIAL INPUT TRIGGER";
+        } else if (obj instanceof SerialOutputTrigger) {
+            //SERIAL OUTPU TRIGGER
+            return "SERIAL OUTPU TRIGGER";
+        } else if (obj instanceof FallingEdgeDetector) {
+            //FALLING EDGE DETECTOR
+            return "FALLING EDGE DETECTOR";
+        } else if (obj instanceof MCU) {
+            //MCU
+            return "MCU";
         }
         return null;
     }
@@ -765,6 +771,7 @@ public class Tools {
                 }
             });
         } catch (Exception ex) {
+            ExceptionLogger.getInstance().logException(ex);
         }
 
     }
@@ -850,11 +857,13 @@ public class Tools {
      * @param core LS core
      */
     public static void removeProject(LogicSimulatorCore core) {
-        core.getLSComponents().stream()
-                .filter((comp) -> (comp instanceof Project))
-                .forEachOrdered((comp) -> {
-                    core.getLSComponents().remove(comp);
-                });
+        LSComponent comp;
+        for (int i = 0; i < core.getLSComponents().size(); ++i) {
+            comp = core.getLSComponents().get(i);
+            if (comp instanceof Project) {
+                core.getLSComponents().remove(comp);
+            }
+        }
     }
 
     /**
@@ -911,6 +920,8 @@ public class Tools {
             return LogicSimulatorCore.HEX_FILE_TYPE;
         } else if (pf instanceof DocumentationEditor) {
             return LogicSimulatorCore.DOCUMENTATION_FILE_TYPE;
+        } else if (pf instanceof Library) {
+            return LogicSimulatorCore.LIB_FILE_TYPE;
         }
         return "";
     }
@@ -1171,6 +1182,117 @@ public class Tools {
             ret.add(obj.cloneObject());
         });
         return ret;
+    }
+
+    /**
+     * Create image of workspace
+     *
+     * @param objs WorkSpace objects
+     * @param width Width of output image
+     * @param height Height of output image
+     * @return BufferedImage
+     */
+    public static BufferedImage createImage(List<WorkSpaceObject> objs, int width, int height) {
+        BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+        //compute scale and offset
+        Point min = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE),
+                max = new Point(Integer.MIN_VALUE, Integer.MIN_VALUE);
+
+        objs.forEach((obj) -> {
+            if (obj != null) {
+                if (obj instanceof Wire) {
+                    //wire
+                    ((Wire) obj).getPath().stream().forEach((line) -> {
+                        for (Point.Double p2 : ((Line) line).getPoints()) {
+                            min.x = Math.min(min.x, (int) p2.x);
+                            max.x = Math.max(max.x, (int) p2.x);
+                            min.y = Math.min(min.y, (int) p2.y);
+                            max.y = Math.max(max.y, (int) p2.y);
+                        }
+                    });
+                } else {
+                    //normal object
+                    Point p = obj.getPosition();
+                    min.x = Math.min(min.x, p.x);
+                    max.x = Math.max(max.x, p.x);
+                    min.y = Math.min(min.y, p.y);
+                    max.y = Math.max(max.y, p.y);
+                }
+            }
+        });
+
+        float scale = Math.min((float) width / (max.x - min.x),
+                (float) height / (max.y - min.y)) * 0.8f;
+
+        Point offset = new Point(
+                (int) (width / (2f * scale) - (max.x - (max.x - min.x) / 2)),
+                (int) (height / (2f * scale) - (max.y - (max.y - min.y) / 2))
+        );
+
+        //create graphics
+        Graphics2D g2 = (Graphics2D) img.createGraphics();
+        Tools.setHighQuality(g2);
+
+        g2.setColor(Colors.BACKGROUND);
+        g2.fillRect(0, 0, width, height);
+        g2.scale(scale, scale);
+
+        //draw all objects
+        objs.stream().forEach((obj) -> {
+            //unselect object
+            obj.unSelect();
+
+            //apply offset
+            if (obj instanceof Wire) {
+                //wire
+                List<Point.Double> moved = new ArrayList<>();
+                ((Wire) obj).getPath().stream().forEach((line) -> {
+                    for (Point.Double p : ((Line) line).getPoints()) {
+                        if (moved.stream().allMatch((p2) -> (p2 != p))) {
+                            p.x += offset.x;
+                            p.y += offset.y;
+                            moved.add(p);
+                        }
+                    }
+                });
+            } else {
+                //normal obj
+                obj.getPosition().x += offset.x;
+                obj.getPosition().y += offset.y;
+            }
+
+            //render object
+            obj.render(g2, new Point(0, 0), new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        });
+
+        return img;
+    }
+
+    public static String removeEndWhiteSpaces(String text) {
+        for (int i = text.length() - 1; i >= 0; --i) {
+            if (text.charAt(i) != ' ') {
+                return text.substring(0, i + 1);
+            }
+        }
+        return "";
+    }
+
+    public static String getGreyCode(int num, int bits) {
+        if (bits == 1) {
+            return String.valueOf(num);
+        }
+
+        if (num >= Math.pow(2, (bits - 1))) {
+            return "1" + getGreyCode((int) (Math.pow(2, (bits))) - num - 1, bits - 1);
+        } else {
+            return "0" + getGreyCode(num, bits - 1);
+        }
+    }
+
+    public static String getGreyCode(int num) {
+        int numOfBits = (int) (Math.log(num) / Math.log(2)) + 1;
+        return getGreyCode(num, numOfBits);
     }
 
 }

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import logicSimulator.Convert;
+import logicSimulator.ExceptionLogger;
 import logicSimulator.Tools;
 import logicSimulator.WorkSpaceObject;
 import logicSimulator.common.Model;
@@ -115,7 +116,7 @@ public class Constant extends WorkSpaceObject {
                     break;
             }
         } catch (Exception ex) {
-            Logger.getLogger(Constant.class.getName()).log(Level.SEVERE, null, ex);
+            ExceptionLogger.getInstance().logException(ex);
         }
     }
 

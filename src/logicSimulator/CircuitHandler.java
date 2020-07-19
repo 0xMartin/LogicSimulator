@@ -5,6 +5,7 @@
 package logicSimulator;
 
 import java.awt.Point;
+import java.util.ArrayList;
 import java.util.List;
 import logicSimulator.graphics.Line;
 import logicSimulator.objects.IOPin;
@@ -349,4 +350,31 @@ public class CircuitHandler {
             }
         }
     }
+
+    private static Bridge findBridge(List<WorkSpaceObject> objects, Point.Double pt) {
+        for (WorkSpaceObject obj : objects) {
+            if (obj instanceof Bridge) {
+                if (Tools.equal(((Bridge) obj).getPins().get(0).getPosition(), pt)) {
+                    return (Bridge) obj;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get all points of current selected wire and ignore next points which are
+     * in other segment connected by the bridge
+     *
+     * @param objects All objects
+     * @param wire Wire
+     * @return List<Point.Double>
+     */
+    public static List<Point.Double> getPointsOfCurrentWire(List<WorkSpaceObject> objects, Wire wire) {
+        List<Point.Double> pts = new ArrayList<>();
+
+        return pts;
+    }
+
 }

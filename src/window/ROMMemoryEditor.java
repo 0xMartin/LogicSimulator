@@ -35,8 +35,8 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import logicSimulator.Convert;
+import logicSimulator.ExceptionLogger;
 import logicSimulator.Project;
-import logicSimulator.Tools;
 import logicSimulator.common.Memory;
 import logicSimulator.projectFile.HexEditor;
 import logicSimulator.ui.SystemResources;
@@ -404,7 +404,7 @@ public class ROMMemoryEditor extends javax.swing.JFrame {
                     JOptionPane.ERROR_MESSAGE,
                     null
             );
-            Logger.getLogger(ROMMemoryEditor.class.getName()).log(Level.SEVERE, null, ex);
+            ExceptionLogger.getInstance().logException(ex);
         }
     }//GEN-LAST:event_jMenuItem5ActionPerformed
 

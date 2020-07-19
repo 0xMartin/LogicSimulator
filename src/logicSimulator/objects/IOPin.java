@@ -23,6 +23,7 @@ import java.awt.Point;
 import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import logicSimulator.ExceptionLogger;
 import logicSimulator.objects.wiring.Wire;
 import logicSimulator.ui.Fonts;
 
@@ -43,7 +44,7 @@ public class IOPin implements Serializable {
         IO, //this is input and output pin
         LINKER;     //for wire connecting using bridge
     }
-    
+
     //label of this pin
     private String label = "";
 
@@ -88,8 +89,9 @@ public class IOPin implements Serializable {
         this.position = position;
     }
 
-     /**
+    /**
      * Set label of pin
+     *
      * @return String
      */
     public String getLabel() {
@@ -98,6 +100,7 @@ public class IOPin implements Serializable {
 
     /**
      * Get label of pin
+     *
      * @param label String
      */
     public void setLabel(String label) {
@@ -115,6 +118,7 @@ public class IOPin implements Serializable {
 
     /**
      * Get position of pin (reference)
+     *
      * @return Point.Double
      */
     public Point.Double getPosition() {
@@ -210,7 +214,7 @@ public class IOPin implements Serializable {
                             }
                         });
             } catch (Exception ex) {
-                Logger.getLogger(IOPin.class.getName()).log(Level.SEVERE, null, ex);
+                ExceptionLogger.getInstance().logException(ex);
                 //call again (this call if some object connect or unconnect from wire in time of writing)
                 writeValue();
             }
@@ -248,6 +252,7 @@ public class IOPin implements Serializable {
 
     /**
      * Render pin
+     *
      * @param g2 Graphics context
      * @param xoff X offset
      * @param yoff Y offset
@@ -275,7 +280,8 @@ public class IOPin implements Serializable {
         }
 
         //draw label of pin
-        if (this.label.length() != 0 && this.VisibleLabel) {
+        String lab = this.label + " : " + this.value.length;
+        if (this.VisibleLabel) {
             /**
              * Off set for label: if is on left side of model the draw it more
              * on left side in ride side is it same but on right, center line of
@@ -283,28 +289,32 @@ public class IOPin implements Serializable {
              *
              */
             g2.setFont(Fonts.SMALL);
-            int labelOffset = this.position.x < 0 ? - 9 - g2.getFontMetrics().stringWidth(this.label) : 9;
-            int xp = (int) (this.position.x + xoff + labelOffset);
-            int yp = (int) (this.position.y + yoff - 9);
+            int labelOffsetX = this.position.x < 0 ? - 9 - g2.getFontMetrics().stringWidth(lab) : 9;
+            int labelOffsetY = this.position.y > 0 ? g2.getFontMetrics().getHeight() + 14 : -5;
+            int xp = (int) (this.position.x + xoff + labelOffsetX);
+            int yp = (int) (this.position.y + yoff + labelOffsetY - 9);
+
             //draw rectangle       
             g2.setColor(Colors.WIRE_1);
             g2.fillRoundRect(xp - 3, yp - g2.getFontMetrics().getHeight(),
-                    g2.getFontMetrics().stringWidth(this.label) + 6,
+                    g2.getFontMetrics().stringWidth(lab) + 6,
                     g2.getFontMetrics().getHeight() + 6, 3, 3
             );
             g2.setColor(Colors.TEXT);
             g2.setStroke(new BasicStroke(2));
             g2.drawRoundRect(xp - 3, yp - g2.getFontMetrics().getHeight(),
-                    g2.getFontMetrics().stringWidth(this.label) + 6,
+                    g2.getFontMetrics().stringWidth(lab) + 6,
                     g2.getFontMetrics().getHeight() + 6, 3, 3
             );
+
             //draw label
-            g2.drawString(this.label, xp, yp);
+            g2.drawString(lab, xp, yp);
         }
     }
 
     /**
      * Clone this pin
+     *
      * @return IOPin
      */
     public IOPin cloneObject() {
@@ -325,6 +335,7 @@ public class IOPin implements Serializable {
 
     /**
      * Change width of pin buffer
+     *
      * @param bits New bit width of bin buffer
      */
     public void changeBitWidth(int bits) {
@@ -344,6 +355,7 @@ public class IOPin implements Serializable {
 
     /**
      * Get connected wire
+     *
      * @return Wire
      */
     public Wire getWire() {

@@ -18,16 +18,13 @@ package logicSimulator;
 
 import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.data.PropertieReader;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import logicSimulator.objects.IOPin;
-import logicSimulator.graphics.Line;
 import logicSimulator.common.Propertie;
-import logicSimulator.objects.wiring.Bridge;
 import logicSimulator.objects.wiring.Wire;
 import logicSimulator.timing.ConstantTimeLoop;
 
@@ -61,6 +58,9 @@ public class ComputeCore implements LSComponent {
 
     //1 sec listener, workspace closed
     private ActionListener invoke1Sec, workClosed;
+    
+    //invoke every compute core tick
+    private List<ActionListener> onTick = new ArrayList<>();
 
     /**
      * Set workspace for simulation
@@ -102,6 +102,22 @@ public class ComputeCore implements LSComponent {
     public void setWorkSpaceClosedListener(ActionListener action) {
         this.workClosed = action;
     }
+    
+    /**
+     * Listener is invoked when compute core do one computing iteration
+     * @param action ActionListener
+     */
+    public void addOnTickListener(ActionListener action) {
+        this.onTick.add(action);
+    }
+    
+    /**
+     * Remove on tick listener
+     * @param action ActionListener
+     */
+    public void removeOnTickListener(ActionListener action) {
+        this.onTick.remove(action);
+    }
 
     @Override
     public void init(LogicSimulatorCore core, PropertieReader propt) throws Exception {
@@ -136,10 +152,11 @@ public class ComputeCore implements LSComponent {
                             break;
                     }
                 } catch (NumberFormatException ex) {
+                    ExceptionLogger.getInstance().logException(ex);
                 }
             }));
         } catch (Exception ex) {
-            System.out.println("ComputeCore: Propertie file not found");
+            ExceptionLogger.getInstance().logException(ex);
         }
     }
 
@@ -268,10 +285,14 @@ public class ComputeCore implements LSComponent {
                         this.work.getHandler().repaintPF();
                     }
                     this.LAST_UPDATES = this.CURRENT_UPDATES;
+                    
+                    //invoke tick listeners
+                    this.onTick.stream().forEach((tick) -> {
+                        tick.actionPerformed(new ActionEvent(this, 0, ""));
+                    });
                 }
             } catch (Exception ex) {
-                Logger.getLogger(ComputeCore.class
-                        .getName()).log(Level.SEVERE, null, ex);
+                ExceptionLogger.getInstance().logException(ex);
             }
         }
     }

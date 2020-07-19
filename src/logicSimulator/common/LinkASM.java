@@ -27,6 +27,8 @@ public class LinkASM implements Serializable {
     //Mnemonic of link and before transation "hex" 
     public String Mnemonic, Hex, Comment;
     
+    public boolean isFunction = true;
+    
     public LinkASM(String Mnemonic, String Hex) {
         init(Mnemonic, Hex, "");
     }
@@ -34,7 +36,11 @@ public class LinkASM implements Serializable {
     public LinkASM(String Mnemonic, String Hex, String Comment) {
         init(Mnemonic, Hex, Comment);
     }
-
+    
+    public LinkASM(String Mnemonic, String Hex, String Comment, boolean isFunction) {
+        init(Mnemonic, Hex, Comment);
+        this.isFunction = isFunction;
+    }
     
     private void init(String Mnemonic, String Hex, String Comment) {
         this.Comment = Comment;

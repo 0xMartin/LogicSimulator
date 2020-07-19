@@ -156,6 +156,7 @@ public class ROMRAM extends WorkSpaceObject implements ClickAction, Memory {
     //this call after access to memory, get address of accessed cell (in action event id)
     private transient ActionListener onMemoryAccess = null;
 
+    @Override
     public void setOnMemoryAccessListener(ActionListener listener) {
         this.onMemoryAccess = listener;
     }
@@ -226,11 +227,13 @@ public class ROMRAM extends WorkSpaceObject implements ClickAction, Memory {
      *
      * @return
      */
+    @Override
     public String getID() {
         return this.ID;
     }
 
-    public void loadData(List<Byte> hex, int offset, boolean clear) {
+    @Override
+    public void uploadProgram(List<Byte> hex, int offset, boolean clear) {
         //clear
         if (clear) {
             for (int i = 0; i < this.data.length; i++) {

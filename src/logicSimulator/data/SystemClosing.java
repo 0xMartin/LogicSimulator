@@ -16,11 +16,14 @@
  */
 package logicSimulator.data;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import logicSimulator.ComputeCore;
+import logicSimulator.ExceptionLogger;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.common.Propertie;
+import logicSimulator.ui.Colors;
 import window.MainWindow;
 
 /**
@@ -30,7 +33,7 @@ import window.MainWindow;
 public class SystemClosing {
 
     private final LogicSimulatorCore core;
-    
+
     private MainWindow window;
 
     private ComputeCore cc;
@@ -59,13 +62,35 @@ public class SystemClosing {
         PropertieWriter writer = new PropertieWriter(LogicSimulatorCore.PROPT_WINDOW);
         List<Propertie> propts = new ArrayList<>();
         try {
+            //ref components
             List<String> l1 = this.window.getRefComponents();
             l1.forEach((c) -> {
                 propts.add(new Propertie("RefComponent", c));
             });
+            //colors
+            propts.add(new Propertie("GRID", Colors.GRID.getRGB()));
+            propts.add(new Propertie("BACKGROUND", Colors.BACKGROUND.getRGB()));
+            propts.add(new Propertie("ERROR", Colors.ERROR.getRGB()));
+            propts.add(new Propertie("SELECT_RECT", Colors.SELECT_RECT.getRGB()));
+            propts.add(new Propertie("SELECT_RECT2", Colors.SELECT_RECT2.getRGB()));
+            propts.add(new Propertie("OBJECT", Colors.OBJECT.getRGB()));
+            propts.add(new Propertie("IOPIN", Colors.IOPIN.getRGB()));
+            propts.add(new Propertie("IOPIN_BUS", Colors.IOPIN_BUS.getRGB()));
+            propts.add(new Propertie("WIRE_1", Colors.WIRE_1.getRGB()));
+            propts.add(new Propertie("WIRE_0", Colors.WIRE_0.getRGB()));
+            propts.add(new Propertie("WIRE_BUS", Colors.WIRE_BUS.getRGB()));
+            propts.add(new Propertie("TEXT", Colors.TEXT.getRGB()));
+            propts.add(new Propertie("ME_DRAG", Colors.ME_DRAG.getRGB()));
+            propts.add(new Propertie("ME_CURSORCROSS", Colors.ME_CURSORCROSS.getRGB()));
+            propts.add(new Propertie("ME_CENTER", Colors.ME_CENTER.getRGB()));
+            propts.add(new Propertie("GR_BACKGROUND", Colors.GR_BACKGROUND.getRGB()));
+            propts.add(new Propertie("GR_AXES", Colors.GR_AXES.getRGB()));
+            propts.add(new Propertie("GR_GRAPHLINE", Colors.GR_GRAPHLINE.getRGB()));
+            
             writer.writeFile(propts);
         } catch (Exception ex) {
         }
+
         //computing
         writer = new PropertieWriter(LogicSimulatorCore.PROPT_COMPUTING);
         propts.clear();
@@ -81,6 +106,12 @@ public class SystemClosing {
         this.core.getLSComponents().stream().forEach((ls) -> {
             ls.stop();
         });
+
+        try {
+            //close exception logger file
+            ExceptionLogger.getInstance().closeFile();
+        } catch (IOException ex) {
+        }
     }
 
 }

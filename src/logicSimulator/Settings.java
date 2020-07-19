@@ -25,4 +25,6 @@ public class Settings {
     //quality of rendering
     public static boolean HIGH_RENDER_QUALITY = true;
 
+    public static Language LANG = Language.EN;
+
 }

@@ -19,7 +19,6 @@ package logicSimulator.projectFile;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Event;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -39,7 +38,6 @@ import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
@@ -47,10 +45,10 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JSplitPane;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import logicSimulator.CircuitHandler;
-import logicSimulator.ComputeCore;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.PFHandler;
 import logicSimulator.Project;
@@ -77,11 +75,15 @@ public class ModuleEditor extends ProjectFile {
     //logic module
     private LogicModule module;
 
+    //time of last change
     private String changeTime = "";
 
+    //name of logic module
     private String logicModelName;
 
     private final ProjectFileToolbar toolbar;
+
+    private final DocumentationEditor documentation;
 
     //menu for model editor
     private JPopupMenu menu;
@@ -99,11 +101,24 @@ public class ModuleEditor extends ProjectFile {
 
         //toolbar
         this.toolbar = new ProjectFileToolbar(this);
+
         super.add(this.toolbar, BorderLayout.NORTH);
 
         //editor handler
         this.editorHandler = new EditorHandler(this);
-        super.add(this.editorHandler, BorderLayout.CENTER);
+
+        //documentation
+        this.documentation = new DocumentationEditor(name, project);
+
+        JSplitPane splitter = new JSplitPane(
+                JSplitPane.VERTICAL_SPLIT,
+                this.editorHandler,
+                this.documentation
+        );
+        splitter.setResizeWeight(0.6d);
+
+        //super.add(this.editorHandler, BorderLayout.CENTER);
+        super.add(splitter, BorderLayout.CENTER);
 
         //init menu
         initMenu();
@@ -136,7 +151,7 @@ public class ModuleEditor extends ProjectFile {
         item = new JMenuItem("Remove model");
         m.add(item);
         action = (ActionEvent evt) -> {
-
+            this.setWorkSpace(null);
         };
         item.addActionListener(action);
 
@@ -144,7 +159,15 @@ public class ModuleEditor extends ProjectFile {
         item = new JMenuItem("Show model");
         m.add(item);
         action = (ActionEvent evt) -> {
-
+            //find workspace (current logic model) and open it
+            for (ProjectFile pf : super.getProject().getProjectFiles()) {
+                if (pf instanceof WorkSpace) {
+                    if (pf.getName().equals(this.logicModelName)) {
+                        super.getProject().displayFile(pf);
+                        break;
+                    }
+                }
+            }
         };
         item.addActionListener(action);
 
@@ -339,7 +362,7 @@ public class ModuleEditor extends ProjectFile {
     public void backUpData(String projectDirectoryPath) throws Exception {
         FileIO.writeObject(
                 new File(projectDirectoryPath + this.getName() + "." + LogicSimulatorCore.MODULE_FILE_TYPE),
-                new Object[]{this.module, this.logicModelName}
+                new Object[]{this.module, this.logicModelName, this.documentation.getText()}
         );
     }
 
@@ -349,6 +372,7 @@ public class ModuleEditor extends ProjectFile {
         Object[] data = (Object[]) FileIO.readObject(file);
         this.module = (LogicModule) data[0];
         this.logicModelName = (String) data[1];
+        this.documentation.setText((String) data[2]);
     }
 
     public ProjectFileToolbar getToolBar() {
@@ -361,10 +385,16 @@ public class ModuleEditor extends ProjectFile {
      * @param workspace
      */
     public void setWorkSpace(WorkSpace workspace) {
-        //set logic model
-        this.module.setLogicModel(workspace.getObjects());
-        //get name of workspace (logic model)
-        this.logicModelName = workspace.getName() == null ? "" : workspace.getName();
+        if (workspace == null) {
+            this.module.setLogicModel(null);
+            this.logicModelName = "";
+        } else {
+            //set logic model
+            this.module.setLogicModel(workspace.getObjects());
+            //get name of workspace (logic model)
+            this.logicModelName = workspace.getName() == null ? "" : workspace.getName();
+        }
+
         //time of last change
         this.changeTime = LogicSimulatorCore.getDate("HH:mm:ss - dd.MM.yyyy");
 
@@ -450,6 +480,8 @@ public class ModuleEditor extends ProjectFile {
                 this.editorHandler.pressed.x - this.editorHandler.getWidth() / 2,
                 this.editorHandler.pressed.y - this.editorHandler.getHeight() / 2
         );
+        p.x /= this.editorHandler.scale;
+        p.y /= this.editorHandler.scale;
         Tools.step(p, LogicSimulatorCore.WORK_SPACE_STEP);
         this.editorHandler.line = new Line(p, Tools.copy(p));
         this.module.getModel().getGraphicsObjects().add(this.editorHandler.line);
@@ -464,6 +496,8 @@ public class ModuleEditor extends ProjectFile {
                 this.editorHandler.cursor.x - this.editorHandler.getWidth() / 2,
                 this.editorHandler.cursor.y - this.editorHandler.getHeight() / 2
         );
+        p.x /= this.editorHandler.scale;
+        p.y /= this.editorHandler.scale;
         this.editorHandler.circle = new Circle(p, LogicSimulatorCore.WORK_SPACE_STEP);
         module.getModel().getGraphicsObjects().add(this.editorHandler.circle);
         this.editorHandler.repaint();
@@ -477,6 +511,8 @@ public class ModuleEditor extends ProjectFile {
                 this.editorHandler.cursor.x - this.editorHandler.getWidth() / 2,
                 this.editorHandler.cursor.y - this.editorHandler.getHeight() / 2
         );
+        p.x /= this.editorHandler.scale;
+        p.y /= this.editorHandler.scale;
         int a = LogicSimulatorCore.WORK_SPACE_STEP * 3;
         GraphicsObject[] rect = new GraphicsObject[]{
             new Line(new Point.Double(p.x, p.y), new Point.Double(p.x, p.y + a)),
@@ -495,6 +531,8 @@ public class ModuleEditor extends ProjectFile {
                 this.editorHandler.pressed.x - this.editorHandler.getWidth() / 2,
                 this.editorHandler.pressed.y - this.editorHandler.getHeight() / 2
         );
+        p.x /= this.editorHandler.scale;
+        p.y /= this.editorHandler.scale;
         Tools.step(p, LogicSimulatorCore.WORK_SPACE_STEP);
         this.editorHandler.curve = new Curve(p, Tools.copy(p), Tools.copy(p));
         module.getModel().getGraphicsObjects().add(this.editorHandler.curve);
@@ -509,6 +547,8 @@ public class ModuleEditor extends ProjectFile {
                 this.editorHandler.cursor.x - this.editorHandler.getWidth() / 2,
                 this.editorHandler.cursor.y - this.editorHandler.getHeight() / 2
         );
+        p.x /= this.editorHandler.scale;
+        p.y /= this.editorHandler.scale;
         GString str = new GString(p, 20, "Ahoj");
         this.editorHandler.GOBuffer.add(str);
     }
@@ -524,6 +564,15 @@ public class ModuleEditor extends ProjectFile {
                 this.editorHandler.select.add(pt);
             });
         }
+    }
+
+    /**
+     * Get documentation of module
+     *
+     * @return String
+     */
+    public String getDocumentation() {
+        return this.documentation.getText();
     }
 
     /**
@@ -643,7 +692,7 @@ public class ModuleEditor extends ProjectFile {
                 Tools.setHighQuality(g2);
             }
 
-            g2.setColor(Colors.ME_BACKGROUND);
+            g2.setColor(Colors.BACKGROUND);
             g2.fillRect(0, 0, this.getWidth(), this.getHeight());
 
             //center of screen
@@ -651,7 +700,7 @@ public class ModuleEditor extends ProjectFile {
             int cH = (int) (this.getHeight() / 2 / this.scale);
 
             //find start [x, y] for grid
-            g2.setColor(Colors.ME_GRID);
+            g2.setColor(Colors.GRID);
             int startX = (int) (this.getWidth() / 2 / this.scale);
             int startY = (int) (this.getHeight() / 2 / this.scale);
             while (startX > 0) {
@@ -670,7 +719,6 @@ public class ModuleEditor extends ProjectFile {
 
             //draw model of module
             g2.setStroke(new BasicStroke(2));
-            g2.setColor(Colors.ME_MODEL);
             if (module.getModel() != null) {
                 module.getModel().render(g2, cW, cH);
             }
@@ -708,7 +756,7 @@ public class ModuleEditor extends ProjectFile {
 
             //draw cross mouse press pointer
             if (this.pressed != null) {
-                g2.setColor(Colors.ME_GRID);
+                g2.setColor(Colors.GRID);
                 g2.drawLine(
                         (int) (this.pressed.x / this.scale),
                         (int) (this.pressed.y / this.scale - 10),
@@ -782,7 +830,7 @@ public class ModuleEditor extends ProjectFile {
                             if (this.select.stream().anyMatch((pt) -> (p == pt))) {
                                 g2.setColor(logicSimulator.ui.Colors.SELECT_RECT);
                             } else {
-                                g2.setColor(pin != null ? Color.BLUE : Color.GRAY);
+                                g2.setColor(pin != null ? Colors.IOPIN : Colors.GRID);
                             }
                             g2.fillRect(
                                     (int) (p.x - 2 + cW),
@@ -791,7 +839,7 @@ public class ModuleEditor extends ProjectFile {
                                     4
                             );
                             if (pin != null) {
-                                g2.setColor(Color.blue);
+                                g2.setColor(Colors.IOPIN);
                                 int xoff = pin.getPosition().x < 0
                                         ? -g2.getFontMetrics().stringWidth(pin.getLabel()) - 10 : 10;
                                 g2.drawString(
@@ -810,18 +858,20 @@ public class ModuleEditor extends ProjectFile {
             //module info table
             int co = 0, in = 0, out = 0;
             if (module != null) {
-                co = module.getLogicModel().size();
-                for (IOPin p : module.getPins()) {
-                    if (p.mode == IOPin.MODE.INPUT) {
-                        in++;
-                    } else if (p.mode == IOPin.MODE.OUTPUT) {
-                        out++;
+                if (module.getLogicModel() != null) {
+                    co = module.getLogicModel().size();
+                    for (IOPin p : module.getPins()) {
+                        if (p.mode == IOPin.MODE.INPUT) {
+                            in++;
+                        } else if (p.mode == IOPin.MODE.OUTPUT) {
+                            out++;
+                        }
                     }
                 }
             }
-            g2.setColor(Colors.ME_BACKGROUND);
+            g2.setColor(Colors.BACKGROUND);
             g2.fillRect(10, 8, 200, 80);
-            g2.setColor(Colors.ME_MODEL);
+            g2.setColor(Colors.OBJECT);
             g2.drawRect(10, 8, 200, 80);
 
             g2.drawString("Logic model: " + logicModelName, 20, 20);
@@ -832,9 +882,9 @@ public class ModuleEditor extends ProjectFile {
 
             //info table
             if (this.cursor != null && this.pressed != null) {
-                g2.setColor(Colors.ME_BACKGROUND);
+                g2.setColor(Colors.BACKGROUND);
                 g2.fillRect(10, this.getHeight() - 40, 100, 40);
-                g2.setColor(Colors.ME_GRID);
+                g2.setColor(Colors.GRID);
                 g2.drawString(
                         "Dx: " + String.format("%.03f", (float) (this.cursor.x - this.pressed.x) / LogicSimulatorCore.WORK_SPACE_STEP),
                         20,
@@ -914,7 +964,8 @@ public class ModuleEditor extends ProjectFile {
                  * null
                  */
                 if (!Tools.equal(p, line.p1)) {
-                    this.line.p2 = p;
+                    this.line.p2.x = p.x / this.scale;
+                    this.line.p2.y = p.y / this.scale;
                     this.line = null;
                 }
 
@@ -925,8 +976,9 @@ public class ModuleEditor extends ProjectFile {
             if (this.circle != null) {
                 if (!this.circleRadius) {
                     Tools.step(p, LogicSimulatorCore.WORK_SPACE_STEP / 2);
-                    this.circle.p1 = p;
-                    //on next step changing circle radius
+                    this.circle.p1.x = p.x / this.scale;
+                    this.circle.p1.y = p.y / this.scale;
+                    //on next  step changing circle radius
                     this.circleRadius = true;
                 } else {
                     this.circleRadius = false;
@@ -1035,6 +1087,8 @@ public class ModuleEditor extends ProjectFile {
             if (this.line != null) {
                 this.line.p2.x = this.cursor.x - this.getWidth() / 2;
                 this.line.p2.y = this.cursor.y - this.getHeight() / 2;
+                this.line.p2.x /= this.scale;
+                this.line.p2.y /= this.scale;
                 Tools.step(this.line.p2, LogicSimulatorCore.WORK_SPACE_STEP / 2);
             }
 
@@ -1046,12 +1100,16 @@ public class ModuleEditor extends ProjectFile {
                             this.cursor.x - this.getWidth() / 2,
                             this.cursor.y - this.getHeight() / 2
                     );
+                    p.x /= this.scale;
+                    p.y /= this.scale;
                     this.circle.radius = (int) Tools.dist(this.circle.p1, p);
                     this.circle.radius = Tools.step(this.circle.radius, LogicSimulatorCore.WORK_SPACE_STEP / 4);
                 } else {
                     //move
                     this.circle.p1.x = this.cursor.x - this.getWidth() / 2;
                     this.circle.p1.y = this.cursor.y - this.getHeight() / 2;
+                    this.circle.p1.x /= this.scale;
+                    this.circle.p1.y /= this.scale;
                     Tools.step(this.circle.p1, LogicSimulatorCore.WORK_SPACE_STEP / 2);
                 }
             }
@@ -1061,10 +1119,14 @@ public class ModuleEditor extends ProjectFile {
                 if (this.curveC) {
                     this.curve.control.x = this.cursor.x - this.getWidth() / 2;
                     this.curve.control.y = this.cursor.y - this.getHeight() / 2;
+                    this.curve.control.x /= this.scale;
+                    this.curve.control.y /= this.scale;
                     Tools.step(this.curve.control, LogicSimulatorCore.WORK_SPACE_STEP / 4);
                 } else {
                     this.curve.p2.x = this.cursor.x - this.getWidth() / 2;
                     this.curve.p2.y = this.cursor.y - this.getHeight() / 2;
+                    this.curve.p2.x /= this.scale;
+                    this.curve.p2.y /= this.scale;
                     Tools.step(this.curve.p2, LogicSimulatorCore.WORK_SPACE_STEP / 2);
                 }
             }

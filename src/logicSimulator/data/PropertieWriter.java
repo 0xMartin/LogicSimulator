@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import logicSimulator.ExceptionLogger;
 import logicSimulator.common.Propertie;
 
 /**
@@ -55,7 +56,7 @@ public class PropertieWriter {
                 writer.write(p.getName() + "=" + p.getValueString());
                 writer.newLine();
             } catch (IOException ex) {
-                Logger.getLogger(PropertieWriter.class.getName()).log(Level.SEVERE, null, ex);
+                ExceptionLogger.getInstance().logException(ex);
             }
         });
         writer.flush();

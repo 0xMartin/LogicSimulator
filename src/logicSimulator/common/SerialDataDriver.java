@@ -21,7 +21,6 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 import logicSimulator.Convert;
-import logicSimulator.Tools;
 
 /**
  * SerialDataDriver is usefull for comenponent that require serial data access

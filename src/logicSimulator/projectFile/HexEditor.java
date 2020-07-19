@@ -17,23 +17,25 @@
 package logicSimulator.projectFile;
 
 import java.awt.BorderLayout;
+import java.awt.Event;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import logicSimulator.ExceptionLogger;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.PFHandler;
 import logicSimulator.Project;
@@ -41,8 +43,8 @@ import logicSimulator.ProjectFile;
 import logicSimulator.Tools;
 import logicSimulator.WorkSpaceObject;
 import logicSimulator.common.LinkASM;
+import logicSimulator.common.Memory;
 import logicSimulator.data.FileIO;
-import logicSimulator.objects.memory.ROMRAM;
 import window.components.HexEditorArea;
 import window.components.NumberChooser;
 
@@ -60,8 +62,9 @@ public class HexEditor extends ProjectFile {
     private String memID = null;
     private int offset = 0;
     private boolean clear = true;
+
     //memory selected for program uploading
-    private ROMRAM memory = null;
+    private Memory memory = null;
 
     //handler
     private final HEXHandler handler;
@@ -75,14 +78,9 @@ public class HexEditor extends ProjectFile {
         this.toolbar = new ProjectFileToolbar(this);
         super.add(this.toolbar, BorderLayout.NORTH);
 
-        //scroll pane for hex editor area
-        JScrollPane jScrollPane = new JScrollPane();
-        jScrollPane.setBorder(null);
-        super.add(jScrollPane, BorderLayout.CENTER);
-
         //handler for hex editor
         this.handler = new HEXHandler(this);
-        jScrollPane.setViewportView(this.handler);
+        super.add(this.handler, BorderLayout.CENTER);
 
     }
 
@@ -112,6 +110,11 @@ public class HexEditor extends ProjectFile {
             this.handler.getTranslator().add(link);
         });
 
+        //offset
+        this.offset = (int) data[3];
+        ((HexEditorArea) this.handler).programOffset = this.offset;
+        ((NumberChooser) Tools.getComponent(this.toolbar.getComponents(), "offset")).setValue(this.offset);
+
         //text
         this.handler.setText((String) data[0]);
 
@@ -120,10 +123,6 @@ public class HexEditor extends ProjectFile {
         JComboBox cb = (JComboBox) Tools.getComponent(this.toolbar.getComponents(), "memID");
         cb.setModel(new DefaultComboBoxModel(new String[]{this.memID}));
         cb.setSelectedIndex(0);
-
-        //offset
-        this.offset = (int) data[3];
-        ((NumberChooser) Tools.getComponent(this.toolbar.getComponents(), "offset")).setValue(this.offset);
 
         //clear
         this.clear = (boolean) data[4];
@@ -192,6 +191,8 @@ public class HexEditor extends ProjectFile {
      */
     public void setCodeOffset(int off) {
         this.offset = off;
+        //change program offset in hex editor area
+        ((HexEditorArea) this.handler).programOffset = off;
     }
 
     /**
@@ -266,7 +267,7 @@ public class HexEditor extends ProjectFile {
             try {
                 //load data from hex editor to memory
                 List<Byte> program = getHexData();
-                this.memory.loadData(program, this.offset, this.clear);
+                this.memory.uploadProgram(program, this.offset, this.clear);
                 //message
                 JOptionPane.showMessageDialog(
                         this, "Hex code successfully uploaded to [" + this.memID + "]\n"
@@ -278,7 +279,7 @@ public class HexEditor extends ProjectFile {
                 );
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Can't upload program");
-                Logger.getLogger(HexEditor.class.getName()).log(Level.SEVERE, null, ex);
+                ExceptionLogger.getInstance().logException(ex);
             }
         }
     }
@@ -304,18 +305,18 @@ public class HexEditor extends ProjectFile {
                 if (pf instanceof WorkSpace) {
                     //finding of ROM RAM in workspace, must have same id as "memID" 
                     for (WorkSpaceObject obj : ((WorkSpace) pf).getObjects()) {
-                        if (obj instanceof ROMRAM) {
-                            ROMRAM rom = (ROMRAM) obj;
+                        if (obj instanceof Memory) {
+                            Memory mem = (Memory) obj;
                             //upload data
-                            if (rom.getID().endsWith(id_m)) {
+                            if (mem.getID().endsWith(id_m)) {
                                 //remove listener of memory (listener is for highlighting actual accessed command in hexeditorarea)
-                                if (this.memory != rom) {
+                                if (this.memory != mem) {
                                     if (this.memory != null) {
                                         this.memory.setOnMemoryAccessListener(null);
                                     }
                                 }
                                 //set new memory
-                                this.memory = rom;
+                                this.memory = mem;
                                 return;
                             }
                         }

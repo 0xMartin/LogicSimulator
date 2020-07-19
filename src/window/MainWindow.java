@@ -26,10 +26,11 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -37,12 +38,15 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
 import logicSimulator.CircuitHandler;
 import logicSimulator.ComputeCore;
+import logicSimulator.ExceptionLogger;
 import logicSimulator.LSComponent;
 import logicSimulator.LogicSimulatorCore;
-import logicSimulator.projectFile.ModuleEditor;
 import logicSimulator.Project;
 import logicSimulator.ProjectFile;
 import logicSimulator.Tools;
@@ -53,6 +57,8 @@ import logicSimulator.ui.ButtonHQ;
 import logicSimulator.ui.MenuItemHQ;
 import logicSimulator.ui.SystemResources;
 import logicSimulator.PFTwoSlotViewer;
+import logicSimulator.projectFile.Library;
+import logicSimulator.ui.Colors;
 import window.components.NumberChooser;
 import window.components.ProjectTreeView;
 import window.components.PropertieEditor;
@@ -66,6 +72,9 @@ public class MainWindow extends JFrame implements LSComponent {
     //main system core
     private LogicSimulatorCore core;
 
+    //propts of this window
+    private PropertieReader propt;
+
     //computing core
     private ComputeCore comuteCore;
 
@@ -75,6 +84,10 @@ public class MainWindow extends JFrame implements LSComponent {
     //utilities
     private final ComponentChooser componentChooser;
     private final SerialConfiguration serialConfig;
+    private final ColorSettings colorSettings;
+    private final Tutorial tutorial;
+    private final About about;
+    private final KarnaughMap kMap;
 
     /**
      * Creates new form MainWindow
@@ -90,6 +103,10 @@ public class MainWindow extends JFrame implements LSComponent {
         //create instances of utils
         this.componentChooser = new ComponentChooser(this);
         this.serialConfig = new SerialConfiguration(this);
+        this.colorSettings = new ColorSettings(this);
+        this.tutorial = new Tutorial(this);
+        this.about = new About(this);
+        this.kMap = new KarnaughMap(this);
 
         //propertie editor event
         ((PropertieEditor) this.jTableProperties).onPropertieChange((ActionEvent evt) -> {
@@ -158,9 +175,7 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenuItemSaveProject = new MenuItemHQ();
         jMenuItemSaveProjectAs = new MenuItemHQ();
         jSeparator4 = new javax.swing.JPopupMenu.Separator();
-        jMenuItemExport = new MenuItemHQ();
-        jSeparator9 = new javax.swing.JPopupMenu.Separator();
-        jMenuItemExit = new MenuItemHQ();
+        jMenuItemExport1 = new MenuItemHQ();
         jMenuEdit = new javax.swing.JMenu();
         jMenuItemEndo = new MenuItemHQ();
         jMenuItemRedo = new MenuItemHQ();
@@ -173,8 +188,8 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenuItemRename = new MenuItemHQ();
         jMenuItemMove = new MenuItemHQ();
         jMenuItemAddLibrary = new MenuItemHQ();
-        jMenuItemSettings = new MenuItemHQ();
         jMenuItemSettings1 = new MenuItemHQ();
+        jMenuItem2 = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         jMenuItemRun = new MenuItemHQ();
         jMenuItemStop = new MenuItemHQ();
@@ -183,7 +198,6 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenu3 = new javax.swing.JMenu();
         jMenuItemSettingsGlobal = new MenuItemHQ();
         jMenuItemColors = new MenuItemHQ();
-        jMenuItemWindows = new MenuItemHQ();
         jMenuItemCheckForUpdates = new MenuItemHQ();
         jMenu4 = new javax.swing.JMenu();
         jMenuItemPrint = new MenuItemHQ();
@@ -192,6 +206,8 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenuItemPrint1 = new MenuItemHQ();
         jMenuItemPrint2 = new MenuItemHQ();
         jMenu5 = new javax.swing.JMenu();
+        jMenuItem1 = new javax.swing.JMenuItem();
+        jMenuItem3 = new javax.swing.JMenuItem();
         jMenu6 = new javax.swing.JMenu();
         jMenuItemTutorials = new MenuItemHQ();
         jMenuItemAbout = new MenuItemHQ();
@@ -576,17 +592,13 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenuFile.add(jMenuItemSaveProjectAs);
         jMenuFile.add(jSeparator4);
 
-        jMenuItemExport.setText("Export library");
-        jMenuFile.add(jMenuItemExport);
-        jMenuFile.add(jSeparator9);
-
-        jMenuItemExit.setText("Exit");
-        jMenuItemExit.addActionListener(new java.awt.event.ActionListener() {
+        jMenuItemExport1.setText("Export as library");
+        jMenuItemExport1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItemExitActionPerformed(evt);
+                jMenuItemExport1ActionPerformed(evt);
             }
         });
-        jMenuFile.add(jMenuItemExit);
+        jMenuFile.add(jMenuItemExport1);
 
         jMenuBarMain.add(jMenuFile);
 
@@ -644,17 +656,28 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenu1.setText("Project");
 
         jMenuItemRename.setText("Rename");
+        jMenuItemRename.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemRenameActionPerformed(evt);
+            }
+        });
         jMenu1.add(jMenuItemRename);
 
         jMenuItemMove.setText("Move");
+        jMenuItemMove.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemMoveActionPerformed(evt);
+            }
+        });
         jMenu1.add(jMenuItemMove);
 
         jMenuItemAddLibrary.setText("Add library");
+        jMenuItemAddLibrary.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemAddLibraryActionPerformed(evt);
+            }
+        });
         jMenu1.add(jMenuItemAddLibrary);
-
-        jMenuItemSettings.setIcon(SystemResources.TOOLBAR_SETTINGS);
-        jMenuItemSettings.setText("Settings");
-        jMenu1.add(jMenuItemSettings);
 
         jMenuItemSettings1.setIcon(SystemResources.TOOLBAR_SETTINGS);
         jMenuItemSettings1.setText("Serial port configuration");
@@ -664,6 +687,14 @@ public class MainWindow extends JFrame implements LSComponent {
             }
         });
         jMenu1.add(jMenuItemSettings1);
+
+        jMenuItem2.setText("Add image resource");
+        jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem2ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem2);
 
         jMenuBarMain.add(jMenu1);
 
@@ -717,10 +748,12 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenu3.add(jMenuItemSettingsGlobal);
 
         jMenuItemColors.setText("Colors");
+        jMenuItemColors.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemColorsActionPerformed(evt);
+            }
+        });
         jMenu3.add(jMenuItemColors);
-
-        jMenuItemWindows.setText("Windows");
-        jMenu3.add(jMenuItemWindows);
 
         jMenuItemCheckForUpdates.setText("Check for updates");
         jMenu3.add(jMenuItemCheckForUpdates);
@@ -743,6 +776,23 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenu4.add(jMenuItemPrint2);
 
         jMenu5.setText("Utilities");
+
+        jMenuItem1.setText("Grapher");
+        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem1ActionPerformed(evt);
+            }
+        });
+        jMenu5.add(jMenuItem1);
+
+        jMenuItem3.setText("Karnaugh map");
+        jMenuItem3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem3ActionPerformed(evt);
+            }
+        });
+        jMenu5.add(jMenuItem3);
+
         jMenu4.add(jMenu5);
 
         jMenuBarMain.add(jMenu4);
@@ -750,6 +800,11 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenu6.setText("Help");
 
         jMenuItemTutorials.setText("Tutorials");
+        jMenuItemTutorials.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemTutorialsActionPerformed(evt);
+            }
+        });
         jMenu6.add(jMenuItemTutorials);
 
         jMenuItemAbout.setText("About");
@@ -796,14 +851,18 @@ public class MainWindow extends JFrame implements LSComponent {
                 ((PFTwoSlotViewer) this.pfdockingPanel).displayProjectFile(pf);
             }
         });
-
+        
         //display visible project file (select in tab)
         this.project.getProjectFiles().stream().forEach((pf) -> {
             if (pf.getPFMode().VISIBLE) {
                 ((PFTwoSlotViewer) this.pfdockingPanel).displayProjectFile(pf);
-
             }
         });
+        
+        
+        if(this.project.getProjectFiles().size() == 1) {
+            ((PFTwoSlotViewer) this.pfdockingPanel).displayProjectFile(this.project.getProjectFiles().get(0));
+        }
 
         //refresh layout of tabbed panels
         ((PFTwoSlotViewer) this.pfdockingPanel).refreshLayout();
@@ -833,7 +892,7 @@ public class MainWindow extends JFrame implements LSComponent {
     }//GEN-LAST:event_jButtonControlActionPerformed
 
     private void jMenuItemOpenProjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemOpenProjectActionPerformed
-        // TODO add your handling code here:
+        openProjectWizzard(ProjectWizard.Mode.OPEN);
     }//GEN-LAST:event_jMenuItemOpenProjectActionPerformed
 
     private void jMenuItemPlaceComponentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemPlaceComponentActionPerformed
@@ -841,7 +900,7 @@ public class MainWindow extends JFrame implements LSComponent {
             //show component chooser
             ProjectFile pf = this.project.getSelectedFile();
             if (pf instanceof WorkSpace) {
-                this.componentChooser.chooseComponent();
+                this.componentChooser.chooseComponent((WorkSpace) pf);
                 ((WorkSpace) pf).unselectAllObjects(null);
             }
         }
@@ -898,15 +957,18 @@ public class MainWindow extends JFrame implements LSComponent {
     }//GEN-LAST:event_jButtonHelpActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
-        //save project
-        if (JOptionPane.showConfirmDialog(this, "Do you want to save this projects?",
-                "Save project", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
+        //save project ?
+        int opt = JOptionPane.showConfirmDialog(this, "Do you want to save this projects?",
+                "Save project", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+        if (opt == JOptionPane.YES_OPTION) {
             saveProject(this.project.getFile());
         }
 
         //close system
         SystemClosing sc = new SystemClosing(this.core);
         sc.saveProperties();
+
         sc.dispose();
     }//GEN-LAST:event_formWindowClosing
 
@@ -918,7 +980,7 @@ public class MainWindow extends JFrame implements LSComponent {
     }//GEN-LAST:event_jButtonStepActionPerformed
 
     private void jMenuItemNewFileProjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemNewFileProjectActionPerformed
-        // TODO add your handling code here:
+        openProjectWizzard(ProjectWizard.Mode.NEW);
     }//GEN-LAST:event_jMenuItemNewFileProjectActionPerformed
 
     private void jMenuItemEndoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemEndoActionPerformed
@@ -938,7 +1000,7 @@ public class MainWindow extends JFrame implements LSComponent {
     }//GEN-LAST:event_jMenuItemFindObjectActionPerformed
 
     private void jMenuItemAboutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemAboutActionPerformed
-        // TODO add your handling code here:
+        this.about.setVisible(true);
     }//GEN-LAST:event_jMenuItemAboutActionPerformed
 
     private void jMenuItemSaveProjectAsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSaveProjectAsActionPerformed
@@ -968,18 +1030,6 @@ public class MainWindow extends JFrame implements LSComponent {
             this.saveProject(new File(path));
         }
     }//GEN-LAST:event_jMenuItemSaveProjectAsActionPerformed
-
-    private void jMenuItemExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemExitActionPerformed
-        int dialogResult = JOptionPane.showConfirmDialog(
-                this,
-                "Do you want to exit without saving?",
-                "Exit",
-                JOptionPane.YES_NO_OPTION
-        );
-        if (dialogResult == JOptionPane.YES_OPTION) {
-            dispose();
-        }
-    }//GEN-LAST:event_jMenuItemExitActionPerformed
 
     private void jMenuItemStepActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemStepActionPerformed
         //simulate one step
@@ -1023,6 +1073,221 @@ public class MainWindow extends JFrame implements LSComponent {
         this.serialConfig.showComponent();
     }//GEN-LAST:event_jMenuItemSettings1ActionPerformed
 
+    private void jMenuItemColorsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemColorsActionPerformed
+        this.colorSettings.showComponent();
+    }//GEN-LAST:event_jMenuItemColorsActionPerformed
+
+    private void jMenuItemRenameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemRenameActionPerformed
+        JTextField newName = new JTextField(this.project.getName());
+        int opt = JOptionPane.showConfirmDialog(
+                this,
+                new Object[]{"Enter new name of current project:", newName},
+                "Rename project",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (opt == JOptionPane.YES_OPTION) {
+            //change name of project
+            this.project.setName(newName.getText());
+
+            //update tree view of this project
+            ((ProjectTreeView) this.jTreeProject).updateProjectTree();
+        }
+    }//GEN-LAST:event_jMenuItemRenameActionPerformed
+
+    private void jMenuItemMoveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemMoveActionPerformed
+        //save opened project as
+        JFileChooser chooser = new JFileChooser();
+        chooser.setSelectedFile(new File(this.project.getName() + "." + LogicSimulatorCore.PROJECT_FILE_TYPE));
+        chooser.setFileFilter(new FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                return f.getPath().endsWith(LogicSimulatorCore.PROJECT_FILE_TYPE) || f.isDirectory();
+            }
+
+            @Override
+            public String getDescription() {
+                return "High low simulator project";
+            }
+        });
+        if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            /**
+             * Get path of new location of project and if project file doesnt
+             * end with its agree postfix then add it on the end of path
+             */
+            String path = chooser.getSelectedFile().getPath();
+            path += path.endsWith(LogicSimulatorCore.PROJECT_FILE_TYPE) ? "" : '.'
+                    + LogicSimulatorCore.PROJECT_FILE_TYPE;
+
+            //delete current project
+            IOProject pIO = new IOProject(this.project);
+            pIO.deleteAll();
+
+            //move project
+            try {
+                IOProject io = new IOProject(this.project);
+                io.save(new File(path));
+                JOptionPane.showMessageDialog(this, "Project successfully moved", "Project",
+                        JOptionPane.INFORMATION_MESSAGE, null);
+            } catch (Exception ex) {
+                ExceptionLogger.getInstance().logException(ex);
+                JOptionPane.showMessageDialog(this, "Project could not be moved", "Error",
+                        JOptionPane.ERROR_MESSAGE, null);
+            }
+        }
+    }//GEN-LAST:event_jMenuItemMoveActionPerformed
+
+    private void jMenuItemExport1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemExport1ActionPerformed
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileFilter(new FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                return f.getPath().endsWith("." + LogicSimulatorCore.LIBRARY) || f.isDirectory();
+            }
+
+            @Override
+            public String getDescription() {
+                return "Circuit library";
+            }
+        });
+
+        //show save dialog
+        if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            IOProject pIO = new IOProject(this.project);
+            try {
+                //get description from user about library
+                JTextField author = new JTextField();
+                JTextArea area = new JTextArea(30, 50);
+                JOptionPane.showMessageDialog(this, new Object[]{"Author:", author,
+                    "Description: ", new JScrollPane(area)},
+                        "Library description", JOptionPane.QUESTION_MESSAGE);
+
+                //export library
+                pIO.exportAsLibrary(chooser.getSelectedFile(),
+                        "Author: " + author.getText() + "\nDate: "
+                        + LogicSimulatorCore.getDate("dd. MM. yyyy") + "\n" + area.getText());
+                JOptionPane.showMessageDialog(this, "Project successfully exported",
+                        "Project", JOptionPane.INFORMATION_MESSAGE, null);
+            } catch (IOException ex) {
+                ExceptionLogger.getInstance().logException(ex);
+            }
+        }
+    }//GEN-LAST:event_jMenuItemExport1ActionPerformed
+
+    private void jMenuItemAddLibraryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemAddLibraryActionPerformed
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileFilter(new FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                return f.getPath().endsWith("." + LogicSimulatorCore.LIBRARY) || f.isDirectory();
+            }
+
+            @Override
+            public String getDescription() {
+                return "Circuit library";
+            }
+        });
+
+        //show save dialog
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+
+            //add selected library to current project
+            Library lib = new Library(Tools.fileName(chooser.getSelectedFile().getName()), this.project);
+            this.project.getProjectFiles().add(lib);
+
+            //move lib to the project directory
+            try {
+                Files.copy(chooser.getSelectedFile().toPath(),
+                        new File(this.project.getFile().getAbsoluteFile().getParent()
+                                + "/" + chooser.getSelectedFile().getName()).toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException ex) {
+                ExceptionLogger.getInstance().logException(ex);
+            }
+
+            //load lib
+            try {
+                lib.loadLib();
+            } catch (Exception ex) {
+                ExceptionLogger.getInstance().logException(ex);
+            }
+
+            //refresh tree view
+            ((ProjectTreeView) this.jTreeProject).updateProjectTree();
+        }
+    }//GEN-LAST:event_jMenuItemAddLibraryActionPerformed
+
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        ProjectFile pf = this.project.getSelectedFile();
+
+        if (pf instanceof WorkSpace) {
+            Grapher grapher = new Grapher((WorkSpace) pf, this.comuteCore);
+            grapher.setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "You can not open grapher for this file",
+                    "Grapher", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+    private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
+        File imgDir = new File(this.project.getFile().getAbsoluteFile().getParentFile() + "/img");
+
+        //create dir with images
+        if (!imgDir.exists()) {
+            imgDir.mkdir();
+        }
+
+        //choose and insert copy of selected image to the project resource directory
+        JFileChooser chooser = new JFileChooser();
+        chooser.setSelectedFile(new File(this.project.getName() + "." + LogicSimulatorCore.PROJECT_FILE_TYPE));
+        chooser.setFileFilter(new FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                return f.getPath().endsWith(".png") || f.getPath().endsWith(".jpg") || f.isDirectory();
+            }
+
+            @Override
+            public String getDescription() {
+                return "Image";
+            }
+        });
+        if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File[] imgs = imgDir.listFiles();
+            int index = 0;
+            for (File f : imgs) {
+                try {
+                    String str1 = f.getName().split("_")[1];
+                    index = Math.max(index, Integer.parseInt(str1.split("\\.")[0]));
+                } catch (NumberFormatException ex) {
+                }
+            }
+
+            //copy img to project img res dir
+            try {
+                Files.copy(chooser.getSelectedFile().toPath(),
+                        new File(imgDir.toString() + "/img_" + (index + 1) + "."
+                                + Tools.fileType(chooser.getSelectedFile().toString())).toPath());
+            } catch (IOException ex) {
+                ExceptionLogger.getInstance().logException(ex);
+            }
+
+            //reload img res
+            try {
+                SystemResources.reloadImageResources(this.project);
+            } catch (IOException ex) {
+                ExceptionLogger.getInstance().logException(ex);
+            }
+        }
+    }//GEN-LAST:event_jMenuItem2ActionPerformed
+
+    private void jMenuItemTutorialsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemTutorialsActionPerformed
+        this.tutorial.setVisible(true);
+    }//GEN-LAST:event_jMenuItemTutorialsActionPerformed
+
+    private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
+        this.kMap.setVisible(true);
+    }//GEN-LAST:event_jMenuItem3ActionPerformed
+
     /**
      * Init this window, must exis compute core and project in Core
      *
@@ -1034,6 +1299,7 @@ public class MainWindow extends JFrame implements LSComponent {
     public void init(LogicSimulatorCore core, PropertieReader propt) throws Exception {
         //default
         this.core = core;
+        this.propt = propt;
 
         //load compute core, project
         core.getLSComponents().forEach((obj) -> {
@@ -1116,15 +1382,71 @@ public class MainWindow extends JFrame implements LSComponent {
             List<Propertie> propts = propt.readFile();
             propts.stream().forEach((p -> {
                 switch (p.getName()) {
+                    //ref components
                     case "RefComponent":
                         this.addComponentToToolbar(
                                 this.componentChooser.selectComponent(p.getValueString())
                         );
                         break;
+                    //color
+                    case "GRID":
+                        Colors.GRID = new Color(p.getValueInt());
+                        break;
+                    case "BACKGROUND":
+                        Colors.BACKGROUND = new Color(p.getValueInt());
+                        break;
+                    case "ERROR":
+                        Colors.ERROR = new Color(p.getValueInt());
+                        break;
+                    case "SELECT_RECT":
+                        Colors.SELECT_RECT = new Color(p.getValueInt());
+                        break;
+                    case "SELECT_RECT2":
+                        Colors.SELECT_RECT2 = new Color(p.getValueInt());
+                        break;
+                    case "OBJECT":
+                        Colors.OBJECT = new Color(p.getValueInt());
+                        break;
+                    case "IOPIN":
+                        Colors.IOPIN = new Color(p.getValueInt());
+                        break;
+                    case "IOPIN_BUS":
+                        Colors.IOPIN_BUS = new Color(p.getValueInt());
+                        break;
+                    case "WIRE_1":
+                        Colors.WIRE_1 = new Color(p.getValueInt());
+                        break;
+                    case "WIRE_0":
+                        Colors.WIRE_0 = new Color(p.getValueInt());
+                        break;
+                    case "WIRE_BUS":
+                        Colors.WIRE_BUS = new Color(p.getValueInt());
+                        break;
+                    case "TEXT":
+                        Colors.TEXT = new Color(p.getValueInt());
+                        break;
+                    case "ME_DRAG":
+                        Colors.ME_DRAG = new Color(p.getValueInt());
+                        break;
+                    case "ME_CURSORCROSS":
+                        Colors.ME_CURSORCROSS = new Color(p.getValueInt());
+                        break;
+                    case "ME_CENTER":
+                        Colors.ME_CENTER = new Color(p.getValueInt());
+                        break;
+                    case "GR_BACKGROUND":
+                        Colors.GR_BACKGROUND = new Color(p.getValueInt());
+                        break;
+                    case "GR_AXES":
+                        Colors.GR_AXES = new Color(p.getValueInt());
+                        break;
+                    case "GR_GRAPHLINE":
+                        Colors.GR_GRAPHLINE = new Color(p.getValueInt());
+                        break;
                 }
             }));
         } catch (Exception ex) {
-            System.out.println("Window: Propertie file not found");
+            ExceptionLogger.getInstance().logException(ex);
         }
         //set value for ups controler (value can be changed in compute core from propertie file)
         ((NumberChooser) this.ups).setValue(this.comuteCore.getCTL().getTicksPerSecond());
@@ -1233,26 +1555,37 @@ public class MainWindow extends JFrame implements LSComponent {
         if (n != JOptionPane.YES_OPTION) {
             return;
         }
-        //remove from tabbedPane
+
+        //remove deleted project file from tabbedPane
         ((PFTwoSlotViewer) this.pfdockingPanel).removePF(comp.getComp());
 
-        //remove from project list
-        if (comp instanceof WorkSpace) {
-            this.project.getProjectFiles().remove((WorkSpace) comp);
-        }
+        //remove deleted project file from the project
+        this.project.getProjectFiles().remove(comp);
 
         //update tree
         ((ProjectTreeView) this.jTreeProject).updateProjectTree();
 
         //delete file from disk and from project link list
         IOProject io = new IOProject(this.project);
-        String fileType = "";
-        if (comp instanceof WorkSpace) {
-            fileType = "." + LogicSimulatorCore.WORKSPACE_FILE_TYPE;
-        } else if (comp instanceof ModuleEditor) {
-            fileType = "." + LogicSimulatorCore.MODULE_FILE_TYPE;
+        io.deleteFile(comp.getComp().getName() + "." + Tools.getFileType(comp));
+
+        //only for lib
+        if (comp instanceof Library) {
+            //remove each modul of deleted library
+            for (int i = 0; i < this.project.getProjectFiles().size(); ++i) {
+                ProjectFile pf = this.project.getProjectFiles().get(i);
+                if (pf.isLibFile) {
+                    if (pf.libName.equals(((Library) comp).getName())) {
+                        this.project.getProjectFiles().remove(i);
+                        --i;
+                    }
+                }
+            }
+
+            //remove lib from project directory
+            (new File(this.project.getFile().getAbsoluteFile().getParent() + "/"
+                    + comp.getName() + "." + LogicSimulatorCore.LIBRARY)).delete();
         }
-        io.deleteFile(comp.getComp().getName() + fileType);
     }
 
     /**
@@ -1264,9 +1597,9 @@ public class MainWindow extends JFrame implements LSComponent {
         try {
             IOProject io = new IOProject(this.project);
             io.save(location);
-            JOptionPane.showMessageDialog(this, "project successfully saved", "Project", JOptionPane.INFORMATION_MESSAGE, null);
+            JOptionPane.showMessageDialog(this, "Project successfully saved", "Project", JOptionPane.INFORMATION_MESSAGE, null);
         } catch (Exception ex) {
-            Logger.getLogger(ProjectWizard.class.getName()).log(Level.SEVERE, null, ex);
+            ExceptionLogger.getInstance().logException(ex);
             JOptionPane.showMessageDialog(this, "Project could not be saved", "Error", JOptionPane.ERROR_MESSAGE, null);
         }
     }
@@ -1344,9 +1677,11 @@ public class MainWindow extends JFrame implements LSComponent {
                 this.jMenuItemRun.setEnabled(false);
                 this.jMenuItemStop.setEnabled(true);
                 this.jMenuItemStep.setEnabled(false);
+
                 return;
             }
         }
+
         //show message
         JOptionPane.showMessageDialog(
                 this,
@@ -1383,6 +1718,59 @@ public class MainWindow extends JFrame implements LSComponent {
         return (PFTwoSlotViewer) this.pfdockingPanel;
     }
 
+    private void openProjectWizzard(ProjectWizard.Mode mode) {
+        for (LSComponent comp : this.core.getLSComponents()) {
+            if (comp instanceof ProjectWizard) {
+
+                //get project path
+                File f = this.project.getFile();
+
+                //open some new project
+                ((ProjectWizard) comp).setMode(mode);
+                ((ProjectWizard) comp).setVisible(true);
+
+                //if projects is same as before than return
+                File f2 = null;
+                for (LSComponent comp2 : this.core.getLSComponents()) {
+                    if (comp2 instanceof Project) {
+                        f2 = ((Project) comp2).getFile();
+                        break;
+                    }
+                }
+                if (f2 == null) {
+                    return;
+                }
+                if (f.toString().equals(f2.toString())) {
+                    return;
+                }
+
+                //save project
+                if (JOptionPane.showConfirmDialog(this, "Do you want to save this projects?",
+                        "Save project", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
+                    saveProject(this.project.getFile());
+                }
+
+                //close this window
+                this.dispose();
+
+                //init window
+                LSComponent component = new MainWindow();
+                try {
+                    component.init(
+                            this.core,
+                            this.propt
+                    );
+                    this.core.getLSComponents().add(component);
+                    component.run();
+                } catch (Exception ex) {
+                    ExceptionLogger.getInstance().logException(ex);
+                }
+
+                break;
+            }
+        }
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonControl;
     private javax.swing.JButton jButtonEdit;
@@ -1408,13 +1796,15 @@ public class MainWindow extends JFrame implements LSComponent {
     private javax.swing.JMenuBar jMenuBarMain;
     private javax.swing.JMenu jMenuEdit;
     private javax.swing.JMenu jMenuFile;
+    private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JMenuItem jMenuItem2;
+    private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItemAbout;
     private javax.swing.JMenuItem jMenuItemAddLibrary;
     private javax.swing.JMenuItem jMenuItemCheckForUpdates;
     private javax.swing.JMenuItem jMenuItemColors;
     private javax.swing.JMenuItem jMenuItemEndo;
-    private javax.swing.JMenuItem jMenuItemExit;
-    private javax.swing.JMenuItem jMenuItemExport;
+    private javax.swing.JMenuItem jMenuItemExport1;
     private javax.swing.JMenuItem jMenuItemFindObject;
     private javax.swing.JMenuItem jMenuItemFindText;
     private javax.swing.JMenuItem jMenuItemMove;
@@ -1432,13 +1822,11 @@ public class MainWindow extends JFrame implements LSComponent {
     private javax.swing.JMenuItem jMenuItemRun;
     private javax.swing.JMenuItem jMenuItemSaveProject;
     private javax.swing.JMenuItem jMenuItemSaveProjectAs;
-    private javax.swing.JMenuItem jMenuItemSettings;
     private javax.swing.JMenuItem jMenuItemSettings1;
     private javax.swing.JMenuItem jMenuItemSettingsGlobal;
     private javax.swing.JMenuItem jMenuItemStep;
     private javax.swing.JMenuItem jMenuItemStop;
     private javax.swing.JMenuItem jMenuItemTutorials;
-    private javax.swing.JMenuItem jMenuItemWindows;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanelBody;
     private javax.swing.JScrollPane jScrollPane1;
@@ -1449,7 +1837,6 @@ public class MainWindow extends JFrame implements LSComponent {
     private javax.swing.JPopupMenu.Separator jSeparator6;
     private javax.swing.JPopupMenu.Separator jSeparator7;
     private javax.swing.JPopupMenu.Separator jSeparator8;
-    private javax.swing.JPopupMenu.Separator jSeparator9;
     private javax.swing.JSplitPane jSplitPaneBody;
     private javax.swing.JSplitPane jSplitPaneLeft;
     private javax.swing.JTable jTableProperties;

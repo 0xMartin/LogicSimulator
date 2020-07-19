@@ -21,8 +21,8 @@ import logicSimulator.LogicSimulatorCore;
 import logicSimulator.Project;
 import logicSimulator.SerialPortDriver;
 import logicSimulator.common.SerialIO;
-import logicSimulator.objects.input.SerialInputTrigger;
 import logicSimulator.projectFile.WorkSpace;
+import logicSimulator.ui.SystemResources;
 
 /**
  *
@@ -112,6 +112,7 @@ public class SerialConfiguration extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Serial Port Configurator");
+        setIconImage(SystemResources.ICON);
         setType(java.awt.Window.Type.UTILITY);
 
         jComboBoxPort.setModel(this.availablePorts);

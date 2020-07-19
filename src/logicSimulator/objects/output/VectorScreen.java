@@ -34,6 +34,7 @@ import logicSimulator.graphics.Line;
 import logicSimulator.common.Model;
 import logicSimulator.common.Propertie;
 import logicSimulator.common.SerialDataDriver;
+import logicSimulator.ui.SystemResources;
 
 /**
  *
@@ -88,6 +89,7 @@ public class VectorScreen extends WorkSpaceObject {
         //buffet
         this.buffer = new BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB);
         this.bufferG = (Graphics2D) this.buffer.getGraphics();
+        Tools.setHighQuality(this.bufferG);
     }
 
     private void rebuildModel() {
@@ -183,7 +185,7 @@ public class VectorScreen extends WorkSpaceObject {
                     break;
             }
             rebuildModel();
-        } catch (Exception ex) {
+        } catch (NumberFormatException ex) {
         }
     }
 
@@ -206,23 +208,24 @@ public class VectorScreen extends WorkSpaceObject {
         //list with all instruction for this component
         return new LinkASM[]{
             //instructions
-            new LinkASM("POINT", "0x1", "Create and add point to buffer, 2x 16bit, One value -> [2 x 8bit : 1. (8 bit) lower weight, 2. (8 bit) higher weight]"),
-            new LinkASM("OBJ", "0x2", "Set type of vector object"),
-            new LinkASM("COLOR", "0x3", "Set color of drawing [1x 8bit : RRRGGGBB]"),
-            new LinkASM("DRAW", "0x4", "Draw all"),
-            new LinkASM("CLR", "0x5", "Clear buffer screen"),
-            new LinkASM("LDSTR", "0x6", "Load string [1x 8bit : length of string], string stay in memory, if you want to load new than you must use CLRSTR"),
-            new LinkASM("CLRSTR", "0x7", "Clear string"),
-            new LinkASM("STRSIZE", "0x8", "Set size of text"),
-            new LinkASM("IMGID", "0x9", "Set ID of image 1x 8bit"),
-            //vector objects
-            new LinkASM("LINE", "0x0", "Syntax: OBJ LINE, 2x point"),
-            new LinkASM("CIRCLE", "0x1", "Syntax: OBJ CIRCLE, 2x point [1. center, 2. width and height]"),
-            new LinkASM("FILL_CIRCLE", "0x2", "Syntax: OBJ FILL_CIRCLE, 2x point [1. center, 2. width and height]"),
-            new LinkASM("POLYGON", "0x3", "Syntax: OBJ POLYGON, min 3 points"),
-            new LinkASM("FILL_POLYGON", "0x4", "Syntax: OBJ FILL_POLYGON, min 3 points"),
-            new LinkASM("STRING", "0x5", "Syntax: OBJ STRING, Draw string, in buffer must be position of string and chars"),
-            new LinkASM("IMAGE", "0x6", "Syntax: OBJ IMAGE")
+            new LinkASM("POINT", "0x1", "Create and add point to buffer, 2x 16bit, One value -> [2 x 8bit : 1. (8 bit) lower weight, 2. (8 bit) higher weight]", true),
+            new LinkASM("DTB", "0x2", "Draw object to the back buffer 1x object_type", true),
+            new LinkASM("COLOR", "0x3", "Set color of drawing [1x 8bit : RRRGGGBB]", true),
+            new LinkASM("DRAW", "0x4", "Draw all", true),
+            new LinkASM("CLR", "0x5", "Clear buffer screen", true),
+            new LinkASM("LDSTR", "0x6", "Load string [1x 8bit : length of string], string stay in memory, if you want to load new than you must use CLRSTR", true),
+            new LinkASM("CLRSTR", "0x7", "Clear string", true),
+            new LinkASM("STRSIZE", "0x8", "Set size of text", true),
+            new LinkASM("IMGID", "0x9", "Set ID of image 1x 8bit", true),
+            new LinkASM("SCALE", "0xA", "Change scale 1x 8bit (scale = hex_value / 50f)", true),
+            //objects
+            new LinkASM("LINE", "0x0", "Syntax: OBJ LINE, 2x point", false),
+            new LinkASM("CIRCLE", "0x1", "Syntax: OBJ CIRCLE, 2x point [1. center, 2. width and height]", false),
+            new LinkASM("FILL_CIRCLE", "0x2", "Syntax: OBJ FILL_CIRCLE, 2x point [1. center, 2. width and height]", false),
+            new LinkASM("POLYGON", "0x3", "Syntax: OBJ POLYGON, min 3 points", false),
+            new LinkASM("FILL_POLYGON", "0x4", "Syntax: OBJ FILL_POLYGON, min 3 points", false),
+            new LinkASM("STRING", "0x5", "Syntax: OBJ STRING, Draw string, in buffer must be position of string and chars", false),
+            new LinkASM("IMAGE", "0x6", "Syntax: OBJ IMAGE", false)
         };
     }
 
@@ -241,16 +244,24 @@ public class VectorScreen extends WorkSpaceObject {
     public boolean compute() {
         //clear
         if (this.clear.getValue()[0]) {
+            
             //clear screnn buffer
             this.bufferG.setColor(Color.white);
             this.bufferG.clearRect(0, 0, this.width, this.height);
+            
             //draw buffer
             this.image.setData(this.buffer.getData());
+            
             //clear hadler data
             this.points.clear();
+            this.newPoint = null;
             this.str = null;
             this.sdd.getBitBuffer().clear();
             this.sdd.setValuesCount(0);
+            
+            //scale
+            this.scale = 1f;
+            
             return true;
         }
 
@@ -281,6 +292,10 @@ public class VectorScreen extends WorkSpaceObject {
 
     private transient String str = null;
 
+    private transient int imgID = 0;
+
+    private transient float scale = 1f;
+
     private transient SerialDataDriver sdd = new SerialDataDriver();
 
     private void initSerilaDataDriver() {
@@ -296,7 +311,7 @@ public class VectorScreen extends WorkSpaceObject {
                     //clear buffer
                     this.sdd.getBitBuffer().clear();
                     //clear buffer
-                    this.sdd.getBitBuffer().clear();
+                    //this.sdd.getBitBuffer().clear();
                     break;
                 case 3:
                     //create new point and add to list
@@ -313,6 +328,7 @@ public class VectorScreen extends WorkSpaceObject {
         //OBJ
         this.sdd.addInstructionListener(2, 1, null);
         this.sdd.addValueListener(SerialDataDriver.SOME_VALUE, 2, (ActionEvent e) -> {
+            this.bufferG.scale(this.scale, this.scale);
             switch (this.sdd.getBitBufferValue()) {
                 case 0:
                     //draw line
@@ -373,7 +389,17 @@ public class VectorScreen extends WorkSpaceObject {
                         this.points.clear();
                     }
                     break;
+                case 6:
+                    //img
+                    if (this.imgID >= 0 && this.imgID < SystemResources.IMG_RES.size()) {
+                        this.bufferG.drawImage(SystemResources.IMG_RES.get(this.imgID),
+                                this.points.get(0).x, this.points.get(0).y, null);
+                        this.points.clear();
+                    }
+                    break;
             }
+            this.bufferG.scale(1f / this.scale, 1f / this.scale);
+
             //clear buffer
             this.sdd.getBitBuffer().clear();
         });
@@ -396,7 +422,8 @@ public class VectorScreen extends WorkSpaceObject {
         //CLR
         this.sdd.addInstructionListener(5, 0, (ActionEvent e) -> {
             //clear buffer
-            this.bufferG.clearRect(0, 0, this.width, this.height);
+            this.bufferG.clearRect(0, 0, (int) (this.width / this.scale),
+                    (int) (this.height / this.scale));
         });
 
         //LDSTR
@@ -423,6 +450,23 @@ public class VectorScreen extends WorkSpaceObject {
         this.sdd.addValueListener(SerialDataDriver.SOME_VALUE, 8, (ActionEvent e) -> {
             //set text size
             this.bufferG.setFont(this.bufferG.getFont().deriveFont((float) this.sdd.getBitBufferValue()));
+            //clear buffer
+            this.sdd.getBitBuffer().clear();
+        });
+
+        //IMGID
+        this.sdd.addInstructionListener(9, 1, null);
+        this.sdd.addValueListener(SerialDataDriver.SOME_VALUE, 9, (ActionEvent e) -> {
+            //load img id
+            this.imgID = this.sdd.getBitBufferValue();
+            //clear buffer
+            this.sdd.getBitBuffer().clear();
+        });
+
+        //SCALE
+        this.sdd.addInstructionListener(10, 1, null);
+        this.sdd.addValueListener(SerialDataDriver.SOME_VALUE, 10, (ActionEvent e) -> {
+            this.scale = this.sdd.getBitBufferValue() / 50f;
             //clear buffer
             this.sdd.getBitBuffer().clear();
         });

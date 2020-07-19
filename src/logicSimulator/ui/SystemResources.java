@@ -17,7 +17,13 @@
 package logicSimulator.ui;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javax.imageio.ImageIO;
+import logicSimulator.Project;
 import window.components.Icon16;
 import window.components.Icon20;
 
@@ -29,6 +35,8 @@ import window.components.Icon20;
  */
 public class SystemResources {
 
+    public static List<BufferedImage> IMG_RES = new ArrayList<>();
+
     public static BufferedImage PROJECT_WIZARD_BG,
             ICON;
 
@@ -36,7 +44,8 @@ public class SystemResources {
             MF_ICON,
             HEF_ICON,
             PACKAGE_ICON,
-            DF_ICON;
+            DF_ICON,
+            LIB_ICON;
 
     public static Icon20 TOOLBAR_CURCOR,
             TOOLBAR_CLICKER,
@@ -76,7 +85,7 @@ public class SystemResources {
             TOOLBAR_ALIGN_CENTER,
             TOOLBAR_ALIGN_RIGHT,
             TOOLBAR_ALIGN_JUSTIFIED,
-            TOOLBAR_TABLE, 
+            TOOLBAR_TABLE,
             TOOLBAR_HORISONTAL_LINE;
 
     public SystemResources() throws Exception {
@@ -92,6 +101,7 @@ public class SystemResources {
         SystemResources.MF_ICON = new Icon16(this.getClass().getResource("/src/img/Icons/mfIcon.png"));
         SystemResources.HEF_ICON = new Icon16(this.getClass().getResource("/src/img/Icons/hefIcon.png"));
         SystemResources.DF_ICON = new Icon16(this.getClass().getResource("/src/img/Icons/docIcon.png"));
+        SystemResources.LIB_ICON = new Icon16(this.getClass().getResource("/src/img/Icons/libIcon.png"));
 
         //main toolbar
         SystemResources.TOOLBAR_CURCOR = new Icon20(this.getClass().getResource("/src/img/toolbar/cursor.png"));
@@ -142,6 +152,31 @@ public class SystemResources {
         SystemResources.TOOLBAR_ALIGN_JUSTIFIED = new Icon20(this.getClass().getResource("/src/img/toolbar/align_justified.png"));
         SystemResources.TOOLBAR_TABLE = new Icon20(this.getClass().getResource("/src/img/toolbar/table.png"));
         SystemResources.TOOLBAR_HORISONTAL_LINE = new Icon20(this.getClass().getResource("/src/img/toolbar/horisontal_line.png"));
+    }
+
+    /**
+     * Load all image resources to memory for next work
+     *
+     * @param project Project
+     * @throws IOException
+     */
+    public static void reloadImageResources(Project project) throws IOException {
+        File imgResDir = new File(project.getFile().getAbsoluteFile().getParentFile() + "/img");
+        if (imgResDir.exists()) {
+            File[] imgs = imgResDir.listFiles();
+
+            SystemResources.IMG_RES.clear();
+
+            if (imgs.length == 0) {
+                return;
+            }
+
+            Arrays.sort(imgs);
+
+            for (File img : imgs) {
+                SystemResources.IMG_RES.add(ImageIO.read(img));
+            }
+        }
     }
 
 }

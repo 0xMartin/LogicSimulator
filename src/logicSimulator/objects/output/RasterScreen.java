@@ -118,6 +118,8 @@ public class RasterScreen extends WorkSpaceObject {
         super.setModel(model);
         model.disableRotation();
         model.computeSize();
+        
+        this.pixels = new boolean[this.width * this.height];
     }
 
     public void setWidth(int width) {
@@ -171,7 +173,7 @@ public class RasterScreen extends WorkSpaceObject {
     @Override
     public void changePropertie(Propertie propt) {
         try {
-            int wl = this.width, hl = this.height;
+            int wl = this.width, hl = this.height, ps = this.pixelSize;
             switch (propt.getName()) {
                 case "Width":
                     this.width = propt.getValueInt();
@@ -183,7 +185,7 @@ public class RasterScreen extends WorkSpaceObject {
                     this.pixelSize = propt.getValueInt();
                     break;
             }
-            if (wl != this.width || hl != this.height) {
+            if (wl != this.width || hl != this.height || ps != this.pixelSize) {
                 rebuildModel();
             }
         } catch (Exception ex) {

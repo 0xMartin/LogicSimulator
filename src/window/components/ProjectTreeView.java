@@ -29,7 +29,9 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTree;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import logicSimulator.projectFile.HexEditor;
 import logicSimulator.LogicSimulatorCore;
@@ -39,6 +41,7 @@ import logicSimulator.ProjectFile;
 import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.Tools;
 import logicSimulator.projectFile.DocumentationEditor;
+import logicSimulator.projectFile.Library;
 import window.MainWindow;
 import window.NewFile;
 
@@ -53,6 +56,10 @@ public class ProjectTreeView extends JTree implements MouseListener {
     private MainWindow window;
 
     private JPopupMenu menu;
+
+    private DefaultTreeModel model;
+
+    private DefaultMutableTreeNode workspaces, modules, hexFiles, documentations, libraries;
 
     public ProjectTreeView() {
         super();
@@ -73,102 +80,124 @@ public class ProjectTreeView extends JTree implements MouseListener {
         this.window = window;
         //set renderer
         this.setCellRenderer(new ProjectTreeView.Renderer());
-        //update tree
-        updateProjectTree();
         //create popup menu
         createMenu();
+
+        //build default tree structure
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode(this.project.getName());
+        this.model = new DefaultTreeModel(root, true);
+
+        this.workspaces = new DefaultMutableTreeNode("Workspaces");
+        root.add(this.workspaces);
+        this.modules = new DefaultMutableTreeNode("Modules");
+        root.add(this.modules);
+        this.hexFiles = new DefaultMutableTreeNode("HEX files");
+        root.add(this.hexFiles);
+        this.documentations = new DefaultMutableTreeNode("Documentations");
+        root.add(this.documentations);
+        this.libraries = new DefaultMutableTreeNode("Libraries");
+        root.add(this.libraries);
+
+        super.setModel(model);
+
+        //update tree
+        updateProjectTree();
     }
 
+    /**
+     * Find object in tree model
+     *
+     * @param model Default tree model
+     * @param parent Parent object
+     * @param name Name of wanted node
+     * @return
+     */
+    private Object findNode(DefaultTreeModel model, Object parent, String name) {
+        int count = model.getChildCount(parent);
+        Object node;
+        for (int i = 0; i < count; ++i) {
+            node = model.getChild(parent, i);
+            if (name.equals(node.toString())) {
+                return node;
+            } else {
+                Object ret = findNode(model, node, name);
+                if (ret != null) {
+                    return ret;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private void addPFtoTree(ProjectFile pf) {
+        if (pf == null) {
+            return;
+        }
+
+        //get name of folder
+        DefaultMutableTreeNode node = null;
+        if (pf instanceof WorkSpace) {
+            node = this.workspaces;
+        } else if (pf instanceof ModuleEditor) {
+            node = this.modules;
+        } else if (pf instanceof HexEditor) {
+            node = this.hexFiles;
+        } else if (pf instanceof DocumentationEditor) {
+            node = this.documentations;
+        } else if (pf instanceof Library) {
+            node = this.libraries;
+        }
+
+        //add pf to folder
+        if (node != null) {
+            this.model.insertNodeInto(
+                    new DefaultMutableTreeNode(pf.getName() + "." + Tools.getFileType(pf), false),
+                    node,
+                    node.getChildCount()
+            );
+        }
+    }
+
+    private final List<String> lastPF = new ArrayList<>();
+
     public void updateProjectTree() {
-        //work spaces
-        List<ProjectFile> projectFiles = this.project.getProjectFiles();
-
-        //count number of items in sections
-        int count_project = 0, count_module = 0, count_hex = 0, count_doc = 0;
-        for (ProjectFile pf : projectFiles) {
-            if (pf instanceof WorkSpace) {
-                count_project++;
-            } else if (pf instanceof ModuleEditor) {
-                count_module++;
-            } else if (pf instanceof HexEditor) {
-                count_hex++;
-            }else if (pf instanceof DocumentationEditor) {
-                count_doc++;
-            }
+        if (this.model == null) {
+            return;
         }
 
-        //buil data for tree builder
-        List<String[]> data = new ArrayList<>();
+        //add new files
+        List<String> currentPF = new ArrayList<>();
+        this.project.getProjectFiles().stream().forEach((pf) -> {
+            if (!pf.isLibFile) {
+                currentPF.add(pf.getName() + "." + Tools.getFileType(pf));
 
-        //project files
-        String[] folder = new String[Math.max(count_project + 1, 2)];
-        data.add(folder);
-        folder[0] = "Workspaces";
-        if (count_project == 0) {
-            folder[1] = "";
-        } else {
-            int index = 0;
-            for (int i = 0; i < projectFiles.size() && index < count_project; i++) {
-                if (projectFiles.get(i) instanceof WorkSpace) {
-                    folder[(index++) + 1] = projectFiles.get(i).getComp().getName()
-                            + "." + LogicSimulatorCore.WORKSPACE_FILE_TYPE;
+                //add pf to tree
+                Object obj = findNode(model, model.getRoot(), pf.getName() + "." + Tools.getFileType(pf));
+                if (obj == null) {
+                    addPFtoTree(pf);
                 }
             }
-        }
-        
-        //modules
-        folder = new String[Math.max(count_module + 1, 2)];
-        data.add(folder);
-        folder[0] = "Modules";
-        if (count_module == 0) {
-            folder[1] = "";
-        } else {
-            int index = 0;
-            for (int i = 0; i < projectFiles.size() && index < count_module; i++) {
-                if (projectFiles.get(i) instanceof ModuleEditor) {
-                    folder[(index++) + 1] = projectFiles.get(i).getComp().getName()
-                            + "." + LogicSimulatorCore.MODULE_FILE_TYPE;
+        });
+
+        //remove files
+        this.lastPF.stream().forEach((pfName) -> {
+            if (currentPF.stream().allMatch((pfName2) -> (!pfName.equals(pfName2)))) {
+                Object obj = findNode(this.model, this.model.getRoot(), pfName);
+                if (obj != null) {
+                    this.model.removeNodeFromParent((DefaultMutableTreeNode) obj);
                 }
             }
-        }
-        
-        //hex files
-        folder = new String[Math.max(count_hex + 1, 2)];
-        data.add(folder);
-        folder[0] = "HEX files";
-        if (count_hex == 0) {
-            folder[1] = "";
-        } else {
-            int index = 0;
-            for (int i = 0; i < projectFiles.size() && index < count_hex; i++) {
-                if (projectFiles.get(i) instanceof HexEditor) {
-                    folder[(index++) + 1] = projectFiles.get(i).getComp().getName()
-                            + "." + LogicSimulatorCore.HEX_FILE_TYPE;
-                }
+        });
+
+        //refresh tree
+        this.lastPF.clear();
+        this.project.getProjectFiles().stream().forEach((pf) -> {
+            if (!pf.isLibFile) {
+                this.lastPF.add(pf.getName() + "." + Tools.getFileType(pf));
             }
-        }
-        
-        //libraries
-        data.add(new String[]{"Libraries", ""});
-        
-        //documentation files
-        folder = new String[Math.max(count_doc + 1, 2)];
-        data.add(folder);
-        folder[0] = "Documentations";
-        if (count_hex == 0) {
-            folder[1] = "";
-        } else {
-            int index = 0;
-            for (int i = 0; i < projectFiles.size() && index < count_hex; i++) {
-                if (projectFiles.get(i) instanceof DocumentationEditor) {
-                    folder[(index++) + 1] = projectFiles.get(i).getComp().getName()
-                            + "." + LogicSimulatorCore.DOCUMENTATION_FILE_TYPE;
-                }
-            }
-        }
-        
-        //build component list  
-        this.setModel(Tools.buildTreeModel(data, this.project.getName()));
+        });
+
     }
 
     public WorkSpace getWorkSpace() {
@@ -184,12 +213,12 @@ public class ProjectTreeView extends JTree implements MouseListener {
         public Component getTreeCellRendererComponent(
                 JTree tree,
                 Object value,
-                boolean sel,
+                boolean selected,
                 boolean expanded,
                 boolean leaf,
                 int row,
                 boolean hasFocus) {
-            super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+            super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
 
             String name = value.toString();
             if (name.endsWith(LogicSimulatorCore.WORKSPACE_FILE_TYPE)) {
@@ -199,12 +228,15 @@ public class ProjectTreeView extends JTree implements MouseListener {
                 //module file
                 this.setIcon(SystemResources.MF_ICON);
             } else if (name.endsWith(LogicSimulatorCore.HEX_FILE_TYPE)) {
-                //module file
+                //hex file
                 this.setIcon(SystemResources.HEF_ICON);
-            }  else if (name.endsWith(LogicSimulatorCore.DOCUMENTATION_FILE_TYPE)) {
-                //module file
+            } else if (name.endsWith(LogicSimulatorCore.DOCUMENTATION_FILE_TYPE)) {
+                //documentation
                 this.setIcon(SystemResources.DF_ICON);
-            }  else if (name.length() == 0){
+            } else if (name.endsWith(LogicSimulatorCore.LIB_FILE_TYPE)) {
+                //library
+                this.setIcon(SystemResources.LIB_ICON);
+            } else if (name.length() == 0) {
                 //module file
                 this.setIcon(SystemResources.PACKAGE_ICON);
             }
@@ -280,6 +312,7 @@ public class ProjectTreeView extends JTree implements MouseListener {
         this.menu = new JPopupMenu();
         JMenu menu;
         JMenuItem item;
+
         //new file
         item = new JMenuItem("Add new file");
         item.addActionListener((ActionEvent evt) -> {
@@ -287,9 +320,17 @@ public class ProjectTreeView extends JTree implements MouseListener {
         });
         this.menu.add(item);
 
+        //open file
+        item = new JMenuItem("Open");
+        item.addActionListener((ActionEvent evt) -> {
+            displayFile();
+        });
+        this.menu.add(item);
+
         //> add edit menu
         menu = new JMenu("Edit");
         this.menu.add(menu);
+
         //rename file
         item = new JMenuItem("Rename");
         item.addActionListener((ActionEvent evt) -> {
@@ -297,6 +338,7 @@ public class ProjectTreeView extends JTree implements MouseListener {
             this.window.renameFileOfProject(this.selected);
         });
         menu.add(item);
+
         //delete file
         item = new JMenuItem("Delete");
         item.addActionListener((ActionEvent evt) -> {

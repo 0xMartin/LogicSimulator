@@ -176,6 +176,7 @@ public class Button extends WorkSpaceObject implements ClickAction {
 
             //draw label
             g2.setFont(Fonts.MEDIUM);
+            g2.setColor(Colors.TEXT);
             g2.drawString(
                     this.label,
                     (int) (pos.x + m.getBoundsMin().x

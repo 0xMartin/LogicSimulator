@@ -16,6 +16,9 @@
  */
 package logicSimulator.common;
 
+import java.awt.event.ActionListener;
+import java.util.List;
+
 /**
  *
  * @author Martin
@@ -29,4 +32,26 @@ public interface Memory {
      */
     public byte[] getData();
 
+    /**
+     * Get id of rom ram memory
+     *
+     * @return
+     */
+    public String getID();
+
+    /**
+     * This listener is invoked when something access to some value inside
+     *
+     * @param listener ActionListener
+     */
+    public void setOnMemoryAccessListener(ActionListener listener);
+
+    /**
+     * Load data to memory
+     * @param hex Hexadecimal program
+     * @param offset Offset of program
+     * @param clear Clear memory before uploading
+     */
+    public void uploadProgram(List<Byte> hex, int offset, boolean clear);
+    
 }

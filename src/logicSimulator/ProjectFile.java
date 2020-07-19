@@ -35,6 +35,11 @@ public abstract class ProjectFile extends JPanel {
     //project file mode
     private final PFMode pfMode = new PFMode(false, false, true);
 
+    //if is true than this file dont be saved
+    public transient boolean isLibFile = false;
+    //name of lib
+    public transient String libName = "";
+    
     public ProjectFile(Project project) {
         this.project = project;
     }

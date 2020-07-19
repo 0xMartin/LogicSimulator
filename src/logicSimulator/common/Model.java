@@ -48,7 +48,7 @@ public class Model implements Serializable {
     //input and output pins
     private final List<IOPin> pins;
 
-    //color of model
+    //color of model #################################################################### REMOVE
     private Color color = Colors.OBJECT;
 
     //angle of model
@@ -328,7 +328,7 @@ public class Model implements Serializable {
      */
     public void render(Graphics2D g2, int x, int y) {
         //color
-        g2.setColor(this.color);
+        g2.setColor(Colors.OBJECT);
 
         //draw all lines
         if (this.graphicsObjects != null) {
@@ -379,7 +379,6 @@ public class Model implements Serializable {
             preRender(g2);
 
             g2.setStroke(new BasicStroke(2));
-            g2.setColor(this.color);
 
             //render model
             this.render(g2, pos.x, pos.y);
@@ -418,7 +417,7 @@ public class Model implements Serializable {
         }
     }
 
-    /**
+    /** #################################################################### REMOVE
      * Set color of model
      *
      * @param c Color
@@ -427,7 +426,7 @@ public class Model implements Serializable {
         this.color = c;
     }
 
-    /**
+    /** #################################################################### REMOVE
      * Get color of model
      *
      * @return

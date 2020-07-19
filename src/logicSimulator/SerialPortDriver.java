@@ -108,6 +108,7 @@ public class SerialPortDriver implements LSComponent {
                             break;
                     }
                 } catch (NumberFormatException ex) {
+                    ExceptionLogger.getInstance().logException(ex);
                 }
             });
         }
@@ -118,6 +119,7 @@ public class SerialPortDriver implements LSComponent {
                 try {
                     dataReceiver();
                 } catch (InterruptedException ex) {
+                    ExceptionLogger.getInstance().logException(ex);
                 }
             }
         });

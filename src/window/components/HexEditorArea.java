@@ -16,7 +16,6 @@
  */
 package window.components;
 
-import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -30,21 +29,19 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter.DefaultHighlightPainter;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Document;
-import javax.swing.text.Element;
 import javax.swing.text.Highlighter;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 import logicSimulator.Convert;
+import logicSimulator.Tools;
 import logicSimulator.common.LinkASM;
 
 public class HexEditorArea extends JScrollPane {
@@ -62,21 +59,33 @@ public class HexEditorArea extends JScrollPane {
     public String fontName = "Consolas";
     public int fontSize = 16;
 
+    //program offset
+    public int programOffset = 0;
+
     //list for code translating
     private final List<LinkASM> translator = new ArrayList<>();
 
     //coloring AttributeSets
     private final StyleContext sc = StyleContext.getDefaultStyleContext();
+
     private final AttributeSet asetCommand = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, Color.BLUE);
+
+    private final AttributeSet asetAlias = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, Color.RED);
+
+    private final AttributeSet asetMark = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, Color.DARK_GRAY);
+
     private final AttributeSet asetValueHex = sc.addAttribute(
             sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Italic, true),
             StyleConstants.Foreground, Color.GREEN.darker()
     );
+
     private final AttributeSet asetValueBin = sc.addAttribute(
             sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Italic, true),
             StyleConstants.Foreground, Color.MAGENTA
     );
+
     private final AttributeSet asetComment = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, Color.GRAY);
+
     private final AttributeSet asetBlack = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, Color.BLACK);
 
     private final StyledDocument doc = new DefaultStyledDocument() {
@@ -131,6 +140,8 @@ public class HexEditorArea extends JScrollPane {
         this.number.setBackground(Color.white);
         this.number.setEditable(false);
 
+        JScrollPane scrollPane = this;
+
         //text area with code
         this.code = new JTextPane(this.doc) {
             @Override
@@ -138,27 +149,38 @@ public class HexEditorArea extends JScrollPane {
                 g.setColor(Color.white);
                 g.fillRect(0, 0, super.getWidth(), super.getHeight());
 
+                Graphics2D g2 = (Graphics2D) g;
+                Tools.setHighQuality(g2);
+                
                 //highlight curent line
                 try {
                     Rectangle rect = super.modelToView(getCaretPosition());
                     if (rect != null) {
-                        g.setColor(new Color(230, 230, 250));
-                        g.fillRect(0, rect.y, super.getWidth(), rect.height);
+                        g2.setColor(new Color(230, 230, 250));
+                        g2.fillRect(0, rect.y, super.getWidth(), rect.height);
                     }
                 } catch (BadLocationException e) {
                 }
 
                 //paint component
-                super.paintComponent(g);
+                super.paintComponent(g2);
 
                 //vertical line divider
-                g.setColor(Color.BLACK);
-                g.drawLine(0, 0, 0, super.getHeight());
+                g2.setColor(Color.BLACK);
+                g2.drawLine(0, 0, 0, super.getHeight());
 
                 //paint instruction list (ctrl + space)
                 if (showInstructions) {
                     try {
                         Rectangle rect = super.modelToView(getCaretPosition());
+
+                        boolean reverse = false;
+                        
+                        //if is so low
+                        if (rect.y - scrollPane.getVerticalScrollBar().getValue() > 0.5 * scrollPane.getHeight()) {
+                            reverse = true;
+                        }
+
                         List<String> view = new ArrayList<>();
                         String w = currentInstruction.toLowerCase();
                         //add all similar instructions to list
@@ -168,13 +190,13 @@ public class HexEditorArea extends JScrollPane {
                                     view.add(link.Mnemonic + " >> 0x" + link.Hex);
                                 });
                         //draw all items
-                        for (int i = 0; i < view.size(); i++) {
+                        for (int i = 0; i < view.size(); ++i) {
                             //bg
-                            g.setColor(i % 2 == 0 ? new Color(190, 190, 220) : new Color(160, 160, 190));
-                            g.fillRect(0, rect.y + 7 + (i + 1) * rect.height, 350, rect.height);
+                            g2.setColor(i % 2 == 0 ? new Color(190, 190, 220) : new Color(160, 160, 190));
+                            g2.fillRect(0, rect.y + (reverse ? - 10 : 7) + (reverse ? -1 : 1) * (i + 1) * rect.height, 350, rect.height);
                             //text
-                            g.setColor(i % 2 == 0 ? Color.black : Color.white);
-                            g.drawString(view.get(i), 5, rect.y + 2 + (i + 2) * rect.height);
+                            g2.setColor(i % 2 == 0 ? Color.black : Color.white);
+                            g2.drawString(view.get(i), 5, rect.y + (reverse ? rect.height + 4 : 4) + (reverse ? -1 : 1) * (i + 2) * rect.height);
                         }
                     } catch (BadLocationException e) {
                     }
@@ -288,7 +310,7 @@ public class HexEditorArea extends JScrollPane {
             //remove \r symbol
             line = line.replace("\r", "");
             //get words
-            String[] words = line.toLowerCase().split(" ");
+            String[] words = Tools.removeEndWhiteSpaces(line).toLowerCase().replace("\r", "").split(" ");
 
             boolean comment = false;
 
@@ -306,10 +328,28 @@ public class HexEditorArea extends JScrollPane {
                     continue;
                 }
 
+                if (word.endsWith(":") && !word.startsWith("'")) {
+                    continue;
+                }
+
+                //link ASM
                 for (LinkASM link : this.translator) {
                     if (link.Mnemonic.equals(word)) {
                         hexData.add(Convert.hexToByte(link.Hex));
                         //add positon of command in text to list
+                        this.commandPositions.add(new Point(index - word.length(), index));
+                        continue word_loop;
+                    }
+                }
+
+                //jump mark
+                for (JMPMark mark : this.jmpMarks) {
+                    if (mark.name.equals(word)) {
+                        byte[] address = Convert.intToTwoBytes(mark.address);
+                        hexData.add(address[0]);
+                        hexData.add(address[1]);
+                        //add positon of command in text to list
+                        this.commandPositions.add(new Point(index - word.length(), index));
                         this.commandPositions.add(new Point(index - word.length(), index));
                         continue word_loop;
                     }
@@ -377,6 +417,9 @@ public class HexEditorArea extends JScrollPane {
      * Colorize words
      */
     private void colorizeWords() {
+        //find jump marks
+        findJumpMarks(this.code.getText());
+
         //remova all chracter atributes (set deafult "black")
         String text = this.code.getText();
         this.doc.setCharacterAttributes(0, text.length(), asetBlack, true);
@@ -384,29 +427,43 @@ public class HexEditorArea extends JScrollPane {
         String[] lines = text.split("\n");
         int index = 0;
         for (String line : lines) {
-            String[] words = line.toLowerCase().replace("\r", "").split(" ");
+            String[] words = Tools.removeEndWhiteSpaces(line).toLowerCase().replace("\r", "").split(" ");
             boolean comment = false;
             for (String word : words) {
                 if (!comment) {
                     if (translator.stream().anyMatch((l) -> (l.Mnemonic.equals(word)))) {
-                        //function
-                        this.doc.setCharacterAttributes(index, word.length(), asetCommand, true);
+                        if (translator.stream().anyMatch((l) -> (l.Mnemonic.equals(word)) && l.isFunction)) {
+                            //function
+                            this.doc.setCharacterAttributes(index, word.length() + 1, asetCommand, true);
+                        } else {
+                            //alias
+                            this.doc.setCharacterAttributes(index, word.length() + 1, asetAlias, true);
+                        }
+                    } else if (word.endsWith(":") && !word.startsWith("'")) {
+                        //hex format of value
+                        this.doc.setCharacterAttributes(index, word.length() + 1, asetMark, true);
                     } else if (word.startsWith("0x")) {
                         //hex format of value
                         this.doc.setCharacterAttributes(index, word.length() + 1, asetValueHex, true);
                     } else if (word.contains("//")) {
                         int start_c = index + word.indexOf("//");
                         int end_c = index + line.length();
-                        this.doc.setCharacterAttributes(start_c, end_c - start_c, asetComment, true);
+                        this.doc.setCharacterAttributes(start_c, end_c - start_c + 1, asetComment, true);
                         comment = true;
-
                     } else if (word.startsWith("'")) {
-                        this.doc.setCharacterAttributes(index, word.length(), asetValueBin, true);
+                        this.doc.setCharacterAttributes(index, word.length() + 1, asetValueBin, true);
                         comment = true;
-
                     } else if (word.matches("[01]*")) {
                         //binary format of value
-                        this.doc.setCharacterAttributes(index, word.length(), asetValueBin, true);
+                        this.doc.setCharacterAttributes(index, word.length() + 1, asetValueBin, true);
+                    } else {
+                        for (JMPMark mark : this.jmpMarks) {
+                            if (mark.name.equals(word)) {
+                                //binary format of value
+                                this.doc.setCharacterAttributes(index, word.length() + 1, asetAlias, true);
+                                break;
+                            }
+                        }
                     }
                 }
                 index += word.length() + 1;
@@ -436,6 +493,70 @@ public class HexEditorArea extends JScrollPane {
         try {
             highlighter.addHighlight(p.x - 1, p.y - 1, new DefaultHighlightPainter(Color.orange));
         } catch (BadLocationException ex) {
+        }
+    }
+
+    private class JMPMark {
+
+        public String name;
+        public int address;
+
+        public JMPMark(String name, int address) {
+            this.name = name;
+            this.address = address;
+        }
+    }
+
+    private final List<JMPMark> jmpMarks = new ArrayList<>();
+
+    private void findJumpMarks(String program) {
+        this.jmpMarks.clear();
+
+        int instructionAddress = this.programOffset;
+
+        //find jump marks
+        String[] lines = program.split("\n");
+        for (String line : lines) {
+            String[] words = Tools.removeEndWhiteSpaces(line).toLowerCase().replace("\r", "").split(" ");
+            boolean comment = false;
+            for (String word : words) {
+                if (word.length() != 0 && !comment) {
+                    if (word.endsWith(":") && !word.startsWith("'")) {
+                        this.jmpMarks.add(new JMPMark(
+                                word.substring(0, word.length() - 1),
+                                instructionAddress
+                        ));
+                    } else if (word.contains("//")) {
+                        comment = true;
+                    }
+                }
+            }
+        }
+
+        //for each jmp mark assigns address
+        for (String line : lines) {
+            String[] words = Tools.removeEndWhiteSpaces(line).toLowerCase().replace("\r", "").split(" ");
+            boolean comment = false;
+            for (String word : words) {
+                if (word.length() != 0 && !comment) {
+                    if (word.endsWith(":") && !word.startsWith("'")) {
+                        String str = word.substring(0, word.length() - 1);
+                        for (JMPMark jmpMark : this.jmpMarks) {
+                            if (jmpMark.name.equals(str)) {
+                                jmpMark.address = instructionAddress;
+                                //System.out.println(jmpMark.name + " -> " + jmpMark.address);
+                                break;
+                            }
+                        }
+                    } else if (word.contains("//")) {
+                        comment = true;
+                    } else if (this.jmpMarks.stream().anyMatch((mark) -> (mark.name.equals(word)))) {
+                        instructionAddress += 2;
+                    } else {
+                        ++instructionAddress;
+                    }
+                }
+            }
         }
 
     }

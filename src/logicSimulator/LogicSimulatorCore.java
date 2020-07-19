@@ -31,7 +31,7 @@ import logicSimulator.ui.SystemResources;
 public abstract class LogicSimulatorCore extends SystemResources {
 
     //properties
-    public static final int WORK_SPACE_STEP = 14;   //default 14 if you change this you must remodeling all components
+    public static final int WORK_SPACE_STEP = 14;   //default 14 if you change this you must remodel all components
     public static final int OBJECT_NULL_POSITION = -9999;
 
     //file types
@@ -39,8 +39,12 @@ public abstract class LogicSimulatorCore extends SystemResources {
     public static final String WORKSPACE_FILE_TYPE = "lwf";
     public static final String MODULE_FILE_TYPE = "mf";
     public static final String HEX_FILE_TYPE = "hef";
+    public static final String LIB_FILE_TYPE = "lbc";
     public static final String DOCUMENTATION_FILE_TYPE = "html";
 
+    //library
+    public static final String LIBRARY = "lib";
+    
     //properties files
     public static final String PROPT_PROJECTS = "projects.propt";
     public static final String PROPT_WINDOW = "window.propt";

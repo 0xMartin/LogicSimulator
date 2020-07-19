@@ -50,7 +50,7 @@ public class RandomGenerator extends WorkSpaceObject {
         GOList.add(new Line(-14, 14, 14, 14));
         
         //pins
-        this.change = new IOPin(IOPin.MODE.INPUT, bits, "CHANGE", new Point.Double(0, -14));
+        this.change = new IOPin(IOPin.MODE.INPUT, 1, "CLK", new Point.Double(0, -14));
         this.rndOut = new IOPin(IOPin.MODE.OUTPUT, bits, "RANDOM", new Point.Double(0, 14));
         model.getIOPins().add(this.rndOut);
         model.getIOPins().add(this.change);

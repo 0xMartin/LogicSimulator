@@ -35,9 +35,11 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 import logicSimulator.common.LinkASM;
+import logicSimulator.objects.complex.MCU;
 import logicSimulator.objects.output.VectorScreen;
 import logicSimulator.ui.SystemResources;
 
@@ -329,12 +331,24 @@ public class TraslatorConfig extends javax.swing.JFrame {
 
     private void jMenuItemImportLocalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemImportLocalActionPerformed
         //import local 
-        JComboBox<String> list = new JComboBox<>(new String[]{"VECTOR SCREEN"});
+        JComboBox<String> list = new JComboBox<>(new String[]{"VECTOR SCREEN", "MCU"});
+        JTextField prefix = new JTextField();
 
-        JOptionPane.showMessageDialog(this, list, "Import traslator", JOptionPane.PLAIN_MESSAGE);
+        JOptionPane.showMessageDialog(this, new Object[]{"Instruction set:", list, "PInstruction prefix:", prefix},
+                "Import traslator", JOptionPane.PLAIN_MESSAGE);
         switch ((String) list.getSelectedItem()) {
             case "VECTOR SCREEN":
                 for (LinkASM link : VectorScreen.getInstructions()) {
+                    link.Mnemonic = prefix.getText() + link.Mnemonic;
+                    link.Mnemonic = link.Mnemonic.toLowerCase();
+                    addToTranslator(link);
+                }
+                refreshLinkerView();
+                break;
+            case "MCU":
+                for (LinkASM link : MCU.getInstructions()) {
+                    link.Mnemonic = prefix.getText() + link.Mnemonic;
+                    link.Mnemonic = link.Mnemonic.toLowerCase();
                     addToTranslator(link);
                 }
                 refreshLinkerView();

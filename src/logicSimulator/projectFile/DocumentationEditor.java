@@ -25,7 +25,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,6 +33,7 @@ import javax.swing.JScrollPane;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
+import logicSimulator.ExceptionLogger;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.PFHandler;
 import logicSimulator.Project;
@@ -168,7 +168,7 @@ public class DocumentationEditor extends ProjectFile {
             try {
                 this.kit.insertHTML(this.doc, this.getCaretPosition(), htmlText, 0, 0, null);
             } catch (BadLocationException | IOException ex) {
-                Logger.getLogger(DocumentationEditor.class.getName()).log(Level.SEVERE, null, ex);
+                ExceptionLogger.getInstance().logException(ex);
             }
         }
 

@@ -60,6 +60,7 @@ import logicSimulator.graphics.Line;
 import logicSimulator.common.Model;
 import logicSimulator.common.ClickAction;
 import logicSimulator.data.FileIO;
+import logicSimulator.objects.LogicModule;
 import logicSimulator.objects.wiring.Wire;
 
 /**
@@ -101,7 +102,7 @@ public class WorkSpace extends ProjectFile {
         this.toolbar = new ProjectFileToolbar(this);
         super.add(this.toolbar, BorderLayout.NORTH);
 
-        //rendering panel
+        //Workspace Handler
         JScrollPane jScrollPane = new JScrollPane();
         jScrollPane.setBorder(null);
         super.add(jScrollPane, BorderLayout.CENTER);
@@ -123,7 +124,7 @@ public class WorkSpace extends ProjectFile {
         });
 
         //init popup menu
-        if(handler != null) {
+        if (this.handler != null) {
             initMenu();
         }
     }
@@ -303,14 +304,23 @@ public class WorkSpace extends ProjectFile {
     public void addNewObjects(List<WorkSpaceObject> newObject) {
         if (newObject != null) {
             //all add to list
-            newObject.stream().forEach((obj) -> {
+            for (WorkSpaceObject obj : newObject) {
                 if (obj != null) {
+
+                    //check if this is not logic module, when its than cant be child of this circuit
+                    if (obj instanceof LogicModule) {
+                        if (((LogicModule) obj).getModuleName().equals(super.getName())) {
+                            continue;
+                        }
+                    }
+
+                    //add object
                     if (obj.getModel() != null) {
                         obj.getModel().setDrag(true);
                     }
                     this.objects.add(obj);
                 }
-            });
+            }
             //set to new object list (pointer)
             this.newObj = newObject;
         }
@@ -736,7 +746,7 @@ public class WorkSpace extends ProjectFile {
                     }
                 });
             }
-            
+
             this.repaint();
         }
 
@@ -824,7 +834,7 @@ public class WorkSpace extends ProjectFile {
         public void mousePressed(MouseEvent evt) {
             //request this workspace
             this.requestFocus();
-  
+
             //select this project file in project
             this.owner.selectInProject();
 

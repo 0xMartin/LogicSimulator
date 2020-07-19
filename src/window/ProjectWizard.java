@@ -39,6 +39,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
+import logicSimulator.ExceptionLogger;
 import logicSimulator.LSComponent;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.Project;
@@ -54,6 +55,12 @@ import logicSimulator.ui.SystemResources;
  * @author Martin
  */
 public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
+
+    public static enum Mode {
+        DEFAULT,    //default mode
+        OPEN,       //this mode allow only opening of projects
+        NEW;        //only allow creting of projects
+    }
 
     private LogicSimulatorCore core;
 
@@ -73,7 +80,6 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 (screen.width - this.getWidth()) / 2,
                 (screen.height - this.getHeight()) / 2
         );
-        this.setAlwaysOnTop(true);
     }
 
     /**
@@ -88,10 +94,8 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
         jPanelMain = new javax.swing.JPanel();
         jButtonOpenProject = new LSButton();
         jButtonNewProject = new LSButton();
-        jLabel3 = new javax.swing.JLabel();
         jPanelNewProject = new javax.swing.JPanel();
         jButtonBack = new LSButton();
-        jLabel4 = new javax.swing.JLabel();
         jButtonCreateProject = new LSButton();
         jTextFieldProjectName = new LSTextField();
         jLabel5 = new javax.swing.JLabel();
@@ -100,7 +104,6 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
         jLabel7 = new javax.swing.JLabel();
         jPanelNewLibrary = new javax.swing.JPanel();
         jButtonBack1 = new LSButton();
-        jLabel8 = new javax.swing.JLabel();
         jButtonCreateProject1 = new LSButton();
         jTextField3 = new LSTextField();
         jLabel9 = new javax.swing.JLabel();
@@ -174,10 +177,6 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
             }
         });
 
-        jLabel3.setBackground(new java.awt.Color(255, 255, 255));
-        jLabel3.setText("Created by Martin Krčma");
-        jLabel3.setOpaque(true);
-
         javax.swing.GroupLayout jPanelMainLayout = new javax.swing.GroupLayout(jPanelMain);
         jPanelMain.setLayout(jPanelMainLayout);
         jPanelMainLayout.setHorizontalGroup(
@@ -186,8 +185,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 .addContainerGap(24, Short.MAX_VALUE)
                 .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jButtonNewProject, javax.swing.GroupLayout.PREFERRED_SIZE, 355, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButtonOpenProject, javax.swing.GroupLayout.PREFERRED_SIZE, 355, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel3))
+                    .addComponent(jButtonOpenProject, javax.swing.GroupLayout.PREFERRED_SIZE, 355, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(15, 15, 15))
         );
         jPanelMainLayout.setVerticalGroup(
@@ -197,9 +195,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 .addComponent(jButtonNewProject, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButtonOpenProject, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 370, Short.MAX_VALUE)
-                .addComponent(jLabel3)
-                .addContainerGap())
+                .addContainerGap(392, Short.MAX_VALUE))
         );
 
         jPanelNewProject.setMinimumSize(new java.awt.Dimension(394, 546));
@@ -218,10 +214,6 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 jButtonBackActionPerformed(evt);
             }
         });
-
-        jLabel4.setBackground(new java.awt.Color(255, 255, 255));
-        jLabel4.setText("Created by Martin Krčma");
-        jLabel4.setOpaque(true);
 
         jButtonCreateProject.setBackground(new java.awt.Color(51, 51, 51));
         jButtonCreateProject.setFont(new java.awt.Font("Gadugi", 1, 14)); // NOI18N
@@ -282,8 +274,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                         .addGroup(jPanelNewProjectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelNewProjectLayout.createSequentialGroup()
                                 .addComponent(jButtonBack, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(0, 142, Short.MAX_VALUE)
-                                .addComponent(jLabel4))
+                                .addGap(0, 0, Short.MAX_VALUE))
                             .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelNewProjectLayout.createSequentialGroup()
                                 .addGap(21, 21, 21)
                                 .addGroup(jPanelNewProjectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -292,7 +283,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                                 .addGroup(jPanelNewProjectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(jPanelNewProjectLayout.createSequentialGroup()
                                         .addGap(75, 75, 75)
-                                        .addComponent(jButtonCreateProject, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                        .addComponent(jButtonCreateProject, javax.swing.GroupLayout.DEFAULT_SIZE, 217, Short.MAX_VALUE))
                                     .addGroup(jPanelNewProjectLayout.createSequentialGroup()
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                         .addGroup(jPanelNewProjectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -316,9 +307,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 .addGap(38, 38, 38)
                 .addComponent(jButtonCreateProject)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 284, Short.MAX_VALUE)
-                .addGroup(jPanelNewProjectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jButtonBack, javax.swing.GroupLayout.Alignment.TRAILING))
+                .addComponent(jButtonBack)
                 .addContainerGap())
         );
 
@@ -338,10 +327,6 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 jButtonBackActionPerformed(evt);
             }
         });
-
-        jLabel8.setBackground(new java.awt.Color(255, 255, 255));
-        jLabel8.setText("Created by Martin Krčma");
-        jLabel8.setOpaque(true);
 
         jButtonCreateProject1.setBackground(new java.awt.Color(51, 51, 51));
         jButtonCreateProject1.setFont(new java.awt.Font("Gadugi", 1, 14)); // NOI18N
@@ -392,8 +377,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                         .addGroup(jPanelNewLibraryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelNewLibraryLayout.createSequentialGroup()
                                 .addComponent(jButtonBack1, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(0, 142, Short.MAX_VALUE)
-                                .addComponent(jLabel8))
+                                .addGap(0, 0, Short.MAX_VALUE))
                             .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelNewLibraryLayout.createSequentialGroup()
                                 .addGap(21, 21, 21)
                                 .addGroup(jPanelNewLibraryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -402,7 +386,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                                 .addGroup(jPanelNewLibraryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                                     .addGroup(jPanelNewLibraryLayout.createSequentialGroup()
                                         .addGap(75, 75, 75)
-                                        .addComponent(jButtonCreateProject1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                        .addComponent(jButtonCreateProject1, javax.swing.GroupLayout.DEFAULT_SIZE, 217, Short.MAX_VALUE))
                                     .addGroup(jPanelNewLibraryLayout.createSequentialGroup()
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                         .addGroup(jPanelNewLibraryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -426,9 +410,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 .addGap(38, 38, 38)
                 .addComponent(jButtonCreateProject1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 284, Short.MAX_VALUE)
-                .addGroup(jPanelNewLibraryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel8, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jButtonBack1, javax.swing.GroupLayout.Alignment.TRAILING))
+                .addComponent(jButtonBack1)
                 .addContainerGap())
         );
 
@@ -490,9 +472,9 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
         jPanelBodyLayout.setVerticalGroup(
             jPanelBodyLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
             .addGroup(jPanelBodyLayout.createSequentialGroup()
-                .addContainerGap()
+                .addGap(16, 16, 16)
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(28, 28, 28)
+                .addGap(18, 18, 18)
                 .addComponent(jLabel2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 383, Short.MAX_VALUE)
@@ -580,11 +562,13 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
             //add new project
             Project project = new Project(this.jTextFieldProjectName.getText());
             project.setFile(new File(this.jTextFieldLocation1.getText()));
+            
             project.init(this.core, null);
             //add main workspace
             WorkSpace w = new WorkSpace("Main", project);
             project.getProjectFiles().add(w);
             project.setSelectedFile(w);
+            
             //add logic system core
             this.core.getLSComponents().add(project);
             project.init(this.core, null);
@@ -655,8 +639,8 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                     showAllLastProjects(this.lastProjects);
                     try {
                         writer.writeFile(this.lastProjects);
-                    } catch (Exception ex1) {
-                        Logger.getLogger(ProjectWizard.class.getName()).log(Level.SEVERE, null, ex1);
+                    } catch (Exception ex) {
+                        ExceptionLogger.getInstance().logException(ex);
                     }
                 } else {
                     //opent project
@@ -666,7 +650,7 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                     dispose();
                 }
             } catch (Exception ex) {
-                Logger.getLogger(ProjectWizard.class.getName()).log(Level.SEVERE, null, ex);
+                ExceptionLogger.getInstance().logException(ex);
                 JOptionPane.showMessageDialog(this, "Cant open project", "Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
@@ -694,13 +678,6 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
         this.jPanel1.repaint();
     }
 
-    /**
-     * Show open project menu
-     */
-    private void showOpenProject() {
-
-    }
-
     @Override
     public void init(LogicSimulatorCore core, PropertieReader propt) throws Exception {
         this.core = core;
@@ -711,6 +688,29 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
                 showAllLastProjects(propts);
             }
         } catch (IOException ex) {
+        }
+    }
+
+    /**
+     * Set mode of project wizzard
+     *
+     * @param mode Mode (DEFAULT, NEW, OPEN)
+     */
+    public void setMode(ProjectWizard.Mode mode) {
+
+        this.jButtonNewProject.setVisible(true);
+        this.jButtonOpenProject.setVisible(true);
+        this.jListLastProjects.setVisible(true);
+
+        //apply mode
+        switch (mode) {
+            case NEW:
+                this.jButtonOpenProject.setVisible(false);
+                this.jListLastProjects.setVisible(false);
+                break;
+            case OPEN:
+                this.jButtonNewProject.setVisible(false);
+                break;
         }
     }
 
@@ -756,12 +756,9 @@ public class ProjectWizard extends javax.swing.JDialog implements LSComponent {
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JList<String> jListLastProjects;
     private javax.swing.JPanel jPanel1;
