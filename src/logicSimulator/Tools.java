@@ -362,8 +362,8 @@ public class Tools {
         }
         for (IOPin pin : obj.getPins()) {
             Point.Double p = pin.getPosition();
-            if (Math.abs(Math.pow(o.x + p.x - cursor.x, 2)
-                    + Math.pow(o.y + p.y - cursor.y, 2)) < 20) {
+            if (Math.sqrt(Math.pow(o.x + p.x - cursor.x, 2)
+                    + Math.pow(o.y + p.y - cursor.y, 2)) < LogicSimulatorCore.WORK_SPACE_STEP / 2) {
                 return pin;
             }
         }

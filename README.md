@@ -6,6 +6,11 @@ This software is used to simulate sequential and combinational circuits. It allo
 <img src="https://github.com/0xMartin/LogicSimulator/blob/master/img/img1.PNG" width=20%>
 
 ## Keyboard shortcuts
+* Global
+	* CTR + ENTER: (new file, new component)
+	* CTR + Q: control mode
+	* CTR + E: edit mode	
+	* CTR + Right mouse button: remove reference component from toolbar
 * Workspace
 	* CTR + C: copy objects
 	* CTR + V: paste objects

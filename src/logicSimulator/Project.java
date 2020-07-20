@@ -18,6 +18,7 @@ package logicSimulator;
 
 import logicSimulator.data.PropertieReader;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import logicSimulator.common.CopyObjectVector;
@@ -47,7 +48,7 @@ public class Project implements LSComponent {
 
     //name of project
     private String name;
-    
+
     //true -> edit mode activated (for circuit editing, ...), false -> control mode
     public boolean editMode = true;
 
@@ -71,7 +72,7 @@ public class Project implements LSComponent {
      * @param projectFile ProjectFile
      */
     public void setSelectedFile(ProjectFile projectFile) {
-        this.selectedFile = projectFile;      
+        this.selectedFile = projectFile;
     }
 
     /**
@@ -93,10 +94,11 @@ public class Project implements LSComponent {
             }
         }
     }
-    
+
     /**
      * Display project file in main window
-     * @param pf Project File 
+     *
+     * @param pf Project File
      */
     public void displayFile(ProjectFile pf) {
         if (this.core == null) {
@@ -143,21 +145,39 @@ public class Project implements LSComponent {
     public String getName() {
         return this.name;
     }
-    
+
     public void setName(String name) {
-        if(name != null) {
-            if(name.length() != 0) {
+        if (name != null) {
+            if (name.length() != 0) {
                 this.name = name;
             }
         }
     }
 
+    /**
+     * Get location of project
+     * @return 
+     */
     public File getFile() {
         return this.file;
     }
 
+    /**
+     * Set location of porject
+     * @param file 
+     */
     public void setFile(File file) {
         this.file = file;
     }
 
+    private final List<WorkSpaceObject> refComponent = new ArrayList<>();
+
+    /**
+     * References on components (components in toolbar)
+     * @return List<WorkSpaceObject>
+     */
+    public List<WorkSpaceObject> getRefComponents() {
+        return this.refComponent;
+    }
+    
 }

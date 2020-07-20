@@ -23,8 +23,12 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Event;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,6 +38,7 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -41,6 +46,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
 import logicSimulator.CircuitHandler;
 import logicSimulator.ComputeCore;
@@ -123,6 +129,19 @@ public class MainWindow extends JFrame implements LSComponent {
         ((NumberChooser) this.ups).setValueChangedEvent((ActionEvent e) -> {
             this.comuteCore.setUPS(((NumberChooser) this.ups).getValue());
         });
+
+        //edit mode
+        this.jPanelBody.registerKeyboardAction(
+                (ActionEvent e) -> {
+                    editMode();
+                }, KeyStroke.getKeyStroke(KeyEvent.VK_E, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+        //contro mode
+        this.jPanelBody.registerKeyboardAction(
+                (ActionEvent e) -> {
+                    controlMode();
+                }, KeyStroke.getKeyStroke(KeyEvent.VK_Q, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
     }
 
     /**
@@ -851,16 +870,15 @@ public class MainWindow extends JFrame implements LSComponent {
                 ((PFTwoSlotViewer) this.pfdockingPanel).displayProjectFile(pf);
             }
         });
-        
+
         //display visible project file (select in tab)
         this.project.getProjectFiles().stream().forEach((pf) -> {
             if (pf.getPFMode().VISIBLE) {
                 ((PFTwoSlotViewer) this.pfdockingPanel).displayProjectFile(pf);
             }
         });
-        
-        
-        if(this.project.getProjectFiles().size() == 1) {
+
+        if (this.project.getProjectFiles().size() == 1) {
             ((PFTwoSlotViewer) this.pfdockingPanel).displayProjectFile(this.project.getProjectFiles().get(0));
         }
 
@@ -869,6 +887,10 @@ public class MainWindow extends JFrame implements LSComponent {
     }//GEN-LAST:event_formWindowOpened
 
     private void jButtonEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonEditActionPerformed
+        editMode();
+    }//GEN-LAST:event_jButtonEditActionPerformed
+
+    private void editMode() {
         this.project.editMode = true;
         this.jButtonEdit.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         this.jButtonControl.setBorder(null);
@@ -876,9 +898,13 @@ public class MainWindow extends JFrame implements LSComponent {
         this.project.getProjectFiles().stream().forEach((w) -> {
             w.getComp().setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         });
-    }//GEN-LAST:event_jButtonEditActionPerformed
+    }
 
     private void jButtonControlActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonControlActionPerformed
+        controlMode();
+    }//GEN-LAST:event_jButtonControlActionPerformed
+
+    private void controlMode() {
         this.project.editMode = false;
         this.jButtonControl.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         this.jButtonEdit.setBorder(null);
@@ -889,7 +915,7 @@ public class MainWindow extends JFrame implements LSComponent {
         this.project.getProjectFiles().stream().forEach((w) -> {
             w.getComp().setCursor(new Cursor(Cursor.HAND_CURSOR));
         });
-    }//GEN-LAST:event_jButtonControlActionPerformed
+    }
 
     private void jMenuItemOpenProjectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemOpenProjectActionPerformed
         openProjectWizzard(ProjectWizard.Mode.OPEN);
@@ -1382,12 +1408,6 @@ public class MainWindow extends JFrame implements LSComponent {
             List<Propertie> propts = propt.readFile();
             propts.stream().forEach((p -> {
                 switch (p.getName()) {
-                    //ref components
-                    case "RefComponent":
-                        this.addComponentToToolbar(
-                                this.componentChooser.selectComponent(p.getValueString())
-                        );
-                        break;
                     //color
                     case "GRID":
                         Colors.GRID = new Color(p.getValueInt());
@@ -1448,6 +1468,14 @@ public class MainWindow extends JFrame implements LSComponent {
         } catch (Exception ex) {
             ExceptionLogger.getInstance().logException(ex);
         }
+
+        //ref components
+        this.project.getRefComponents().stream().forEach((obj) -> {
+            this.addComponentToToolbar(
+                    obj.cloneObject()
+            );
+        });
+
         //set value for ups controler (value can be changed in compute core from propertie file)
         ((NumberChooser) this.ups).setValue(this.comuteCore.getCTL().getTicksPerSecond());
     }
@@ -1616,8 +1644,11 @@ public class MainWindow extends JFrame implements LSComponent {
             //commponent can be only one in toolbar
             for (Component c : this.jToolBarComponents.getComponents()) {
                 if (c instanceof JButton) {
-                    if (((JButton) c).getToolTipText().equals(componentName)) {
-                        return;
+                    String toolTip = ((JButton) c).getToolTipText();
+                    if (toolTip != null) {
+                        if (toolTip.equals(componentName)) {
+                            return;
+                        }
                     }
                 }
             }
@@ -1637,10 +1668,41 @@ public class MainWindow extends JFrame implements LSComponent {
                     }
                 }
             });
+            b.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    if (e.getButton() == 3) {
+                        //remove object from toolbar
+                        jToolBarComponents.remove(b);
+                        jToolBarComponents.revalidate();
+                        jToolBarComponents.repaint();
+                        //remove object from list
+                        String objName = Tools.getComponentName(obj);
+                        for(WorkSpaceObject obj2 : project.getRefComponents()) {
+                            if(objName.equals(Tools.getComponentName(obj2))) {
+                                project.getRefComponents().remove(obj2);
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+
             //create image of selected object and set this image for button        
             b.setIcon(new ImageIcon(Tools.createImage(obj, 20, Math.PI / 4)));
+
             //add to toolbar
             this.jToolBarComponents.add(b);
+
+            //add to ref list in project
+            String objName = Tools.getComponentName(obj);
+            if (this.project.getRefComponents().stream()
+                    .allMatch((obj2) -> (!objName.equals(Tools.getComponentName(obj2))))) {
+                this.project.getRefComponents().add(obj);
+            }
+
+            this.jToolBarComponents.revalidate();
+            this.jToolBarComponents.repaint();
         }
     }
 

@@ -17,12 +17,17 @@
 package window;
 
 import java.awt.Color;
+import java.awt.Event;
 import java.awt.Point;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import logicSimulator.Tools;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.KeyStroke;
 import logicSimulator.projectFile.HexEditor;
 import logicSimulator.projectFile.ModuleEditor;
 import logicSimulator.Project;
@@ -57,6 +62,12 @@ public class NewFile extends javax.swing.JFrame {
         //center location
         super.setLocationRelativeTo(window);
         this.update();
+
+        this.jPanel1.registerKeyboardAction(
+                (ActionEvent e) -> {
+                    addFileToProject();
+                }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
     }
 
     private void update() {
@@ -290,6 +301,10 @@ public class NewFile extends javax.swing.JFrame {
     }//GEN-LAST:event_jTextFieldNameKeyReleased
 
     private void jButtonAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonAddActionPerformed
+        addFileToProject();
+    }//GEN-LAST:event_jButtonAddActionPerformed
+
+    private void addFileToProject() {
         if (this.lastName.length() == 0) {
             return;
         }
@@ -341,7 +356,7 @@ public class NewFile extends javax.swing.JFrame {
             //dispose this window
             dispose();
         }
-    }//GEN-LAST:event_jButtonAddActionPerformed
+    }
 
     private void jButtonsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonsActionPerformed
         if (evt.getSource() == this.jButton1) {

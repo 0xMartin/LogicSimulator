@@ -19,6 +19,7 @@ package window;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Event;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -33,8 +34,10 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
+import javax.swing.JComponent;
 import logicSimulator.ui.SystemResources;
 import javax.swing.JList;
+import javax.swing.KeyStroke;
 import logicSimulator.HTMLImageLoader;
 import logicSimulator.LogicSimulatorCore;
 import logicSimulator.projectFile.ModuleEditor;
@@ -199,6 +202,12 @@ public class ComponentChooser extends javax.swing.JFrame {
         ((PropertieEditor) this.jTableProperties).onPropertieChange((ActionEvent e) -> {
             this.jPanelView.repaint();
         });
+
+        this.jScrollPane1.registerKeyboardAction(
+                (ActionEvent e) -> {
+                    chooseComponent();
+                }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, Event.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
     }
 
     private void reloadList(WorkSpace currentWorkspace) {
@@ -575,6 +584,10 @@ public class ComponentChooser extends javax.swing.JFrame {
     }//GEN-LAST:event_jComboBox1ActionPerformed
 
     private void jButtonPlaceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonPlaceActionPerformed
+        chooseComponent();
+    }//GEN-LAST:event_jButtonPlaceActionPerformed
+
+    private void chooseComponent() {
         if (this.project == null) {
             dispose();
             return;
@@ -591,7 +604,7 @@ public class ComponentChooser extends javax.swing.JFrame {
             }
             dispose();
         }
-    }//GEN-LAST:event_jButtonPlaceActionPerformed
+    }
 
     /**
      * Select and display component
@@ -756,111 +769,112 @@ public class ComponentChooser extends javax.swing.JFrame {
         }
     }
 
-    public WorkSpaceObject selectComponent(String id) {
+    public static WorkSpaceObject selectComponent(String id) {
+        id = id.toLowerCase();
         switch (id) {
             //gate
-            case "Buffer":
+            case "buffer":
                 return new Buffer(new Point(0, 0), 1);
-            case "Not":
+            case "not":
                 return new Not(new Point(0, 0), 1);
-            case "Or":
+            case "or":
                 return new Or(new Point(0, 0), 1, 2);
-            case "Nor":
+            case "nor":
                 return new Nor(new Point(0, 0), 1, 2);
-            case "And":
+            case "and":
                 return new And(new Point(0, 0), 1, 2);
-            case "Nand":
+            case "nand":
                 return new Nand(new Point(0, 0), 1, 2);
-            case "Xor":
+            case "xor":
                 return new Xor(new Point(0, 0), 1, 2);
-            case "Nxor":
+            case "nxor":
                 return new Nxor(new Point(0, 0), 1, 2);
-            case "MUX":
+            case "mux":
                 return new MUX(new Point(0, 0), 1, 2);
-            case "DMUX":
+            case "dmux":
                 return new DMUX(new Point(0, 0), 1, 2);
-            case "Controled buffer":
+            case "controled buffer":
                 return new ControledBuffer(new Point(0, 0), 1);
-            case "Controled not":
+            case "controled not":
                 return new ControledNot(new Point(0, 0), 1);
             //input
-            case "Button":
+            case "button":
                 return new Button(new Point(0, 0), 1);
-            case "Clock":
+            case "clock":
                 return new Clock(new Point(0, 0), 1);
-            case "Keyboard":
+            case "keyboard":
                 return new KeyBoard(new Point(0, 0));
-            case "Random generator":
+            case "random generator":
                 return new RandomGenerator(new Point(0, 0), 1);
-            case "Serial input trigger":
+            case "serial input trigger":
                 return new SerialInputTrigger(new Point(0, 0), "SI" + Tools.randomNumber(5));
             //output
-            case "Bulp":
+            case "bulp":
                 return new Bulp(new Point(0, 0), 1);
-            case "Raster screen":
+            case "raster screen":
                 return new RasterScreen(new Point(0, 0), 10, 10, 10);
-            case "Vector screen":
+            case "vector screen":
                 return new VectorScreen(new Point(0, 0), 240, 240);
-            case "Text screen":
+            case "text screen":
                 return new TextScreen(new Point(0, 0));
             case "7 seg":
                 return new SevenSeg(new Point(0, 0));
-            case "Serial output trigger":
+            case "serial output trigger":
                 return new SerialOutputTrigger(new Point(0, 0), "SO" + Tools.randomNumber(5));
             //wiring
-            case "Bit get":
+            case "bit get":
                 return new BitGet(new Point(0, 0), new boolean[1]);
-            case "Bit set":
+            case "bit set":
                 return new BitSet(new Point(0, 0), new int[1]);
-            case "Input":
+            case "input":
                 return new Input(new Point(0, 0), 1);
-            case "Output":
+            case "output":
                 return new Output(new Point(0, 0), 1);
-            case "Bridge":
+            case "bridge":
                 return new Bridge(new Point(0, 0), "A");
-            case "Constant":
+            case "constant":
                 return new Constant(new Point(0, 0));
             //timing
-            case "Falling edge detector":
+            case "falling edge detector":
                 return new FallingEdgeDetector(new Point(0, 0), 1);
-            case "Raising edge detector":
+            case "raising edge detector":
                 return new RaisingEdgeDetector(new Point(0, 0), 1);
             //memory
-            case "ROM RAM":
+            case "rom ram":
                 return new ROMRAM(new Point(0, 0), 8, "Mem" + Tools.randomNumber(5));
-            case "RWM SAM":
+            case "rwm sam":
                 return new RWMSAM(new Point(0, 0), 8, "Mem" + Tools.randomNumber(5));
-            case "RWM RAM":
+            case "rwm ram":
                 return new RWMRAM(new Point(0, 0), 8, "Mem" + Tools.randomNumber(5));
-            case "Counter":
+            case "counter":
                 return new Counter(new Point(0, 0), 8);
-            case "RS flip flop":
+            case "rs flip flop":
                 return new RSFlipFlop(new Point(0, 0));
-            case "JK flip flop":
+            case "jk flip flop":
                 return new JKFlipFlop(new Point(0, 0));
-            case "D flip flop":
+            case "d flip flop":
                 return new DFlipFlop(new Point(0, 0));
-            case "T flip flop":
+            case "t flip flop":
                 return new TFlipFlop(new Point(0, 0));
-            case "Register":
+            case "register":
                 return new Register(new Point(0, 0), 8);
-            case "LIFO":
+            case "lifo":
                 return new LIFO(new Point(0, 0), 8);
-            case "FIFO":
+            case "fifo":
                 return new FIFO(new Point(0, 0), 8);
             //aritmetic
-            case "Magnitude comparator":
+            case "magnitude comparator":
                 return new MagnitudeComparator(new Point(0, 0), 1);
-            case "Add":
+            case "add":
                 return new BitAdd(new Point(0, 0), 1);
-            case "Sub":
+            case "sub":
                 return new BitSub(new Point(0, 0), 1);
-            case "Mul":
+            case "mul":
                 return new BitMul(new Point(0, 0), 1);
-            case "Div":
+            case "div":
                 return new BitDiv(new Point(0, 0), 1);
             //complex
-            case "MCU":
+            case "mcu":
                 return new MCU(new Point(0, 0), "MCU" + Tools.randomNumber(5));
             //modules
             default:

@@ -62,11 +62,6 @@ public class SystemClosing {
         PropertieWriter writer = new PropertieWriter(LogicSimulatorCore.PROPT_WINDOW);
         List<Propertie> propts = new ArrayList<>();
         try {
-            //ref components
-            List<String> l1 = this.window.getRefComponents();
-            l1.forEach((c) -> {
-                propts.add(new Propertie("RefComponent", c));
-            });
             //colors
             propts.add(new Propertie("GRID", Colors.GRID.getRGB()));
             propts.add(new Propertie("BACKGROUND", Colors.BACKGROUND.getRGB()));
@@ -86,7 +81,7 @@ public class SystemClosing {
             propts.add(new Propertie("GR_BACKGROUND", Colors.GR_BACKGROUND.getRGB()));
             propts.add(new Propertie("GR_AXES", Colors.GR_AXES.getRGB()));
             propts.add(new Propertie("GR_GRAPHLINE", Colors.GR_GRAPHLINE.getRGB()));
-            
+
             writer.writeFile(propts);
         } catch (Exception ex) {
         }

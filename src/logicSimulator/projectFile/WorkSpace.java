@@ -1295,7 +1295,9 @@ public class WorkSpace extends ProjectFile {
                                             pin.getPosition().x + obj.getPosition().x,
                                             pin.getPosition().y + obj.getPosition().y
                                     );
-                                    if (Tools.dist(p, pt) < 4) {
+                                    
+                                    //distance between cursor and wire must be lower then (LogicSimulatorCore.WORK_SPACE_STEP / 2)
+                                    if (Tools.dist(p, pt) < LogicSimulatorCore.WORK_SPACE_STEP / 2) {
                                         add = true;
                                         break;
                                     }

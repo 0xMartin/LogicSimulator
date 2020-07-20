@@ -34,10 +34,13 @@ import logicSimulator.PFMode;
 import logicSimulator.Project;
 import logicSimulator.ProjectFile;
 import logicSimulator.Tools;
+import logicSimulator.WorkSpaceObject;
 import logicSimulator.projectFile.WorkSpace;
 import logicSimulator.common.Propertie;
 import logicSimulator.projectFile.DocumentationEditor;
 import logicSimulator.projectFile.Library;
+import window.ComponentChooser;
+import window.MainWindow;
 
 /**
  * Save or open project
@@ -119,6 +122,12 @@ public class IOProject {
         }
         propts.add(new Propertie("opened_left", opened_left));
         propts.add(new Propertie("opened_right", opened_right));
+
+        //ref components
+        List<WorkSpaceObject> l1 = this.project.getRefComponents();
+        l1.forEach((obj) -> {
+            propts.add(new Propertie("RefComponent", Tools.getComponentName(obj)));
+        });
 
         //write propt file
         writer.writeFile(propts);
@@ -241,6 +250,11 @@ public class IOProject {
                 } else if (propt.getName().equals("opened_right")) {
                     //store all opened workspaces
                     opened_right = propt.getValueString();
+                } else if (propt.getName().equals("RefComponent")) {
+                    //ref components
+                    this.project.getRefComponents().add(
+                            ComponentChooser.selectComponent(propt.getValueString())
+                    );
                 }
             } catch (Exception ex) {
                 ExceptionLogger.getInstance().logException(ex);
