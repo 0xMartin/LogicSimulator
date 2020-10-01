@@ -105,6 +105,7 @@ public class Output extends WorkSpaceObject {
                     i = Math.max(i, 1);
                     i = Math.min(i, 128);
                     super.getPins().get(0).changeBitWidth(i);
+                    this.output.changeBitWidth(i);
                     break;
                 case "Label":
                     this.label = propt.getValueString();

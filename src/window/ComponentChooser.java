@@ -61,7 +61,7 @@ import logicSimulator.objects.input.Clock;
 import logicSimulator.objects.input.RandomGenerator;
 import logicSimulator.objects.output.Bulp;
 import logicSimulator.objects.output.RasterScreen;
-import logicSimulator.objects.output.VectorScreen;
+import logicSimulator.objects.output.GraphicsScreen;
 import logicSimulator.objects.gate.And;
 import logicSimulator.objects.gate.Buffer;
 import logicSimulator.objects.gate.ControledBuffer;
@@ -125,7 +125,7 @@ public class ComponentChooser extends javax.swing.JFrame {
         "Bulp",
         "7 seg",
         "Raster screen",
-        "Vector screen",
+        "Graphics screen",
         "Text screen",
         "Serial output trigger"
     };
@@ -813,8 +813,8 @@ public class ComponentChooser extends javax.swing.JFrame {
                 return new Bulp(new Point(0, 0), 1);
             case "raster screen":
                 return new RasterScreen(new Point(0, 0), 10, 10, 10);
-            case "vector screen":
-                return new VectorScreen(new Point(0, 0), 240, 240);
+            case "graphics screen":
+                return new GraphicsScreen(new Point(0, 0), 240, 240);
             case "text screen":
                 return new TextScreen(new Point(0, 0));
             case "7 seg":

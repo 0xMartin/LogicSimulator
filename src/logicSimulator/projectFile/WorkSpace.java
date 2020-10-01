@@ -329,7 +329,7 @@ public class WorkSpace extends ProjectFile {
     /**
      * Unselest all objects in workspaces
      *
-     * @param ignore
+     * @param ignore WorkSpaceObject
      */
     public void unselectAllObjects(WorkSpaceObject ignore) {
         objects.forEach((obj) -> {
@@ -345,7 +345,14 @@ public class WorkSpace extends ProjectFile {
      */
     public void selectAllObjects() {
         objects.forEach((obj) -> {
-            obj.select(obj.getPosition());
+            if (obj instanceof Wire) {
+                ((Wire) obj).getSelectedLines().clear();
+                ((Wire) obj).getPath().stream().forEach((line) -> {
+                    ((Wire) obj).getSelectedLines().add(line);
+                });
+            } else {
+                obj.select(obj.getPosition());
+            }
         });
     }
 
@@ -1295,7 +1302,7 @@ public class WorkSpace extends ProjectFile {
                                             pin.getPosition().x + obj.getPosition().x,
                                             pin.getPosition().y + obj.getPosition().y
                                     );
-                                    
+
                                     //distance between cursor and wire must be lower then (LogicSimulatorCore.WORK_SPACE_STEP / 2)
                                     if (Tools.dist(p, pt) < LogicSimulatorCore.WORK_SPACE_STEP / 2) {
                                         add = true;

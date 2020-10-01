@@ -51,6 +51,7 @@ import javax.swing.text.StyledEditorKit;
 import javax.swing.text.StyledEditorKit.FontFamilyAction;
 import javax.swing.text.StyledEditorKit.FontSizeAction;
 import javax.swing.text.StyledEditorKit.ForegroundAction;
+import logicSimulator.CircuitHandler;
 import logicSimulator.ProjectFile;
 import logicSimulator.Tools;
 import logicSimulator.WorkSpaceObject;
@@ -211,13 +212,24 @@ public class ProjectFileToolbar extends JToolBar {
             }
             w.repaint();
         });
-        this.add(b);
+        this.add(b); 
 
         //align vertical
         b = new ButtonHQ();
         b.setBorderWidth(1);
         b.setToolTipText("Vertical Align");
         b.setIcon(SystemResources.TOOLBAR_ALIGN_VERTICAL);
+        b.addActionListener((ActionEvent e) -> {
+            WorkSpace w = (WorkSpace) this.projectFile;
+            List<WorkSpaceObject> sel = new ArrayList<>();
+            w.getObjects().stream().forEach((obj) -> {
+                if(obj.isSelected()) {
+                    sel.add(obj);
+                }
+            });
+            CircuitHandler.vAlign(sel);
+            w.getHandler().repaintPF();
+        });
         this.add(b);
 
         //align horisontal
@@ -225,6 +237,17 @@ public class ProjectFileToolbar extends JToolBar {
         b.setBorderWidth(1);
         b.setToolTipText("Horisontal Align");
         b.setIcon(SystemResources.TOOLBAR_ALIGN_HORISONTAL);
+        b.addActionListener((ActionEvent e) -> {
+            WorkSpace w = (WorkSpace) this.projectFile;
+            List<WorkSpaceObject> sel = new ArrayList<>();
+            w.getObjects().stream().forEach((obj) -> {
+                if(obj.isSelected()) {
+                    sel.add(obj);
+                }
+            });
+            CircuitHandler.hAlign(sel);
+            w.getHandler().repaintPF();
+        });
         this.add(b);
 
         //text

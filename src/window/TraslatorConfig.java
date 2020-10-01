@@ -40,7 +40,7 @@ import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 import logicSimulator.common.LinkASM;
 import logicSimulator.objects.complex.MCU;
-import logicSimulator.objects.output.VectorScreen;
+import logicSimulator.objects.output.GraphicsScreen;
 import logicSimulator.ui.SystemResources;
 
 /**
@@ -335,7 +335,7 @@ public class TraslatorConfig extends javax.swing.JFrame {
                 "Import traslator", JOptionPane.PLAIN_MESSAGE);
         switch ((String) list.getSelectedItem()) {
             case "VECTOR SCREEN":
-                for (LinkASM link : VectorScreen.getInstructions()) {
+                for (LinkASM link : GraphicsScreen.getInstructions()) {
                     link.Mnemonic = prefix.getText() + link.Mnemonic;
                     link.Mnemonic = link.Mnemonic.toLowerCase();
                     addToTranslator(link);

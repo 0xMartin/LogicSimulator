@@ -177,7 +177,7 @@
                 <Property name="accelerator" type="javax.swing.KeyStroke" editor="org.netbeans.modules.form.editors.KeyStrokeEditor">
                   <KeyStroke key="Ctrl+W"/>
                 </Property>
-                <Property name="text" type="java.lang.String" value="Place component"/>
+                <Property name="text" type="java.lang.String" value="Component chooser"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMenuItemPlaceComponentActionPerformed"/>
@@ -275,7 +275,7 @@
             <MenuItem class="javax.swing.JMenuItem" name="jMenuItemStop">
               <Properties>
                 <Property name="accelerator" type="javax.swing.KeyStroke" editor="org.netbeans.modules.form.editors.KeyStrokeEditor">
-                  <KeyStroke key="F6"/>
+                  <KeyStroke key="F8"/>
                 </Property>
                 <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
                   <Connection code="SystemResources.TOOLBAR_STOP" type="code"/>
@@ -332,6 +332,9 @@
                 </Property>
                 <Property name="text" type="java.lang.String" value="Settings"/>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMenuItemSettingsGlobalActionPerformed"/>
+              </Events>
               <AuxValues>
                 <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new MenuItemHQ()"/>
               </AuxValues>
@@ -390,8 +393,11 @@
             </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="jMenuItemPrint2">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Object  analysis"/>
+                <Property name="text" type="java.lang.String" value="Objects handler"/>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMenuItemPrint2ActionPerformed"/>
+              </Events>
               <AuxValues>
                 <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new MenuItemHQ()"/>
               </AuxValues>
@@ -522,7 +528,7 @@
               <Group type="102" alignment="0" attributes="0">
                   <Component id="jToolBarMain" min="-2" pref="25" max="-2" attributes="0"/>
                   <EmptySpace min="-2" pref="0" max="-2" attributes="0"/>
-                  <Component id="jSplitPaneBody" pref="495" max="32767" attributes="0"/>
+                  <Component id="jSplitPaneBody" pref="600" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -984,7 +990,7 @@
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="jScrollPane3" alignment="1" pref="427" max="32767" attributes="0"/>
+                          <Component id="jScrollPane3" alignment="1" pref="532" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>
@@ -1034,12 +1040,12 @@
               <Layout>
                 <DimensionLayout dim="0">
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <EmptySpace min="0" pref="565" max="32767" attributes="0"/>
+                      <EmptySpace min="0" pref="958" max="32767" attributes="0"/>
                   </Group>
                 </DimensionLayout>
                 <DimensionLayout dim="1">
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <EmptySpace min="0" pref="495" max="32767" attributes="0"/>
+                      <EmptySpace min="0" pref="600" max="32767" attributes="0"/>
                   </Group>
                 </DimensionLayout>
               </Layout>

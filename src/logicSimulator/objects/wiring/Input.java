@@ -85,7 +85,7 @@ public class Input extends WorkSpaceObject {
                     (int) (super.getPosition().x + super.getModel().getBoundsMin().x
                     - g2.getFontMetrics().stringWidth(this.label) - 9),
                     (int) (super.getPosition().y + super.getModel().getBoundsMin().y
-                    + (super.getModel().getAngle() == 2 ? 0 : super.getModel().getHeight() / 2))
+                    + (super.getModel().getAngle() == 1 ? 0 : super.getModel().getHeight() / 2))
             );
         }
     }
@@ -107,6 +107,7 @@ public class Input extends WorkSpaceObject {
                     i = Math.max(i, 1);
                     i = Math.min(i, 128);
                     super.getPins().get(0).changeBitWidth(i);
+                    this.input.changeBitWidth(i);
                     break;
                 case "Label":
                     this.label = propt.getValueString();

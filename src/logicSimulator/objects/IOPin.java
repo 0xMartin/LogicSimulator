@@ -21,8 +21,6 @@ import logicSimulator.ui.Colors;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.io.Serializable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import logicSimulator.ExceptionLogger;
 import logicSimulator.objects.wiring.Wire;
 import logicSimulator.ui.Fonts;
@@ -56,7 +54,7 @@ public class IOPin implements Serializable {
 
     //draw clk symbol, can use if pin is on left or right side of component
     public boolean drawClkSymbol = false;
-
+    
     //mode of pin
     public final IOPin.MODE mode;
 

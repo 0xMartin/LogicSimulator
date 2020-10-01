@@ -55,11 +55,12 @@ public class BitAdd extends WorkSpaceObject {
         GOList.add(new Line(-28, 28, 28, 28));
 
         //pins
-        this.A = new IOPin(IOPin.MODE.INPUT, 1, "A", new Point.Double(-28.0, -14.0));
-        this.B = new IOPin(IOPin.MODE.INPUT, 1, "B", new Point.Double(-28.0, 14.0));
-        this.OUT = new IOPin(IOPin.MODE.OUTPUT, 1, "OUT", new Point.Double(28.0, 0));
-        this.CIN = new IOPin(IOPin.MODE.INPUT, 1, "CIN", new Point.Double(0, -28.0));
-        this.COUT = new IOPin(IOPin.MODE.OUTPUT, 1, "COUT", new Point.Double(0, 28.0));
+        this.bits = bits;
+        this.A = new IOPin(IOPin.MODE.INPUT, bits, "A", new Point.Double(-28.0, -14.0));
+        this.B = new IOPin(IOPin.MODE.INPUT, bits, "B", new Point.Double(-28.0, 14.0));
+        this.OUT = new IOPin(IOPin.MODE.OUTPUT, bits, "OUT", new Point.Double(28.0, 0));
+        this.CIN = new IOPin(IOPin.MODE.INPUT, bits, "CIN", new Point.Double(0, -28.0));
+        this.COUT = new IOPin(IOPin.MODE.OUTPUT, bits, "COUT", new Point.Double(0, 28.0));
         model.getIOPins().add(this.A);
         model.getIOPins().add(this.B);
         model.getIOPins().add(this.OUT);

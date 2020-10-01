@@ -197,11 +197,12 @@ public class Wire extends WorkSpaceObject{
     @Override
     public void unSelect() {
         this.selectedLines.clear();
+        super.unSelect();
     }
 
     @Override
     public boolean isSelected() {
-        return this.selectedLines.size() > 0;
+        return this.selectedLines.size() > 0 || super.isSelected();
     }
 
     @Override
@@ -209,6 +210,7 @@ public class Wire extends WorkSpaceObject{
         return null;
     }
 
+    @Override
     public Wire cloneObject() {
         Wire w = new Wire();
         //copy lines

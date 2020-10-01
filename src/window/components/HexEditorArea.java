@@ -136,8 +136,8 @@ public class HexEditorArea extends JScrollPane {
     public HexEditorArea() {
         //textarea with number of line
         this.number = new JTextArea(" 1 ");
-        this.number.setForeground(Color.BLUE);
-        this.number.setBackground(Color.white);
+        this.number.setForeground(Color.BLACK);
+        this.number.setBackground(Color.WHITE);
         this.number.setEditable(false);
 
         JScrollPane scrollPane = this;

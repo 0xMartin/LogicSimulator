@@ -40,7 +40,7 @@ import logicSimulator.ui.SystemResources;
  *
  * @author Martin
  */
-public class VectorScreen extends WorkSpaceObject {
+public class GraphicsScreen extends WorkSpaceObject {
 
     /**
      * Width and height of screen (number of pixels) and size of one pixel
@@ -71,7 +71,7 @@ public class VectorScreen extends WorkSpaceObject {
      * @param width width of screen (number of pixels)
      * @param height height of screen (number of pixels)
      */
-    public VectorScreen(Point position, int width, int height) {
+    public GraphicsScreen(Point position, int width, int height) {
         super(position);
         this.width = width;
         this.height = height;
@@ -191,7 +191,7 @@ public class VectorScreen extends WorkSpaceObject {
 
     @Override
     public WorkSpaceObject cloneObject() {
-        return new VectorScreen(Tools.copy(super.getPosition()), this.width, this.height);
+        return new GraphicsScreen(Tools.copy(super.getPosition()), this.width, this.height);
     }
 
     @Override

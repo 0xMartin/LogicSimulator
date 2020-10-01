@@ -49,9 +49,11 @@ import logicSimulator.objects.input.Clock;
 import logicSimulator.objects.input.RandomGenerator;
 import logicSimulator.objects.output.Bulp;
 import logicSimulator.objects.output.RasterScreen;
-import logicSimulator.objects.output.VectorScreen;
+import logicSimulator.objects.output.GraphicsScreen;
 import logicSimulator.objects.gate.And;
 import logicSimulator.objects.gate.Buffer;
+import logicSimulator.objects.gate.ControledBuffer;
+import logicSimulator.objects.gate.ControledNot;
 import logicSimulator.objects.gate.DMUX;
 import logicSimulator.objects.gate.MUX;
 import logicSimulator.objects.gate.Nand;
@@ -290,9 +292,9 @@ public class Tools {
         } else if (obj instanceof RandomGenerator) {
             //RANDOM GENERATOR
             return "RANDOM GENERATOR";
-        } else if (obj instanceof VectorScreen) {
-            //VECTOR SCREEN
-            return "VECTOR SCREEN";
+        } else if (obj instanceof GraphicsScreen) {
+            //GRAPHICS SCREEN
+            return "GRAPHICS SCREEN";
         } else if (obj instanceof ROMRAM) {
             //ROM RAM
             return "ROM RAM";
@@ -338,6 +340,12 @@ public class Tools {
         } else if (obj instanceof MCU) {
             //MCU
             return "MCU";
+        } else if (obj instanceof ControledBuffer) {
+            //CONTROLED BUFFER
+            return "CONTROLED BUFFER";
+        } else if (obj instanceof ControledNot) {
+            //CONTROLED NOT
+            return "CONTROLED NOT";
         }
         return null;
     }
@@ -1057,12 +1065,13 @@ public class Tools {
      * Create image of workspace object
      *
      * @param obj WorkSpaceObject
+     * @param imgSize Image size
      * @param size size of image
      * @param angle Rotation
      * @return
      */
-    public static BufferedImage createImage(WorkSpaceObject obj, int size, double angle) {
-        BufferedImage img = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+    public static BufferedImage createImage(WorkSpaceObject obj, Dimension imgSize, int size, double angle) {
+        BufferedImage img = new BufferedImage(imgSize.width, imgSize.height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = (Graphics2D) img.createGraphics();
         Tools.setHighQuality(g2);
         float scale = (float) size / (float) Math.max(

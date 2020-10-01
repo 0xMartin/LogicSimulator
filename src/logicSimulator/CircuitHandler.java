@@ -376,5 +376,25 @@ public class CircuitHandler {
 
         return pts;
     }
+    
+    public static void hAlign(List<WorkSpaceObject> objects) {
+        int y = 0;
+        y = objects.stream().map((obj) -> obj.getPosition().y).reduce(y, Integer::sum);
+        y = (int)(y/objects.size());
+        
+        for(WorkSpaceObject obj : objects) {
+            obj.getPosition().y = y;
+        }
+    }
+    
+    public static void vAlign(List<WorkSpaceObject> objects) {
+        int x = 0;
+        x = objects.stream().map((obj) -> obj.getPosition().x).reduce(x, Integer::sum);
+        x = (int)(x/objects.size());
+        
+        for(WorkSpaceObject obj : objects) {
+            obj.getPosition().x = x;
+        }
+    }
 
 }

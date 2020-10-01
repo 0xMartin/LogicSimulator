@@ -17,6 +17,8 @@
 package window;
 
 import javax.swing.JFrame;
+import logicSimulator.Project;
+import logicSimulator.common.CopyObjectVector;
 import logicSimulator.ui.SystemResources;
 import window.components.KarnaughMapComponent;
 
@@ -25,6 +27,8 @@ import window.components.KarnaughMapComponent;
  * @author Martin
  */
 public class KarnaughMap extends javax.swing.JFrame {
+
+    private Project project;
 
     /**
      * Creates new form KarnaughMap
@@ -55,6 +59,7 @@ public class KarnaughMap extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
         jButton5 = new javax.swing.JButton();
+        jLabelExpression = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Karnaugh map");
@@ -78,11 +83,11 @@ public class KarnaughMap extends javax.swing.JFrame {
         jPanelMap.setLayout(jPanelMapLayout);
         jPanelMapLayout.setHorizontalGroup(
             jPanelMapLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 499, Short.MAX_VALUE)
+            .addGap(0, 532, Short.MAX_VALUE)
         );
         jPanelMapLayout.setVerticalGroup(
             jPanelMapLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 377, Short.MAX_VALUE)
+            .addGap(0, 411, Short.MAX_VALUE)
         );
 
         jScrollPane1.setViewportView(jPanelMap);
@@ -115,6 +120,9 @@ public class KarnaughMap extends javax.swing.JFrame {
             }
         });
 
+        jLabelExpression.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabelExpression.setText(" ");
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -122,6 +130,7 @@ public class KarnaughMap extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabelExpression, javax.swing.GroupLayout.PREFERRED_SIZE, 535, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jScrollPane1)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jLabel1)
@@ -148,7 +157,9 @@ public class KarnaughMap extends javax.swing.JFrame {
                     .addComponent(jLabel1)
                     .addComponent(jComboBoxInputs, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 403, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabelExpression, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton2)
@@ -209,9 +220,19 @@ public class KarnaughMap extends javax.swing.JFrame {
         this.jPanelMap.repaint();
     }//GEN-LAST:event_jButton4ActionPerformed
 
+    public void setProject(Project project) {
+        this.project = project;
+    }
+
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        ((KarnaughMapComponent) this.jPanelMap).findSegments();
-        this.jPanelMap.repaint();
+        String expression = ((KarnaughMapComponent) this.jPanelMap).buildLogicExpression();
+        this.jLabelExpression.setText("<html><p>Y = " + expression.replaceAll("\\+", " + ") + "</p></html>");
+
+        if (this.project != null) {
+            this.project.copyObjects = new CopyObjectVector(
+                    ((KarnaughMapComponent) this.jPanelMap).buildCircuit(expression)
+            );
+        }
     }//GEN-LAST:event_jButton2ActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -222,6 +243,7 @@ public class KarnaughMap extends javax.swing.JFrame {
     private javax.swing.JButton jButton5;
     private javax.swing.JComboBox<String> jComboBoxInputs;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabelExpression;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanelMap;
     private javax.swing.JScrollPane jScrollPane1;

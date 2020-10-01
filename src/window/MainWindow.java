@@ -94,6 +94,8 @@ public class MainWindow extends JFrame implements LSComponent {
     private final Tutorial tutorial;
     private final About about;
     private final KarnaughMap kMap;
+    private final ObjectsHandler objectsHandler;
+    private final GlobalSettings globalSettings;
 
     /**
      * Creates new form MainWindow
@@ -113,6 +115,8 @@ public class MainWindow extends JFrame implements LSComponent {
         this.tutorial = new Tutorial(this);
         this.about = new About(this);
         this.kMap = new KarnaughMap(this);
+        this.objectsHandler = new ObjectsHandler(this);
+        this.globalSettings = new GlobalSettings(this);
 
         //propertie editor event
         ((PropertieEditor) this.jTableProperties).onPropertieChange((ActionEvent evt) -> {
@@ -516,7 +520,7 @@ public class MainWindow extends JFrame implements LSComponent {
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 427, Short.MAX_VALUE)
+            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 532, Short.MAX_VALUE)
         );
 
         jSplitPaneLeft.setRightComponent(jPanel1);
@@ -527,11 +531,11 @@ public class MainWindow extends JFrame implements LSComponent {
         pfdockingPanel.setLayout(pfdockingPanelLayout);
         pfdockingPanelLayout.setHorizontalGroup(
             pfdockingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 565, Short.MAX_VALUE)
+            .addGap(0, 958, Short.MAX_VALUE)
         );
         pfdockingPanelLayout.setVerticalGroup(
             pfdockingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 495, Short.MAX_VALUE)
+            .addGap(0, 600, Short.MAX_VALUE)
         );
 
         jSplitPaneBody.setRightComponent(pfdockingPanel);
@@ -549,7 +553,7 @@ public class MainWindow extends JFrame implements LSComponent {
             .addGroup(jPanelBodyLayout.createSequentialGroup()
                 .addComponent(jToolBarMain, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, 0)
-                .addComponent(jSplitPaneBody, javax.swing.GroupLayout.DEFAULT_SIZE, 495, Short.MAX_VALUE))
+                .addComponent(jSplitPaneBody, javax.swing.GroupLayout.DEFAULT_SIZE, 600, Short.MAX_VALUE))
         );
 
         jToolBar1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
@@ -662,7 +666,7 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenuEdit.add(jMenuItemFindObject);
 
         jMenuItemPlaceComponent.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItemPlaceComponent.setText("Place component");
+        jMenuItemPlaceComponent.setText("Component chooser");
         jMenuItemPlaceComponent.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jMenuItemPlaceComponentActionPerformed(evt);
@@ -729,7 +733,7 @@ public class MainWindow extends JFrame implements LSComponent {
         });
         jMenu2.add(jMenuItemRun);
 
-        jMenuItemStop.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F6, 0));
+        jMenuItemStop.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F8, 0));
         jMenuItemStop.setIcon(SystemResources.TOOLBAR_STOP);
         jMenuItemStop.setText("Stop");
         jMenuItemStop.setEnabled(false);
@@ -764,6 +768,11 @@ public class MainWindow extends JFrame implements LSComponent {
 
         jMenuItemSettingsGlobal.setIcon(SystemResources.TOOLBAR_SETTINGS);
         jMenuItemSettingsGlobal.setText("Settings");
+        jMenuItemSettingsGlobal.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemSettingsGlobalActionPerformed(evt);
+            }
+        });
         jMenu3.add(jMenuItemSettingsGlobal);
 
         jMenuItemColors.setText("Colors");
@@ -791,7 +800,12 @@ public class MainWindow extends JFrame implements LSComponent {
         jMenuItemPrint1.setText("IO  analysis");
         jMenu4.add(jMenuItemPrint1);
 
-        jMenuItemPrint2.setText("Object  analysis");
+        jMenuItemPrint2.setText("Objects handler");
+        jMenuItemPrint2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemPrint2ActionPerformed(evt);
+            }
+        });
         jMenu4.add(jMenuItemPrint2);
 
         jMenu5.setText("Utilities");
@@ -877,7 +891,7 @@ public class MainWindow extends JFrame implements LSComponent {
                 ((PFTwoSlotViewer) this.pfdockingPanel).displayProjectFile(pf);
             }
         });
-
+        
         if (this.project.getProjectFiles().size() == 1) {
             ((PFTwoSlotViewer) this.pfdockingPanel).displayProjectFile(this.project.getProjectFiles().get(0));
         }
@@ -889,7 +903,7 @@ public class MainWindow extends JFrame implements LSComponent {
     private void jButtonEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonEditActionPerformed
         editMode();
     }//GEN-LAST:event_jButtonEditActionPerformed
-
+    
     private void editMode() {
         this.project.editMode = true;
         this.jButtonEdit.setBorder(BorderFactory.createLineBorder(Color.BLACK));
@@ -903,7 +917,7 @@ public class MainWindow extends JFrame implements LSComponent {
     private void jButtonControlActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonControlActionPerformed
         controlMode();
     }//GEN-LAST:event_jButtonControlActionPerformed
-
+    
     private void controlMode() {
         this.project.editMode = false;
         this.jButtonControl.setBorder(BorderFactory.createLineBorder(Color.BLACK));
@@ -986,7 +1000,7 @@ public class MainWindow extends JFrame implements LSComponent {
         //save project ?
         int opt = JOptionPane.showConfirmDialog(this, "Do you want to save this projects?",
                 "Save project", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-
+        
         if (opt == JOptionPane.YES_OPTION) {
             saveProject(this.project.getFile());
         }
@@ -994,7 +1008,7 @@ public class MainWindow extends JFrame implements LSComponent {
         //close system
         SystemClosing sc = new SystemClosing(this.core);
         sc.saveProperties();
-
+        
         sc.dispose();
     }//GEN-LAST:event_formWindowClosing
 
@@ -1038,7 +1052,7 @@ public class MainWindow extends JFrame implements LSComponent {
             public boolean accept(File f) {
                 return f.getPath().endsWith(LogicSimulatorCore.PROJECT_FILE_TYPE) || f.isDirectory();
             }
-
+            
             @Override
             public String getDescription() {
                 return "High low simulator project";
@@ -1111,7 +1125,7 @@ public class MainWindow extends JFrame implements LSComponent {
                 "Rename project",
                 JOptionPane.YES_NO_OPTION
         );
-
+        
         if (opt == JOptionPane.YES_OPTION) {
             //change name of project
             this.project.setName(newName.getText());
@@ -1130,7 +1144,7 @@ public class MainWindow extends JFrame implements LSComponent {
             public boolean accept(File f) {
                 return f.getPath().endsWith(LogicSimulatorCore.PROJECT_FILE_TYPE) || f.isDirectory();
             }
-
+            
             @Override
             public String getDescription() {
                 return "High low simulator project";
@@ -1170,7 +1184,7 @@ public class MainWindow extends JFrame implements LSComponent {
             public boolean accept(File f) {
                 return f.getPath().endsWith("." + LogicSimulatorCore.LIBRARY) || f.isDirectory();
             }
-
+            
             @Override
             public String getDescription() {
                 return "Circuit library";
@@ -1207,7 +1221,7 @@ public class MainWindow extends JFrame implements LSComponent {
             public boolean accept(File f) {
                 return f.getPath().endsWith("." + LogicSimulatorCore.LIBRARY) || f.isDirectory();
             }
-
+            
             @Override
             public String getDescription() {
                 return "Circuit library";
@@ -1245,7 +1259,7 @@ public class MainWindow extends JFrame implements LSComponent {
 
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
         ProjectFile pf = this.project.getSelectedFile();
-
+        
         if (pf instanceof WorkSpace) {
             Grapher grapher = new Grapher((WorkSpace) pf, this.comuteCore);
             grapher.setVisible(true);
@@ -1271,7 +1285,7 @@ public class MainWindow extends JFrame implements LSComponent {
             public boolean accept(File f) {
                 return f.getPath().endsWith(".png") || f.getPath().endsWith(".jpg") || f.isDirectory();
             }
-
+            
             @Override
             public String getDescription() {
                 return "Image";
@@ -1313,6 +1327,14 @@ public class MainWindow extends JFrame implements LSComponent {
     private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
         this.kMap.setVisible(true);
     }//GEN-LAST:event_jMenuItem3ActionPerformed
+
+    private void jMenuItemPrint2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemPrint2ActionPerformed
+        this.objectsHandler.setVisible(true);
+    }//GEN-LAST:event_jMenuItemPrint2ActionPerformed
+
+    private void jMenuItemSettingsGlobalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSettingsGlobalActionPerformed
+        this.globalSettings.setVisible(true);
+    }//GEN-LAST:event_jMenuItemSettingsGlobalActionPerformed
 
     /**
      * Init this window, must exis compute core and project in Core
@@ -1402,6 +1424,8 @@ public class MainWindow extends JFrame implements LSComponent {
         //init utils
         this.componentChooser.setProject(this.project);
         this.serialConfig.init(core);
+        this.kMap.setProject(this.project);
+        this.objectsHandler.setProject(this.project);
 
         //properties #############################################
         try {
@@ -1479,12 +1503,12 @@ public class MainWindow extends JFrame implements LSComponent {
         //set value for ups controler (value can be changed in compute core from propertie file)
         ((NumberChooser) this.ups).setValue(this.comuteCore.getCTL().getTicksPerSecond());
     }
-
+    
     @Override
     public void run() {
         this.setVisible(true);
     }
-
+    
     @Override
     public void stop() {
         dispose();
@@ -1573,13 +1597,13 @@ public class MainWindow extends JFrame implements LSComponent {
         if (comp == null) {
             return;
         }
-
+        
         int n = JOptionPane.showConfirmDialog(
                 this,
                 "Do you really want to delete [" + comp.getComp().getName() + "]",
                 "Delete",
                 JOptionPane.YES_NO_OPTION);
-
+        
         if (n != JOptionPane.YES_OPTION) {
             return;
         }
@@ -1639,7 +1663,7 @@ public class MainWindow extends JFrame implements LSComponent {
      */
     public void addComponentToToolbar(WorkSpaceObject obj) {
         if (obj != null) {
-
+            
             String componentName = Tools.getComponentName(obj);
             //commponent can be only one in toolbar
             for (Component c : this.jToolBarComponents.getComponents()) {
@@ -1678,8 +1702,8 @@ public class MainWindow extends JFrame implements LSComponent {
                         jToolBarComponents.repaint();
                         //remove object from list
                         String objName = Tools.getComponentName(obj);
-                        for(WorkSpaceObject obj2 : project.getRefComponents()) {
-                            if(objName.equals(Tools.getComponentName(obj2))) {
+                        for (WorkSpaceObject obj2 : project.getRefComponents()) {
+                            if (objName.equals(Tools.getComponentName(obj2))) {
                                 project.getRefComponents().remove(obj2);
                                 break;
                             }
@@ -1689,7 +1713,7 @@ public class MainWindow extends JFrame implements LSComponent {
             });
 
             //create image of selected object and set this image for button        
-            b.setIcon(new ImageIcon(Tools.createImage(obj, 20, Math.PI / 4)));
+            b.setIcon(new ImageIcon(Tools.createImage(obj, new Dimension(20, 20), 20, Math.PI / 4)));
 
             //add to toolbar
             this.jToolBarComponents.add(b);
@@ -1700,7 +1724,7 @@ public class MainWindow extends JFrame implements LSComponent {
                     .allMatch((obj2) -> (!objName.equals(Tools.getComponentName(obj2))))) {
                 this.project.getRefComponents().add(obj);
             }
-
+            
             this.jToolBarComponents.revalidate();
             this.jToolBarComponents.repaint();
         }
@@ -1739,7 +1763,7 @@ public class MainWindow extends JFrame implements LSComponent {
                 this.jMenuItemRun.setEnabled(false);
                 this.jMenuItemStop.setEnabled(true);
                 this.jMenuItemStep.setEnabled(false);
-
+                
                 return;
             }
         }
@@ -1779,7 +1803,7 @@ public class MainWindow extends JFrame implements LSComponent {
     public PFTwoSlotViewer getPFDockingPanel() {
         return (PFTwoSlotViewer) this.pfdockingPanel;
     }
-
+    
     private void openProjectWizzard(ProjectWizard.Mode mode) {
         for (LSComponent comp : this.core.getLSComponents()) {
             if (comp instanceof ProjectWizard) {
@@ -1827,7 +1851,7 @@ public class MainWindow extends JFrame implements LSComponent {
                 } catch (Exception ex) {
                     ExceptionLogger.getInstance().logException(ex);
                 }
-
+                
                 break;
             }
         }
