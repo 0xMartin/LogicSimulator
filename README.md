@@ -132,3 +132,5 @@ This software is used to simulate sequential and combinational circuits. It allo
 <img src="https://github.com/0xMartin/LogicSimulator/blob/master/img/img2.PNG" width=80%>
 
 <img src="https://github.com/0xMartin/LogicSimulator/blob/master/img/img3.PNG" width=80%>
+
+<img src="https://github.com/0xMartin/LogicSimulator/blob/master/img/img4.PNG" width=80%>
