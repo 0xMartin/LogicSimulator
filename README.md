@@ -27,6 +27,10 @@ Software also provides several diagnostic tools. The first of these is the step-
 
 Additionally, HL simulator includes a digital grapher (oscilloscope), which enables real-time monitoring of the states in any part of the circuit. With these powerful diagnostic tools, users can quickly identify and troubleshoot any issues that arise during circuit design and testing. 
 
+There is also Karnaugh map tool, which allows for easy definition of combinational circuit behavior and automatically generates the output equation and circuit from it.
+
+Furthermore, the simulator includes a debugger for ASM language programming, making it easier to debug and test programs written in assembly language. With these additional features, HL simulator provides a comprehensive suite of tools for both circuit design and microprocessor programming.
+
 <img src="./img/img3.png">
 
 ## Modules
