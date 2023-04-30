@@ -54,6 +54,10 @@ Furthermore, HL Simulator also offers a tool for diagnosing combinational circui
 	<img src="./img/img6.png">
 </div>
 
+## Direct connection with external devices
+
+The software communicates over the serial link with an external device that processes messages. This enables the external device to directly control some states in the simulator or indicate certain states of the simulator externally.
+
 ## Keyboard shortcuts
 * Global
 	* CTR + ENTER: (new file, new component)
