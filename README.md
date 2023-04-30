@@ -89,4 +89,4 @@ The software communicates over the serial link with an external device that proc
 * documentation / tutorials [EN]
   
 ## Author:
-HL Simulator was created as an open-source project by Martin Krčma. The project is available on the [GitHub] platform and can be modified and distributed in accordance with the terms of the GNU General Public License v3.0.
+HL Simulator was created as an open-source project by Martin Krčma. 
