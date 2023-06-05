@@ -4,6 +4,13 @@
 	<h1>HL simulator</h1>
 </div>
 
+<div align="center">
+  <img alt="Made with Apache NetBeans" src="https://img.shields.io/badge/Made%20with-Apache%20NetBeans-994422.svg?style=flat">
+  <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/0xMartin/LogicSimulator">
+  <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/0xMartin/LogicSimulator/total">
+  <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/0xMartin/LogicSimulator">
+</div>
+
 HL Simulator is a circuit simulation tool that enables users to design and simulate sequential and logic circuits of various complexities. This application is built with Java and offers an intuitive interface for creating, editing, and simulating circuits.
 
 With HL Simulator, users can easily build complex circuits by selecting from a wide range of built-in logic gates and other circuit components. The application supports simulation of both synchronous and asynchronous circuits, allowing users to observe how their circuits behave over time.
